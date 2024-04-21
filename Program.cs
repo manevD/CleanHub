@@ -25,13 +25,20 @@ namespace CleanHub
             culture.DateTimeFormat.ShortDatePattern = "dd/MM/yyyy";
             culture.DateTimeFormat.DateSeparator = "/";
             supportedCultures.Add(culture);
+            config.AddConfiguration<CompanyConfig>(builder.Services, "Company");
+
             config.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-
+            builder.Services.AddSession(options =>
+            {
+                options.IdleTimeout = TimeSpan.FromMinutes(30); // Session Timeout nach 30 Minuten
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
+            });
             builder.Services.AddControllersWithViews();
     
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
@@ -68,10 +75,11 @@ namespace CleanHub
 
             app.UseAuthorization();
             app.UseAuthentication();
+            app.UseSession(); // Aktiviert die Session
 
             app.MapControllerRoute(
                    name: "default",
-                   pattern: "{controller=Home}/{action=Index}/{id?}");
+                   pattern: "{controller=Residents}/{action=Index}");
             app.MapControllerRoute(
                name: "area",
                pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");

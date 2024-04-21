@@ -3,10 +3,10 @@
     public class Building
     {
         public int Id { get; set; }
-        public Address Address { get; set; }
-        public int NumberOfUnits { get; set; }
+        public string Name { get; set; }
+        public int? NumberOfResidence { get; set; }
 
         // Navigation property for residents
-        public ICollection<Resident> Residents { get; set; }
+        public ICollection<Resident>? Residents { get; set; }
     }
 }

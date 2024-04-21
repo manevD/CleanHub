@@ -1,27 +1,36 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.EntityFrameworkCore;
+﻿using CleanHub.Attribute;
 using CleanHub.Data;
 using CleanHub.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CleanHub.Controllers
 {
+    [RequireLogin]
     public class BuildingsController : Controller
     {
         private readonly ApplicationDbContext _context;
 
-        public BuildingsController(ApplicationDbContext context)
+        private readonly IMemoryCache _cache;
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(30); // Adjust expiration time as needed
+
+        public BuildingsController(ApplicationDbContext context, IMemoryCache cache)
         {
             _context = context;
+            _cache = cache;
         }
 
         // GET: Buildings
         public async Task<IActionResult> Index()
         {
+            if (!_cache.TryGetValue("BuildingsList", out List<Building> buildings))
+            {
+                // Data not in cache, retrieve from database
+                buildings = await _context.Buildings.Include(x=>x.Residents).ToListAsync();
+                // Cache the data
+                _cache.Set("BuildingsList", buildings, _cacheExpiration);
+            }
             return View(await _context.Buildings.ToListAsync());
         }
 
@@ -32,9 +41,14 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-
-            var building = await _context.Buildings
-                .FirstOrDefaultAsync(m => m.Id == id);
+            if (!_cache.TryGetValue("BuildingsList", out List<Building> buildings))
+            {
+                // Data not in cache, retrieve from database
+                buildings = await _context.Buildings.Include(x=>x.Residents).ToListAsync();
+                // Cache the data
+                _cache.Set("BuildingsList", buildings, _cacheExpiration);
+            }
+            var building =  buildings.FirstOrDefault(m => m.Id == id);
             if (building == null)
             {
                 return NotFound();
@@ -60,6 +74,7 @@ namespace CleanHub.Controllers
             {
                 _context.Add(building);
                 await _context.SaveChangesAsync();
+                _cache.Remove("BuildingsList");
                 return RedirectToAction(nameof(Index));
             }
             return View(building);
@@ -72,8 +87,8 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-
-            var building = await _context.Buildings.FindAsync(id);
+            _cache.TryGetValue("BuildingsList", out List<Building> buildings);
+            var building = buildings.FirstOrDefault(x=>x.Id==id);
             if (building == null)
             {
                 return NotFound();
@@ -86,7 +101,7 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, [Bind("Id,NumberOfUnits")] Building building)
+        public async Task<IActionResult> Edit(int id, Building building)
         {
             if (id != building.Id)
             {
@@ -97,8 +112,12 @@ namespace CleanHub.Controllers
             {
                 try
                 {
+                    _cache.TryGetValue("BuildingsList", out List<Building> buildings);
+                    building.NumberOfResidence = buildings.FirstOrDefault(x=>x.Id == id).Residents.Count();
                     _context.Update(building);
+
                     await _context.SaveChangesAsync();
+                    _cache.Remove("BuildingsList");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -123,9 +142,8 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-
-            var building = await _context.Buildings
-                .FirstOrDefaultAsync(m => m.Id == id);
+            _cache.TryGetValue("BuildingsList", out List<Building> buildings);
+            var building = buildings.FirstOrDefault(m => m.Id == id);
             if (building == null)
             {
                 return NotFound();
@@ -139,7 +157,9 @@ namespace CleanHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var building = await _context.Buildings.FindAsync(id);
+            _cache.TryGetValue("BuildingsList", out List<Building> buildings);
+
+            var building = buildings.FirstOrDefault(x=>x.Id==id);
             if (building != null)
             {
                 _context.Buildings.Remove(building);
@@ -151,7 +171,9 @@ namespace CleanHub.Controllers
 
         private bool BuildingExists(int id)
         {
-            return _context.Buildings.Any(e => e.Id == id);
+            _cache.TryGetValue("BuildingsList", out List<Building> buildings);
+
+            return buildings.Any(e => e.Id == id);
         }
     }
 }

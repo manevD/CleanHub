@@ -4,9 +4,7 @@ using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.DataEncryption;
 using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
-using Newtonsoft.Json;
 using System.Security.Cryptography;
-using System.Security.Principal;
 using System.Text;
 
 namespace CleanHub.Data
@@ -15,7 +13,6 @@ namespace CleanHub.Data
     {
         public DbSet<Building> Buildings { get; set; }
         public DbSet<Resident> Residents { get; set; }
-        public DbSet<Address> Addresses { get; set; }
         public DbSet<Invoice> Invoices { get; set; }
 
 

@@ -1,39 +1,110 @@
-﻿using CleanHub.Data;
+﻿using CleanHub.Attribute;
+using CleanHub.Config;
+using CleanHub.Data;
 using CleanHub.Models;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using System.Net;
+using System.Net.Mail;
 
 namespace CleanHub.Controllers
 {
+    [RequireLogin]
+
     public class ResidentsController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private SMTPConfig _smtpConfig;
+        private static DateTime DateFrom = DateTime.Now;
+        private static DateTime DateTo = DateTime.Now;
 
-        public ResidentsController(ApplicationDbContext context)
+        private readonly IMemoryCache _cache;
+        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(20); // Adjust expiration time as needed
+
+        public ResidentsController(ApplicationDbContext context, IMemoryCache cache, IOptions<SMTPConfig> config)
         {
             _context = context;
+            _cache = cache;
+            _smtpConfig = config.Value;
         }
 
         // GET: Residents
         public async Task<IActionResult> Index()
         {
-            var applicationDbContext = _context.Residents.Include(r => r.Building).ThenInclude(d=>d.Address);
-            return View(await applicationDbContext.ToListAsync());
+            string residentsJson = HttpContext.Session.GetString("Residents");
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+            List<Resident> residents;
+            if (!string.IsNullOrEmpty(residentsJson))
+            {
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings);
+            }
+            else
+            {
+                residents = await _context.Residents.Include(r => r.Building).Include(i => i.Invoices).AsNoTracking().ToListAsync();
+                // Load residents for each invoice separately
+
+                HttpContext.Session.SetString("Residents", JsonConvert.SerializeObject(residents, settings));
+            }
+            return View(residents);
         }
 
         // GET: Residents/Details/5
-        public async Task<IActionResult> Details(int? id)
+        public async Task<IActionResult> Details(int? id, string? dateFrom, string? dateTo)
         {
             if (id == null)
             {
                 return NotFound();
             }
 
-            var resident = await _context.Residents
-                .Include(x=>x.Invoices)
-                .Include(r => r.Building).ThenInclude(x=>x.Address)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            string residentsJson = HttpContext.Session.GetString("Residents");
+            var settings = new JsonSerializerSettings
+            {
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+
+            List<Resident> residents;
+
+            if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
+            {
+                DateFrom = DateTime.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                DateTo = DateTime.ParseExact(dateTo, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom;
+                ViewBag.DateTo = DateTo;
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings)
+             .Where(resident => resident.Invoices.Any(inv => inv.DueDate >= DateFrom && inv.DueDate <= DateTo))
+             .ToList();
+            }
+            else if (!string.IsNullOrEmpty(dateFrom))
+            {
+                ViewBag.DateFrom = DateFrom;
+                DateFrom = DateTime.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings)
+             .Where(resident => resident.Invoices.Any(inv => inv.DueDate >= DateFrom))
+             .ToList();
+            }
+            else
+            {
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings);
+            }
+
+            var resident = residents
+                .FirstOrDefault(m => m.Id == id);
+
+            // Iterate through each invoice of the resident
+            foreach (var invoice in resident.Invoices)
+            {
+                // Set the Resident property of the invoice to the current resident
+                invoice.Resident = resident;
+            }
+
             if (resident == null)
             {
                 return NotFound();
@@ -62,6 +133,7 @@ namespace CleanHub.Controllers
                 await _context.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
+            _cache.Remove("ResidentsList");
             ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Id", resident.BuildingId);
             return View(resident);
         }
@@ -73,8 +145,9 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+            _cache.TryGetValue("ResidentsList", out List<Resident> residents);
 
-            var resident = await _context.Residents.FindAsync(id);
+            var resident = residents.FirstOrDefault(x => x.Id == id);
             if (resident == null)
             {
                 return NotFound();
@@ -101,6 +174,7 @@ namespace CleanHub.Controllers
                 {
                     _context.Update(resident);
                     await _context.SaveChangesAsync();
+                    _cache.Remove("ResidentsList");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -126,10 +200,9 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+            _cache.TryGetValue("ResidentsList", out List<Resident> residents);
 
-            var resident = await _context.Residents
-                .Include(r => r.Building)
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var resident = residents.FirstOrDefault(m => m.Id == id);
             if (resident == null)
             {
                 return NotFound();
@@ -138,18 +211,50 @@ namespace CleanHub.Controllers
             return View(resident);
         }
 
+        public async Task<IActionResult> ExportInvoices(DateTime datum, int residentId)
+        {
+            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
+            {
+                smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
+                smtpClient.EnableSsl = true;
+
+                MailMessage mailMessage = new MailMessage
+                {
+                    Subject = string.Concat("Фактура Марти Хигиена за", datum.Day, datum.Month, datum.Year, " за ден"),
+                    //Body = sb.ToString(),
+                    IsBodyHtml = true
+                };
+                mailMessage.From = new MailAddress(_smtpConfig.Email);
+                mailMessage.To.Add(_smtpConfig.Recipient);
+
+                // Send the email
+                smtpClient.Send(mailMessage);
+            }
+            var resident = _context.Residents.FirstOrDefault(x => x.Id == residentId);
+            return RedirectToAction("Details", resident);
+        }
+
         // POST: Residents/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var resident = await _context.Residents.FindAsync(id);
+            if (!_cache.TryGetValue("ResidentsList", out List<Resident> residents))
+            {
+                // Data not in cache, retrieve from database
+                residents = await _context.Residents.Include(r => r.Building).Include(i => i.Invoices).ToListAsync();
+
+                // Cache the data
+                _cache.Set("ResidentsList", residents, _cacheExpiration);
+            }
+            var resident = residents.FirstOrDefault(x => x.Id == id);
             if (resident != null)
             {
                 _context.Residents.Remove(resident);
             }
 
             await _context.SaveChangesAsync();
+            _cache.Remove("ResidentsList");
             return RedirectToAction(nameof(Index));
         }
 
