@@ -1,4 +1,4 @@
-﻿using CleanHub.Models;
+﻿using CleanHub.Core.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace CleanHub.Data
+namespace CleanHub.Infrastructure.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
@@ -19,8 +19,7 @@ namespace CleanHub.Data
         private readonly IEncryptionProvider _provider;
         private readonly string _key = "09e88d4fd3c6fa2f9b05a05f166809b7";
 
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-            : base(options)
+        public ApplicationDbContext()
         {
             byte[] keyBytes = new byte[16];
             byte[] iv = new byte[16];
@@ -99,6 +98,6 @@ namespace CleanHub.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=tcp:cleanhubdbserver.database.windows.net,1433;Initial Catalog=CleanHub_db;Persist Security Info=False;User ID=dimitar.manev@outlook.de@cleanhubdbserver;Password=Hallo123!;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;");
+        "Server=localhost\\SQLEXPRESS;Database=CleanHub;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

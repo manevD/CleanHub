@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
 
-namespace CleanHub.Models
+namespace CleanHub.Core.Entities
 {
     public class Resident
     {

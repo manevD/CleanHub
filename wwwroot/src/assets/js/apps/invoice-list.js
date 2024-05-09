@@ -42,25 +42,3 @@
     "lengthMenu": [7, 10, 20, 50],
     "pageLength": 10
 });
-
-$("div.toolbar").html('<button class="dt-button dt-delete btn btn-danger" tabindex="0" aria-controls="invoice-list"><span>Delete</span></button>');
-
-multiCheck(invoiceList);
-
-
-$('.dt-delete').on('click', function() {
-      // Read all checked checkboxes
-    $(".select-customers-info:checked").each(function () {
-        if (this.classList.contains('chk-parent')) {
-            return;
-        } else {
-            $(this).parents('tr').remove();
-        }
-    });
-    
-})
-
-
-$('.action-delete').on('click', function() {
-    $(this).parents('tr').remove();
-})

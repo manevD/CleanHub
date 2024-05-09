@@ -1,4 +1,4 @@
-﻿namespace CleanHub.Config
+﻿namespace CleanHub.Core.Config
 {
     public class CompanyConfig
     {

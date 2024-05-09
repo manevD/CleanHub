@@ -1,6 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace CleanHub.Config
+namespace CleanHub.Core.Config
 {
     public class SMTPConfig
     {

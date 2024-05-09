@@ -71,39 +71,51 @@ namespace CleanHub.Controllers
             };
 
             List<Resident> residents;
-
+            var resident = new Resident();
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
             {
                 DateFrom = DateTime.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 DateTo = DateTime.ParseExact(dateTo, "dd.MM.yyyy", null);
-                ViewBag.DateFrom = DateFrom;
-                ViewBag.DateTo = DateTo;
-                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings)
-             .Where(resident => resident.Invoices.Any(inv => inv.DueDate >= DateFrom && inv.DueDate <= DateTo))
-             .ToList();
+                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
+                ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings);
+                resident = residents
+             .FirstOrDefault(x => x.Id == id);
+                resident.Invoices = resident.Invoices.Where(inv => inv.DueDate >= DateFrom && inv.DueDate <= DateTo).ToList();
+
+                // Iterate through each invoice of the resident
+                foreach (var invoice in resident.Invoices)
+                {
+                    // Set the Resident property of the invoice to the current resident
+                    invoice.Resident = resident;
+                }
+
             }
             else if (!string.IsNullOrEmpty(dateFrom))
             {
-                ViewBag.DateFrom = DateFrom;
                 DateFrom = DateTime.ParseExact(dateFrom, "dd.MM.yyyy", null);
-                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings)
-             .Where(resident => resident.Invoices.Any(inv => inv.DueDate >= DateFrom))
-             .ToList();
+                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
+                residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings);
+                resident = residents
+             .FirstOrDefault(resident => resident.Id == id && resident.Invoices.Any(inv => inv.DueDate >= DateFrom));
+                resident.Invoices = resident.Invoices.Where(inv => inv.DueDate >= DateFrom).ToList();
+                foreach (var invoice in resident.Invoices)
+                {
+                    // Set the Resident property of the invoice to the current resident
+                    invoice.Resident = resident;
+                }
             }
             else
             {
                 residents = JsonConvert.DeserializeObject<List<Resident>>(residentsJson, settings);
+                resident = residents.FirstOrDefault(x => x.Id == id);
+                foreach (var invoice in resident.Invoices)
+                {
+                    // Set the Resident property of the invoice to the current resident
+                    invoice.Resident = resident;
+                }
             }
 
-            var resident = residents
-                .FirstOrDefault(m => m.Id == id);
-
-            // Iterate through each invoice of the resident
-            foreach (var invoice in resident.Invoices)
-            {
-                // Set the Resident property of the invoice to the current resident
-                invoice.Resident = resident;
-            }
 
             if (resident == null)
             {

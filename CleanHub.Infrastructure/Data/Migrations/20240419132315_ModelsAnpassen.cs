@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace CleanHub.Data.Migrations
+namespace CleanHub.Infrastructure.Migrations
 {
     /// <inheritdoc />
     public partial class ModelsAnpassen : Migration
