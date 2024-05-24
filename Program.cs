@@ -1,11 +1,11 @@
 using CleanHub.Config;
 using CleanHub.Controllers;
-using CleanHub.Data;
+using CleanHub.Extensions;
+using CleanHub.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 using System.Globalization;
-using CleanHub.Extensions;
-using Microsoft.AspNetCore.Localization;
 
 namespace CleanHub
 {

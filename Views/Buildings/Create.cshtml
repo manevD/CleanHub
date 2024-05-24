@@ -1,4 +1,4 @@
-﻿@model CleanHub.Models.Building
+﻿@* @model CleanHub.Entities.Building
 
 @{
     ViewData["Title"] = "Create";
@@ -18,6 +18,11 @@
                 <span asp-validation-for="Name" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <label asp-for="NumberOfResidence" class="control-label"></label>
+                <input asp-for="NumberOfResidence" class="form-control" />
+                <span asp-validation-for="NumberOfResidence" class="text-danger"></span>
+            </div>
+            <div class="form-group">
                 <input type="submit" value="Create" class="btn btn-primary" />
             </div>
         </form>
@@ -31,3 +36,4 @@
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
 }
+ *@

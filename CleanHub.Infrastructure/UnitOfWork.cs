@@ -7,13 +7,13 @@ namespace CleanHub.Infrastructure
 {
     public class UnitOfWork<TEntity, TRepository> : IUnitOfWork<TEntity> where TEntity : class where TRepository : IGenericRepository<TEntity>
     {
-        private readonly ApplicationDbContext _context = new ApplicationDbContext();
+        private readonly ApplicationDbContext _context;
         private readonly Factory _factory;
 
-        public UnitOfWork()
+        public UnitOfWork(ApplicationDbContext dbConext )   
         {
             _factory = new Factory();
-
+            _context = dbConext;
             Repositories = new Dictionary<Type, object>();
         }
 
@@ -31,7 +31,6 @@ namespace CleanHub.Infrastructure
                 return _getCustomOrDefaultRepository;
             }
         }
-
         protected virtual T MakeRepository<T>(
         Func<ApplicationDbContext, object> factory, ApplicationDbContext dbContext)
         {

@@ -1,4 +1,4 @@
-﻿using CleanHub.Core.Entities;
+﻿using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -11,14 +11,24 @@ namespace CleanHub.Infrastructure.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
-        public DbSet<Building> Buildings { get; set; }
-        public DbSet<Resident> Residents { get; set; }
-        public DbSet<Invoice> Invoices { get; set; }
 
+        public virtual DbSet<Article> Articles { get; set; }
+        public virtual DbSet<Building> Buildings { get; set; }
+
+        public virtual DbSet<Bank> Banks { get; set; }
+
+        public virtual DbSet<Document> Documents { get; set; }
+
+        public virtual DbSet<Book> Books { get; set; }
+
+        public virtual DbSet<BookFinancial> BookFinancials { get; set; }
+
+        public virtual DbSet<BookFinancialSub> BookFinancialSub { get; set; }
+
+        public virtual DbSet<Customer> Customers { get; set; }
 
         private readonly IEncryptionProvider _provider;
         private readonly string _key = "09e88d4fd3c6fa2f9b05a05f166809b7";
-
         public ApplicationDbContext()
         {
             byte[] keyBytes = new byte[16];
@@ -29,28 +39,52 @@ namespace CleanHub.Infrastructure.Data
             }
             _provider = new AesProvider(keyBytes, iv);
         }
-        protected override void OnModelCreating(ModelBuilder builder)
+
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
+            : base(options)
         {
-            base.OnModelCreating(builder);
-            builder.UseEncryption(this._provider);
+            byte[] keyBytes = new byte[16];
+            byte[] iv = new byte[16];
+            using (var rng = new RNGCryptoServiceProvider())
+            {
+                rng.GetBytes(iv);
+            }
+            _provider = new AesProvider(keyBytes, iv);
+        }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+            modelBuilder.UseEncryption(this._provider);
 
             // Add configurations for your entities, including primary keys
-            builder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
-            builder.Entity<Resident>()
-             .Property(e => e.FirstName)
+            modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
+            modelBuilder.Entity<Customer>()
+             .Property(e => e.CustomerInfo)
              .HasConversion(
                  encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
                  decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
              );
-            builder.Entity<Resident>()
-            .Property(e => e.LastName)
+            modelBuilder.Entity<Customer>()
+            .Property(e => e.Email)
             .HasConversion(
                 encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
                 decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
             );
-           
+            modelBuilder.Entity<Customer>()
+          .Property(e => e.Web)
+          .HasConversion(
+              encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+              decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+          );
+                modelBuilder.Entity<Customer>()
+           .Property(e => e.PhoneNumber)
+           .HasConversion(
+               encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+               decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+           );
         }
-      
+
         static string Encrypt(string data, string key)
         {
             using (Aes aesAlg = Aes.Create())
@@ -98,6 +132,6 @@ namespace CleanHub.Infrastructure.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=CleanHub;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

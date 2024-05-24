@@ -5,10 +5,6 @@ VisualStudioVersion = 17.10.34804.81
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanHub", "CleanHub.csproj", "{D371E99B-54D0-436B-B60C-DDBF679AB632}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CleanHub.Infrastructure", "CleanHub.Infrastructure\CleanHub.Infrastructure.csproj", "{F998ADED-6710-4FB3-8180-444619120B05}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CleanHub.Core", "CleanHub.Interfaces\CleanHub.Core.csproj", "{6547A4F6-D865-4E5A-B951-CBBCB2B559FE}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -19,14 +15,6 @@ Global
 		{D371E99B-54D0-436B-B60C-DDBF679AB632}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D371E99B-54D0-436B-B60C-DDBF679AB632}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D371E99B-54D0-436B-B60C-DDBF679AB632}.Release|Any CPU.Build.0 = Release|Any CPU
-		{F998ADED-6710-4FB3-8180-444619120B05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{F998ADED-6710-4FB3-8180-444619120B05}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{F998ADED-6710-4FB3-8180-444619120B05}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{F998ADED-6710-4FB3-8180-444619120B05}.Release|Any CPU.Build.0 = Release|Any CPU
-		{6547A4F6-D865-4E5A-B951-CBBCB2B559FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{6547A4F6-D865-4E5A-B951-CBBCB2B559FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{6547A4F6-D865-4E5A-B951-CBBCB2B559FE}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{6547A4F6-D865-4E5A-B951-CBBCB2B559FE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

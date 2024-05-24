@@ -1,12 +1,13 @@
-﻿@model CleanHub.Models.Building
+﻿@* @model CleanHub.Entities.Building
 
 @{
     ViewData["Title"] = "Details";
 }
 
-
 <div class="row layout-spacing ">
-
+    <p>
+        <a class="btn btn-primary" asp-action="SendInvoiceEmail">Прати сметка на сите станари</a>
+    </p>
     <!-- Content -->
     <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 layout-top-spacing">
         <div class="user-profile">
@@ -27,4 +28,4 @@
     {
         @Html.Partial("_ResidentPartial", Model.Residents.ToList())
     }
-</div>
+</div> *@
