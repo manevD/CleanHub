@@ -1,69 +1,110 @@
-﻿@* @model CleanHub.Entities.Resident
+﻿@model CleanHub.ViewModels.CustomerViewModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Додај Партнер";
 }
-
-<h1>Create</h1>
-
-<h4>Resident</h4>
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <div class="form-group">
-                <label asp-for="FirstName" class="control-label"></label>
-                <input asp-for="FirstName" class="form-control" />
-                <span asp-validation-for="FirstName" class="text-danger"></span>
+
+<div class="tab-content" id="animateLineContent-4">
+    <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 layout-spacing">
+                <form asp-action="Create" class="section general-info">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <div class="info">
+                        <h6 class="">Информации за Партнер</h6>
+                        <div class="row">
+                            <div class="col-lg-11 mx-auto">
+                                <div class="row">
+                                    <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
+                                        <div class="form">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Информации</label>
+                                                        <input asp-for="CustomerInfo" type="text" class="form-control mb-3" id="CustomerInformation" placeholder="Информации">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Дејност</label>
+                                                        <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId"></select>
+                                                        <span asp-validation-for="ActivityId" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Адреса</label>
+                                                        <input asp-for="Adress" type="text" class="form-control mb-3" id="Adress" placeholder="Адреса">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Телефон</label>
+                                                        <input asp-for="PhoneNumber" type="text" class="form-control mb-3" id="PhoneNumber" placeholder="Телефонски Број">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Е - Маил</label>
+                                                        <input asp-for="Email" type="text" class="form-control mb-3" id="Email" placeholder="Е - Маил">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Веб</label>
+                                                        <input asp-for="Web" type="text" class="form-control mb-3" id="Web" placeholder="Веб">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Објект </label>
+                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис</label>
+                                                        <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Физичко Лице</label>
+                                                        <input type="checkbox" class="form-check-input" id="PhysicalPerson"
+                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
+                                                    </div>
+                                                </div>
+                                        
+
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="form-group text-end">
+                                                        <input type="submit" value="Зачувај" class="btn btn-primary" />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label asp-for="LastName" class="control-label"></label>
-                <input asp-for="LastName" class="form-control" />
-                <span asp-validation-for="LastName" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Web" class="control-label"></label>
-                <input asp-for="Web" class="form-control" />
-                <span asp-validation-for="Web" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PhoneNumber" class="control-label"></label>
-                <input asp-for="PhoneNumber" class="form-control" />
-                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-            </div>
-            <div class="form-group form-check">
-                <label class="form-check-label">
-                    <input class="form-check-input" asp-for="Inactive" /> @Html.DisplayNameFor(model => model.Inactive)
-                </label>
-            </div>
-          @*   <div class="form-group">
-                <label asp-for="InactiveFrom" class="control-label"></label>
-                <input asp-for="InactiveFrom" class="form-control" />
-                <span asp-validation-for="InactiveFrom" class="text-danger"></span>
-            </div> 
-            <div class="col-12">
-                @Html.LabelFor(model => model.BuildingList, new { @class = "form-label" })
-                @Html.ValidationMessageFor(model => model.BuildingId, "", new { @class = "text-danger", style = "margin-left: 15px;" })
-                @Html.DropDownListFor(model => model.BuildingId, Model.BuildingList, "", new { @class = "form-control" })
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Create" class="btn btn-primary" />
-            </div>
-        </form>
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
- *@

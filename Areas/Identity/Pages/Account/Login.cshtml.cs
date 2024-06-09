@@ -121,7 +121,7 @@ namespace CleanHub.Areas.Identity.Pages.Account
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid login attempt.");
+                    ModelState.AddModelError(string.Empty, "Лозинката или Е-Маилот е неточен. Ве молиме обидете се повторно.");
                     return Page();
                 }
             }

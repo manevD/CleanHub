@@ -1,3 +1,4 @@
+using AutoMapper;
 using CleanHub.Config;
 using CleanHub.Controllers;
 using CleanHub.Extensions;
@@ -47,8 +48,16 @@ namespace CleanHub
 
             builder.Services.AddDataProtection();
             builder.Services.AddRazorPages();
-            builder.Services.AddTransient<HomeController>();
+            var configuration = new MapperConfiguration(cfg =>
+            {
+                cfg.AddProfile(new App());
+                cfg.AddProfile<App>();
+                cfg.AddMaps(typeof(Profile));
+            });
 
+            IMapper mapper = configuration.CreateMapper();
+
+            builder.Services.AddSingleton(mapper);
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -79,7 +88,7 @@ namespace CleanHub
 
             app.MapControllerRoute(
                    name: "default",
-                   pattern: "{controller=Residents}/{action=Index}");
+                   pattern: "{controller=Customers}/{action=Index}");
             app.MapControllerRoute(
                name: "area",
                pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");

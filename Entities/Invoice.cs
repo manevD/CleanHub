@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-namespace CleanHub.Entities;
+﻿namespace CleanHub.Entities;
 
 public partial class Invoice
 {

@@ -1,16 +1,21 @@
-﻿@model List<CleanHub.ViewModels.BuildingViewModel> 
+﻿@* @model IEnumerable<CleanHub.Entities.Building>
+
 @{
+    ViewData["Title"] = "Објекти";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 
 }
+
+
 <div class="row">
     <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
         <p>
-            <a class="btn btn-primary" asp-action="Create">Креирај Објект</a>
+            <a class="btn btn-primary"  asp-action="Create">Креирај Објект</a>
         </p>
 
         <div class="statbox widget box box-shadow">
             <div class="widget-content widget-content-area">
-
+               
                 <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                     <thead>
                         <tr>
@@ -18,7 +23,7 @@
                                 Име на Објект
                             </th>
                             <th>
-                               Сметка
+                                Број на Станари
                             </th>
                             <th>
                                 Функции
@@ -33,7 +38,7 @@
                                     @Html.DisplayFor(modelItem => item.Name)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => item.BankAccount)
+                                    @Html.DisplayFor(modelItem => item.NumberOfResidence)
                                 </td>
                                 <td>
                                     <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Buildings" asp-route-id="@item.Id">
@@ -49,4 +54,4 @@
             </div>
         </div>
     </div>
-</div> 
+</div> *@

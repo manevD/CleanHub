@@ -1,57 +1,144 @@
-﻿@* @model CleanHub.Entities.Resident
+﻿@model CleanHub.ViewModels.CustomerViewModel        
+
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-}
-@{
-    ViewData["Title"] = "Edit";
+    ViewData["Title"] = "Измени Партнер";
 }
 
-<h1>Edit</h1>
-
-<h4>Resident</h4>
 <hr />
-<div class="row">
-    <div class="col-md-4">
-        <form asp-action="Edit">
-            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-            <input type="hidden" asp-for="Id" />
-            <div class="form-group">
-                <label asp-for="FirstName" class="control-label"></label>
-                <input asp-for="FirstName" class="form-control" />
-                <span asp-validation-for="FirstName" class="text-danger"></span>
+
+<div class="tab-content" id="animateLineContent-4">
+    <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 layout-spacing">
+                <form class="section general-info" asp-action="Edit" id="customerForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <div class="info">
+                        <h6 class="">Информации за Партнер</h6>
+                        <div class="row">
+                            <div class="col-lg-11 mx-auto">
+                                <div class="row">
+                                    <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
+                                        <div class="form">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Информации</label>
+                                                        <input asp-for="CustomerInfo" type="text" class="form-control mb-3" id="CustomerInformation" placeholder="Информации">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Дејност</label>
+                                                        <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId"></select>
+                                                        <span asp-validation-for="ActivityId" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Адреса</label>
+                                                        <input asp-for="Adress" type="text" class="form-control mb-3" id="Adress" placeholder="Адреса">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Телефон</label>
+                                                        <input asp-for="PhoneNumber" type="text" class="form-control mb-3" id="PhoneNumber" placeholder="Телефонски Број">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Е - Маил</label>
+                                                        <input asp-for="Email" type="text" class="form-control mb-3" id="Email" placeholder="Е - Маил">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Веб</label>
+                                                        <input asp-for="Web" type="text" class="form-control mb-3" id="Web" placeholder="Веб">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Објект </label>
+                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис</label>
+                                                        <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis" />
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Физичко Лице</label>
+                                                        <input type="checkbox" class="form-check-input" id="PhysicalPerson"
+                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="Inactive"
+                                                               name="Inactive" value="true" @(Model.Inactive == true ? "checked" : "") />
+                                                        <label class="form-check-label">Неактивен</label>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="InactiveDatum">Неактивен од</label>
+                                                        <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum" />
+                                                    </div>
+                                                </div>
+
+
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="form-group text-end">
+                                                        <input type="submit" value="Зачувај" class="btn btn-primary" />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="form-group">
-                <label asp-for="LastName" class="control-label"></label>
-                <input asp-for="LastName" class="form-control" />
-                <span asp-validation-for="LastName" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="Email" class="control-label"></label>
-                <input asp-for="Email" class="form-control" />
-                <span asp-validation-for="Email" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="PhoneNumber" class="control-label"></label>
-                <input asp-for="PhoneNumber" class="form-control" />
-                <span asp-validation-for="PhoneNumber" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <label asp-for="BuildingId" class="control-label"></label>
-                <select asp-for="BuildingId" class="form-control" asp-items="ViewBag.BuildingId"></select>
-                <span asp-validation-for="BuildingId" class="text-danger"></span>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="Save" class="btn btn-primary" />
-            </div>
-        </form>
+
+        </div>
     </div>
 </div>
 
-<div>
-    <a asp-action="Index">Back to List</a>
-</div>
-
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+
+
+        document.addEventListener('DOMContentLoaded', function () {
+            var inactiveCheckbox = document.getElementById('Inactive');
+            var inactiveDatumInput = document.getElementById('InactiveDatum');
+
+            function toggleInactiveDatum() {
+                inactiveDatumInput.disabled = !inactiveCheckbox.checked;
+            }
+
+            // Initial toggle based on initial state
+            toggleInactiveDatum();
+
+            // Add event listener to toggle state on checkbox change
+            inactiveCheckbox.addEventListener('change', toggleInactiveDatum);
+        });
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }
- *@

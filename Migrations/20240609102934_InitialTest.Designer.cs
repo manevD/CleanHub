@@ -4,6 +4,7 @@ using CleanHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240609102934_InitialTest")]
+    partial class InitialTest
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -36,7 +39,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Activity", (string)null);
+                    b.ToTable("Activity");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Article", b =>
@@ -58,7 +61,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Articles", (string)null);
+                    b.ToTable("Articles");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Bank", b =>
@@ -74,7 +77,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Banks", (string)null);
+                    b.ToTable("Banks");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Book", b =>
@@ -121,7 +124,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("DocId");
 
-                    b.ToTable("Books", (string)null);
+                    b.ToTable("Books");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.BookFinancial", b =>
@@ -170,7 +173,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("SmetkaId");
 
-                    b.ToTable("BookFinancials", (string)null);
+                    b.ToTable("BookFinancials");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.BookFinancialSub", b =>
@@ -197,7 +200,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("BookFinancialId");
 
-                    b.ToTable("BookFinancialSub", (string)null);
+                    b.ToTable("BookFinancialSub");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Building", b =>
@@ -216,7 +219,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Buildings", (string)null);
+                    b.ToTable("Buildings");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Customer", b =>
@@ -266,7 +269,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("BuildingId");
 
-                    b.ToTable("Customers", (string)null);
+                    b.ToTable("Customers");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Document", b =>
@@ -311,7 +314,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Documents", (string)null);
+                    b.ToTable("Documents");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.DocumentTyp", b =>
@@ -327,7 +330,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DocumentTyp", (string)null);
+                    b.ToTable("DocumentTyp");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Invoice", b =>
@@ -349,7 +352,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoice", (string)null);
+                    b.ToTable("Invoice");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

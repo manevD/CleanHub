@@ -1,5 +1,5 @@
 ﻿@* @using CleanHub.Entities
-@model List<CleanHub.Entities.Invoice>
+@model List<CleanHub.Entities.Documents>
 <style>
     .table-container {
         overflow: auto !important; /* Ensure overflow is set to auto to allow scrolling */
@@ -7,7 +7,7 @@
     }
 </style>
 <div>
-<form  asp-controller="Residents" asp-action="Details" method="get" autocomplete="off">
+<form  asp-controller="Customers" asp-action="Details" method="get" autocomplete="off">
         <input type="hidden" name="id" value="@Model.FirstOrDefault()!.Resident.Id" /> <!-- Assuming Model.Id is the id value -->
         <div class="row ">
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">

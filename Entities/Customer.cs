@@ -32,13 +32,9 @@ public partial class Customer
 
     [ForeignKey(nameof(Activity))]
     public int? ActivityId { get; set; }
-    public Activity Activity { get; set; }
+    public Activity? Activity { get; set; }
     public bool? PhysicalPerson { get; set; }
 
-    public List<BookFinancial> BookFinancials {  get; set; }
-    public List<Document> Documents { get; set; }
-    [NotMapped]
-    public SelectList BuildingList { get; set; }
-
-
+    public List<BookFinancial>? BookFinancials {  get; set; }
+    public List<Document>? Documents { get; set; }
 }

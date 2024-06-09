@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore.DataEncryption;
 using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
 using System.Security.Cryptography;
 using System.Text;
+using CleanHub.ViewModels;
 
 namespace CleanHub.Infrastructure.Data
 {
@@ -14,6 +15,7 @@ namespace CleanHub.Infrastructure.Data
 
         public virtual DbSet<Article> Articles { get; set; }
         public virtual DbSet<Building> Buildings { get; set; }
+        public virtual DbSet<Activity> Activity { get; set; }
 
         public virtual DbSet<Bank> Banks { get; set; }
 
@@ -59,30 +61,30 @@ namespace CleanHub.Infrastructure.Data
 
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
-            modelBuilder.Entity<Customer>()
-             .Property(e => e.CustomerInfo)
-             .HasConversion(
-                 encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
-                 decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
-             );
-            modelBuilder.Entity<Customer>()
-            .Property(e => e.Email)
-            .HasConversion(
-                encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
-                decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
-            );
-            modelBuilder.Entity<Customer>()
-          .Property(e => e.Web)
-          .HasConversion(
-              encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
-              decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
-          );
-                modelBuilder.Entity<Customer>()
-           .Property(e => e.PhoneNumber)
-           .HasConversion(
-               encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
-               decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
-           );
+          //  modelBuilder.Entity<Customer>()
+          //   .Property(e => e.CustomerInfo)
+          //   .HasConversion(
+          //       encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+          //       decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+          //   );
+          //  modelBuilder.Entity<Customer>()
+          //  .Property(e => e.Email)
+          //  .HasConversion(
+          //      encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+          //      decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+          //  );
+          //  modelBuilder.Entity<Customer>()
+          //.Property(e => e.Web)
+          //.HasConversion(
+          //    encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+          //    decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+          //);
+          //      modelBuilder.Entity<Customer>()
+          // .Property(e => e.PhoneNumber)
+          // .HasConversion(
+          //     encryptedValue => Encrypt(encryptedValue, _key), // Custom encryption function
+          //     decryptedValue => Decrypt(decryptedValue, _key)  // Custom decryption function
+          // );
         }
 
         static string Encrypt(string data, string key)
@@ -133,5 +135,6 @@ namespace CleanHub.Infrastructure.Data
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
         "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        public DbSet<CleanHub.ViewModels.BuildingViewModel> BuildingViewModel { get; set; } = default!;
     }
 }
