@@ -53,7 +53,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var building = _context.Buildings.FirstOrDefault(c => c.Id == id);
+            var building = _context.Buildings.Include(x=>x.Customers).FirstOrDefault(c => c.Id == id);
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
 
             return View(buildingViewModel);

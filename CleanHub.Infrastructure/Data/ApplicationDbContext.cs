@@ -135,6 +135,5 @@ namespace CleanHub.Infrastructure.Data
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
         "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
-        public DbSet<CleanHub.ViewModels.BuildingViewModel> BuildingViewModel { get; set; } = default!;
     }
 }

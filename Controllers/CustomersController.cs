@@ -140,6 +140,17 @@ namespace CleanHub.Controllers
 
             return View(customer);
         }
+        // GET: Customers/Create
+        public IActionResult CreateWithBuilding(int buildingId)
+        {
+           
+            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name",buildingId);
+            var customer = new CustomerViewModel
+            {
+                BuildingId = buildingId
+            };
+            return View(nameof(Create),customer);
+        }
 
         public IActionResult CreateWithModel(CustomerViewModel customer)
         {

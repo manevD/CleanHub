@@ -62,7 +62,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Објект </label>
-                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
+                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="@(ViewData["BuildingId"] as SelectList)"></select>
                                                     </div>
                                                 </div>
 

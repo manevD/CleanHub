@@ -48,6 +48,7 @@ public class App : Profile
             cfg.CreateMap<Building, BuildingViewModel>()
           .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
           .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
+          .ForMember(dest=> dest.Customers,opts => opts.MapFrom(src => src.Customers))
           .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id)).ReverseMap();
 
             #endregion

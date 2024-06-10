@@ -7,5 +7,6 @@
         public string? Name { get; set; }
 
         public string? BankAccount { get; set; }
+        public List<CustomerViewModel> Customers { get; set; }  
     }
 }
