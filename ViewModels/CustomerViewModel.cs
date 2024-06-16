@@ -25,17 +25,15 @@ namespace CleanHub.ViewModels
 
         public DateOnly? InactiveDatum { get; set; }
 
-        [ForeignKey(nameof(Building))]
         public int BuildingId { get; set; }
 
-        public Building? Building { get; set; }
+        public BuildingViewModel? Building { get; set; }
 
-        [ForeignKey(nameof(Activity))]
         public int ActivityId { get; set; }
-        public Activity? Activity { get; set; }
+        public ActivityViewModel? Activity { get; set; }
         public bool? PhysicalPerson { get; set; }
 
-        public List<BookFinancial>? BookFinancials { get; set; }
-        public List<Document>? Documents { get; set; }
+        public List<BookFinancialViewModel>? BookFinancials { get; set; }
+        public List<DocumentViewModel>? Documents { get; set; }
     }
 }

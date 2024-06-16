@@ -18,7 +18,7 @@ public partial class Document
 
     public string? Description { get; set; }
 
-    public DateOnly? DateReceived  { get; set; }
+    public DateOnly? DateReceived { get; set; }
 
     public DateOnly? DueDate
     {
@@ -42,4 +42,5 @@ public partial class Document
     public DateTime? CreatedTime { get; set; }
 
     public DateTime? DateTimeChanged { get; set; }
+    public List<Book> Books { get; set; }
 }

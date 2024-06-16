@@ -187,7 +187,7 @@ namespace CleanHub.Controllers
         //            var invoices = _context.Invoices.Where(x => x.ResidentId == item.Id && (x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето)).ToList();
         //            foreach (var invoice in invoices)
         //            {
-        //                sb.Append(ControllerExtensions.RenderPartialViewToString(this, "_InvoiceDetail", invoice));
+        //                sb.Append(ControllerExtensions.RenderPartialViewToString(this, "_DocumentDetailPartial", invoice));
         //            }
 
         //            MailMessage mailMessage = new MailMessage

@@ -8,6 +8,6 @@
         public string? PhoneNumber { get; set; }
         public string? VATID { get; set; }
         public string? Email { get; set; }
-        public string? InvoicNotice { get; set; }
+        public string? InvoiceNotice { get; set; }
     }
 }

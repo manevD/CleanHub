@@ -1,5 +1,4 @@
-﻿@* @using CleanHub.Entities
-@model List<CleanHub.Entities.Documents>
+﻿@model List<CleanHub.ViewModels.DocumentViewModel>
 <style>
     .table-container {
         overflow: auto !important; /* Ensure overflow is set to auto to allow scrolling */
@@ -8,7 +7,7 @@
 </style>
 <div>
 <form  asp-controller="Customers" asp-action="Details" method="get" autocomplete="off">
-        <input type="hidden" name="id" value="@Model.FirstOrDefault()!.Resident.Id" /> <!-- Assuming Model.Id is the id value -->
+        <input type="hidden" name="id" value="@Model.FirstOrDefault()!.Customer.Id" /> <!-- Assuming Model.Id is the id value -->
         <div class="row ">
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                 <div class="form-group mb-0">
@@ -38,28 +37,20 @@
                 <thead>
                     <tr>
                         <th>Број на Сметка</th>
-                        <th>Станар</th>
-                        <th>Е=Маил</th>
-                        <th>Статус</th>
                         <th>Вредност</th>
-
                         <th>Дата на креирање</th>
-                        <th>Месец на плаќање</th>
+                        <th>Дата на примање</th>
+                        <th>По Документ</th>
                         <th>Функции</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach (var invoice in @Model)
+                    @foreach (var document in @Model)
                     {
                         <tr>
-                            <td><a href="./app-invoice-preview.html"><span class="inv-number">@invoice.InvoiceNumber</span></a></td>
-                            <td>
-                                <div class="d-flex">
-                                    <p class="align-self-center mb-0 user-name"> @invoice.Resident.FirstName  @invoice.Resident.LastName </p>
-                                </div>
-                            </td>
-                            <td><span class="inv-email"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> @invoice.Resident.Email</span></td>
-                            @if (@invoice.PaymentStatus == PaymentStatus.Неплатено)
+                            <td><a href="./app-invoice-preview.html"><span class="inv-number">@document.Number</span></a></td>
+                       
+                           @*  @if (@invoice.PaymentStatus == PaymentStatus.Неплатено)
                             {
                                 <td><span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span></td>
                             }
@@ -70,25 +61,26 @@
                             @if (@invoice.PaymentStatus == PaymentStatus.Задоцнето)
                             {
                                 <td><span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span></td>
-                            }
+                            } *@
 
-                            <td><span class="inv-amount"> @invoice.AmountDue MDK</span></td>
+                            <td><span class="inv-amount"> @document.TotalOutput!.Value.ToString("F2") MDK</span></td>
                             <td>
                                 <span class="inv-date">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> @invoice.CreatedDate
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> @document.CreatedTime
                                 </span>
                             </td>
                             <td>
                                 <span class="inv-date">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> @invoice.DueDate
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-calendar"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg> @document.DueDate
                                 </span>
                             </td>
+                              <td>@document.ToDocument</td>
                             <td>
-                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Invoices" asp-route-id="@invoice.Id">
+                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Documents" asp-route-id="@document.Id">
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
                                 </a>
-                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="Invoices" asp-route-id="@invoice.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></a>
-                                <a class="badge badge-light-danger text-start action-delete" asp-action="Delete" asp-controller="Invoices" asp-route-id="@invoice.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="Documents" asp-route-id="@document.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></a>
+                                <a class="badge badge-light-danger text-start action-delete" asp-action="Delete" asp-controller="Documents" asp-route-id="@document.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
                             </td>
                         </tr>
                     }
@@ -97,4 +89,3 @@
         </div>
     </div>
 </div>
- *@
