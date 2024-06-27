@@ -2,7 +2,6 @@ using AutoMapper;
 using CleanHub.Config;
 using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
-using CleanHub.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,7 +26,6 @@ namespace CleanHub
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
-            builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
 
             builder.Services.AddSession(options =>
             {
