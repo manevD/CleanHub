@@ -29,7 +29,7 @@ namespace CleanHub.Controllers
 
         private static int Month = DateTime.Now.Month;
         private static int Year = DateTime.Now.Year;
-        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig>  config)
+        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig> config)
         {
             _httpContextAccessor = httpContextAccessor;
 
@@ -37,7 +37,7 @@ namespace CleanHub.Controllers
             _viewEngine = viewEngine;
             _context = context;
             _smtpConfig = smtpConfig.Value;
-            _config = config.Value;   
+            _config = config.Value;
         }
 
         // GET: Buildings
@@ -71,8 +71,8 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var building = await _context.Buildings.Include(x=>x.Customers).FirstOrDefaultAsync(c => c.Id == id);
-           
+            var building = await _context.Buildings.Include(x => x.Customers).FirstOrDefaultAsync(c => c.Id == id);
+
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
             ViewBag.Month = Month;
             ViewBag.Year = Year;
@@ -197,23 +197,21 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
         {
             var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers).SelectMany(d => d.Customers!).ToList();
-        
-            foreach (var item in customers.Where(x => x.Email != null))
+            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
             {
-                using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
+                foreach (var item in customers.Where(x => x.Email != null))
                 {
                     smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
                     smtpClient.EnableSsl = true;
 
-                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x=>x.Customer).Include(x=>x.Books).FirstOrDefault(x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
+                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x => x.Customer).Include(x => x.Books).FirstOrDefault(x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
                     document.Company = _config;
                     document.IsForPdf = true;
-                    
+
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
-                    var request = _httpContextAccessor.HttpContext.Request;
-                    string baseUrl = $"{request.Scheme}://{request.Host.Value}/";
+                    var request = _httpContextAccessor?.HttpContext?.Request;
+                    string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                     HtmlToPdf converter = new HtmlToPdf();
-                  
                     try
                     {
                         // create a new pdf document converting an url
@@ -227,14 +225,25 @@ namespace CleanHub.Controllers
 
                         // reset stream position
                         pdfStream.Position = 0;
+                        string emailBody = 
+                            @$"Почитувани,
 
+                            Во прилог ви ја праќаме сметката за {month}/{year}. Ве молиме, проверете ја прикачената сметка и извршете ги потребните активности за плаќање.
+
+                            Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
+                            Со почит,
+
+                            {_config.Name}
+                            {_config.PhoneNumber}
+                            {_config.Email}
+                            {_config.Address}";
                         // create email message
                         MailMessage message = new MailMessage();
-                        message.From = new MailAddress(_smtpConfig.Email); ;
+                        message.From = new MailAddress(_smtpConfig.Email);
                         message.To.Add(_smtpConfig.Recipient);
-                        message.Subject = "SelectPdf Sample - Convert and Email as Attachment";
-
-                        message.Attachments.Add(new Attachment(pdfStream, "Document.pdf"));
+                        message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/", year);
+                        message.Body = emailBody;
+                        message.Attachments.Add(new Attachment(pdfStream, string.Concat("МартиХигиена", month, "/", year,".pdf")));
 
                         // send email
                         smtpClient.Send(message);
@@ -245,7 +254,7 @@ namespace CleanHub.Controllers
                     catch (Exception ex) { }
                 }
             }
-            return RedirectToAction("Details",id);
+            return RedirectToAction("Details", new { id = id });
         }
 
         private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
