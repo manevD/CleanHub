@@ -8,8 +8,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System.Net;
-using System.Net.Mail;
 
 namespace CleanHub.Controllers
 {
@@ -283,29 +281,7 @@ namespace CleanHub.Controllers
             return View(customer);
         }
 
-        public async Task<IActionResult> ExportInvoices(DateTime datum, int customerId)
-        {
-            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
-            {
-                smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
-                smtpClient.EnableSsl = true;
-
-                MailMessage mailMessage = new MailMessage
-                {
-                    Subject = string.Concat("Фактура Марти Хигиена за", datum.Day, datum.Month, datum.Year, " за ден"),
-                    //Body = sb.ToString(),
-                    IsBodyHtml = true
-                };
-                mailMessage.From = new MailAddress(_smtpConfig.Email);
-                mailMessage.To.Add(_smtpConfig.Recipient);
-
-                // Send the email
-                smtpClient.Send(mailMessage);
-            }
-            var customer = _context.Customers.FirstOrDefault(x => x.Id == customerId);
-            return RedirectToAction("Details", customer);
-        }
-
+     
         // POST: customers/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]

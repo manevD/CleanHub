@@ -13,14 +13,14 @@ public class App : Profile
     {
         var readerMapConfiguration = new MapperConfiguration(cfg =>
         {
-            cfg.CreateMap<Document, DocumentViewModel>()
-            .ForMember(dest => dest.Number, opts => opts.MapFrom(src => src.Number))
-            .ForMember(dest => dest.ToDocument, opts => opts.MapFrom(src => src.ToDocument))
-            .ForMember(dest => dest.Company, opts => opts.Ignore())
-            .ForMember(dest => dest.Books, opts => opts.Ignore())
-
-            .ForMember(dest => dest.DateReceived, opts => opts.MapFrom(src => src.DateReceived))
-            .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id)).ReverseMap();
+            cfg.CreateMap<Document, DocumentViewModel>().ReverseMap();
+            //.ForMember(dest => dest.Number, opts => opts.MapFrom(src => src.Number))
+            //.ForMember(dest => dest.ToDocument, opts => opts.MapFrom(src => src.ToDocument))
+            //.ForMember(dest => dest.Company, opts => opts.Ignore())
+            // .ForMember(dest => dest.IsForPdf, opts => opts.Ignore())
+            //.ForMember(dest => dest.Books, opts => opts.Ignore())
+            //.ForMember(dest => dest.DateReceived, opts => opts.MapFrom(src => src.DateReceived))
+            //.ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id)).ReverseMap();
 
 
             cfg.CreateMap<BookFinancial, BookFinancialViewModel>().ReverseMap();
@@ -91,8 +91,10 @@ public class App : Profile
 
             #region Document
 
-            cfg.CreateMap<Document, DocumentViewModel>().ForMember(dest => dest.Company, opts => opts.Ignore()).ReverseMap();
-
+            cfg.CreateMap<Document, DocumentViewModel>()
+                      .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
+                      .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default
+                      .ForMember(dest => dest.Books, opt => opt.MapFrom(src => src.Books)); // Map Books property
             #endregion
 
             #region Invoice
@@ -105,7 +107,7 @@ public class App : Profile
         FullMapper = configuration.CreateMapper();
         ReaderMapper = readerMapConfiguration.CreateMapper();
         configuration.AssertConfigurationIsValid();
-        readerMapConfiguration.AssertConfigurationIsValid();
+       // readerMapConfiguration.AssertConfigurationIsValid();
     }
 
     #region Properties

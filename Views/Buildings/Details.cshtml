@@ -28,9 +28,35 @@
             </div>
         </div>
     </div>
+  
     <h1></h1>
+
     @if (Model.Customers.Any())
     {
+        <form asp-controller="Buildings" asp-action="SendInvoiceEmail" autocomplete="off" method="post">
+            <input type="hidden" name="id" value="@Model.Id" />
+            <div class="row">
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                    <div class="form-group mb-0">
+                        <p>За Месец </p>
+                        <input id="month" name="month" min="1" max="12" placeholder="Внесете месец" type="text" class="form-control" value="@ViewBag.Month" />
+                    </div>
+                </div>
+                <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                    <p>За година</p>
+                    <div class="form-group mb-0">
+                        <input id="year" name="year" min="2000" max="2100" placeholder="Внесете година" type="text" class="form-control" value="@ViewBag.Year" />
+                    </div>
+                </div>
+                <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+                    <p>Испрати </p>
+                    <div class="form-group mb-0">
+                        <button type="submit" class="form-control btn btn-primary">Испрати</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+        <h1></h1>
         @Html.Partial("_CustomersPartial", Model.Customers.ToList())
     }
 </div>

@@ -1,12 +1,9 @@
 ﻿@model CleanHub.ViewModels.DocumentViewModel
-<link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" />
-<script src="~/layouts/horizontal-light-menu/loader.js"></script>
-<!-- BEGIN GLOBAL MANDATORY STYLES -->
-<link href="~/src/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
-<link href="~/layouts/horizontal-light-menu/css/light/plugins.css" rel="stylesheet" type="text/css" />
-<!-- END GLOBAL MANDATORY STYLES -->
-<!--  BEGIN CUSTOM STYLE FILE  -->
-<link href="~/src/assets/css/light/apps/invoice-preview.css" rel="stylesheet" type="text/css" />
+<link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" media="all" />
+<link href="~/src/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all" />
+<link href="~/layouts/horizontal-light-menu/css/light/plugins.css" rel="stylesheet" type="text/css" media="all" />
+
+<link href="~/src/assets/css/light/apps/invoice-preview.css" rel="stylesheet" type="text/css" media="all" />
 <style>
 
     @@media print {
@@ -45,7 +42,7 @@
         }
     }
 </style>
-<div class="row invoice layout-top-spacing layout-spacing">
+<div class="row invoice layout-top-spacing layout-spacing" id="Grid">
     <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
         <div class="doc-container">
             <div class="row">
@@ -59,7 +56,7 @@
                                             <div class="row">
                                                 <div class="col-sm-6 col-12 mr-auto">
                                                     <div class="d-flex">
-                                                        <img class="company-logo" src="~/src/logo3.png" alt="company">
+                                                        <img class="company-logo" src="~/src/logo3.png">
                                                         <h3 class="in-heading align-self-center">@Model.Company.Name</h3>
                                                     </div>
                                                     <p class="inv-street-addr mt-3">@Model.Company.Address</p>
@@ -119,25 +116,28 @@
                                                             </tr>
                                                         }
                                                         <tr>
-                                                            <p class="">ЗА НАПЛАТА: @Model.TotalOutput</p>
+                                                            <td></td>
+                                                            <td></td>
+                                                            <td></td>
+
+                                                            <td class="text-end">ЗА НАПЛАТА: @Model.TotalOutput</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
+                                        </div>
+                                    </div>
+
+                                    <div class="inv--additional-notes">
+                                        @Html.Raw(@Model.Company.InvoiceNotice)
+                                    </div>
+
+                                    <div class="inv--note">
+                                        <div class="row mt-4">
+                                            <div class="col-sm-6 col-12 order-sm-0 order-1">
+                                                <p>Примил</p>
                                             </div>
-                                        </div>
-
-                                        <div class="inv--additional-notes">
-                                            @Html.Raw(@Model.Company.InvoiceNotice)
-                                        </div>
-
-                                        <div class="inv--note">
-                                            <div class="row mt-4">
-                                                <div class="col-sm-6 col-12 order-sm-0 order-1">
-                                                    <p>Примил</p>
-                                                </div>
-                                                <div class="col-sm-6 col-12 order-sm-1 order-1">
-                                                    <p>Потпис Виолета</p>
-                                                </div>
+                                            <div class="col-sm-6 col-12 order-sm-1 order-1">
+                                                <p>Потпис Виолета</p>
                                             </div>
                                         </div>
                                     </div>
@@ -146,30 +146,27 @@
                         </div>
                     </div>
                 </div>
+            </div>
+
+            @if (!@Model.IsForPdf)
+            {
                 <div class="col-xl-3">
                     <div class="invoice-actions-btn">
                         <div class="invoice-action-btn">
                             <div class="row">
-                                <div class="col-xl-12 col-md-3 col-sm-6">
-                                    <a href="javascript:void(0);" class="btn btn-primary btn-send">Испрати Сметка</a>
-                                </div>
-                                <div class="col-xl-12 col-md-3 col-sm-6">
-                                    <a href="javascript:void(0);" class="btn btn-secondary btn-print action-print">Принтај</a>
-                                </div>
-                                <div class="col-xl-12 col-md-3 col-sm-6">
-                                    <a href="javascript:void(0);" class="btn btn-success btn-download">Слегни</a>
-                                </div>
-                                <div class="col-xl-12 col-md-3 col-sm-6">
-                                    <a href="./app-invoice-edit.html" class="btn btn-dark btn-edit">Измени</a>
-                                </div>
+                                <form asp-action="GeneratePdfTest" asp-controller="Documents">
+                                    <input type="hidden" asp-for="Id" />
+                                    <input type="submit" value="Испрати Сметка" class="btn btn-danger" /> |
+                                </form>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            }
         </div>
     </div>
 </div>
+<script src="~/layouts/horizontal-light-menu/loader.js"></script>
 <script src="~/src/bootstrap/js/bootstrap.bundle.min.js"></script>
 <script src="~/src/plugins/src/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <script src="~/src/plugins/src/mousetrap/mousetrap.min.js"></script>

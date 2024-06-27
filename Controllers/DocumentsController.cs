@@ -1,5 +1,4 @@
 ﻿using CleanHub.Config;
-using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using System.Text;
 
 namespace CleanHub.Controllers
 {
@@ -14,12 +14,13 @@ namespace CleanHub.Controllers
     {
         private readonly ApplicationDbContext _context;
         private readonly CompanyConfig _config;
-        public DocumentsController(ApplicationDbContext context, IOptions<CompanyConfig> config)
+        private SMTPConfig _smtpConfig;
+        public DocumentsController( ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {
             _context = context;
-            _config = config.Value;
+            _smtpConfig = config.Value;
+            _config = companyConfig.Value;
         }
-
         // GET: Documents
         public async Task<IActionResult> Index()
         {
@@ -35,7 +36,7 @@ namespace CleanHub.Controllers
             }
             else
             {
-                var documentEntity = await _context.Documents.AsNoTracking().Select(c => new Document
+                var documentEntity = await _context.Documents.AsNoTracking().Select(c => new CleanHub.Entities.Document
                 {
                     Id = c.Id,
                     Number = c.Number,
@@ -81,11 +82,11 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create( DocumentViewModel document)
+        public async Task<IActionResult> Create(DocumentViewModel document)
         {
             if (ModelState.IsValid)
             {
-                var entity = App.FullMapper.Map<Document>(document);
+                var entity = App.FullMapper.Map<CleanHub.Entities.Document>(document);
                 _context.Add(document);
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
@@ -104,7 +105,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var documentEntity= await _context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
+            var documentEntity = await _context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
             var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
             if (document == null)
             {
@@ -191,5 +192,7 @@ namespace CleanHub.Controllers
         {
             return _context.Documents.Any(e => e.Id == id);
         }
+
+ 
     }
 }

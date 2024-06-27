@@ -4,9 +4,15 @@ using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Mvc.ViewEngines;
+using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using SelectPdf;
+using System.Net;
+using System.Net.Mail;
 using System.Text;
 
 namespace CleanHub.Controllers
@@ -16,11 +22,22 @@ namespace CleanHub.Controllers
     {
         private readonly ApplicationDbContext _context;
         private SMTPConfig _smtpConfig;
+        private readonly CompanyConfig _config;
+        private readonly ICompositeViewEngine _viewEngine;
+        private readonly IWebHostEnvironment _env;
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public BuildingsController(ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig)
+        private static int Month = DateTime.Now.Month;
+        private static int Year = DateTime.Now.Year;
+        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig>  config)
         {
+            _httpContextAccessor = httpContextAccessor;
+
+            _env = env;
+            _viewEngine = viewEngine;
             _context = context;
             _smtpConfig = smtpConfig.Value;
+            _config = config.Value;   
         }
 
         // GET: Buildings
@@ -53,9 +70,12 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var building = _context.Buildings.Include(x=>x.Customers).FirstOrDefault(c => c.Id == id);
-            var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
 
+            var building = await _context.Buildings.Include(x=>x.Customers).FirstOrDefaultAsync(c => c.Id == id);
+           
+            var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
+            ViewBag.Month = Month;
+            ViewBag.Year = Year;
             return View(buildingViewModel);
         }
 
@@ -173,37 +193,85 @@ namespace CleanHub.Controllers
             return _context.Buildings.Any(e => e.Id == id);
         }
 
-        //[HttpPost, ActionName("SendInvoiceEmail")]
-        //public IActionResult SendInvoiceEmail(int id)
-        //{
-        //    var residents = _context.Buildings.Where(x => x.Id == id).Include(x => x.Residents).SelectMany(d => d.Residents!).ToList();
-        //    StringBuilder sb = new StringBuilder();
-        //    foreach (var item in residents)
-        //    {
-        //        using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
-        //        {
-        //            smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
-        //            smtpClient.EnableSsl = true;
-        //            var invoices = _context.Invoices.Where(x => x.ResidentId == item.Id && (x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето)).ToList();
-        //            foreach (var invoice in invoices)
-        //            {
-        //                sb.Append(ControllerExtensions.RenderPartialViewToString(this, "_DocumentDetailPartial", invoice));
-        //            }
+        [HttpPost, ActionName("SendInvoiceEmail")]
+        public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
+        {
+            var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers).SelectMany(d => d.Customers!).ToList();
+        
+            foreach (var item in customers.Where(x => x.Email != null))
+            {
+                using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
+                {
+                    smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
+                    smtpClient.EnableSsl = true;
 
-        //            MailMessage mailMessage = new MailMessage
-        //            {
-        //                Subject = string.Concat("Сметка Марти Хигиена за ", item.FirstName, item.LastName, " за ден"),
-        //                Body = sb.ToString(),
-        //                IsBodyHtml = true
-        //            };
-        //            mailMessage.From = new MailAddress(_smtpConfig.Email);
-        //            mailMessage.To.Add(_smtpConfig.Recipient);
+                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x=>x.Customer).Include(x=>x.Books).FirstOrDefault(x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
+                    document.Company = _config;
+                    document.IsForPdf = true;
+                    
+                    string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
+                    var request = _httpContextAccessor.HttpContext.Request;
+                    string baseUrl = $"{request.Scheme}://{request.Host.Value}/";
+                    HtmlToPdf converter = new HtmlToPdf();
+                  
+                    try
+                    {
+                        // create a new pdf document converting an url
+                        PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
 
-        //            // Send the email
-        //            smtpClient.Send(mailMessage);
-        //        }
-        //    }
-        //    return View(nameof(Details));
-        //}
+                        // create memory stream to save PDF
+                        MemoryStream pdfStream = new MemoryStream();
+
+                        // save pdf document into a MemoryStream
+                        doc.Save(pdfStream);
+
+                        // reset stream position
+                        pdfStream.Position = 0;
+
+                        // create email message
+                        MailMessage message = new MailMessage();
+                        message.From = new MailAddress(_smtpConfig.Email); ;
+                        message.To.Add(_smtpConfig.Recipient);
+                        message.Subject = "SelectPdf Sample - Convert and Email as Attachment";
+
+                        message.Attachments.Add(new Attachment(pdfStream, "Document.pdf"));
+
+                        // send email
+                        smtpClient.Send(message);
+
+                        // close pdf document
+                        doc.Close();
+                    }
+                    catch (Exception ex) { }
+                }
+            }
+            return RedirectToAction("Details",id);
+        }
+
+        private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
+        {
+            ViewData.Model = model;
+            using (var writer = new StringWriter())
+            {
+                var viewResult = _viewEngine.GetView("", viewPath, false);
+
+                if (viewResult.View == null)
+                {
+                    throw new ArgumentNullException($"The view '{viewPath}' was not found.");
+                }
+
+                var viewContext = new ViewContext(
+                    ControllerContext,
+                    viewResult.View,
+                    ViewData,
+                    TempData,
+                    writer,
+                    new HtmlHelperOptions()
+                );
+
+                await viewResult.View.RenderAsync(viewContext);
+                return writer.GetStringBuilder().ToString();
+            }
+        }
     }
 }

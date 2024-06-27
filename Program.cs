@@ -1,12 +1,10 @@
 using AutoMapper;
 using CleanHub.Config;
-using CleanHub.Controllers;
 using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
+using CleanHub.Services;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
-using System.Globalization;
 
 namespace CleanHub
 {
@@ -21,19 +19,16 @@ namespace CleanHub
              .AddJsonFile($"appsettings.json")
              .AddEnvironmentVariables()
              .Build();
-            var culture = new CultureInfo("mk-MK");
-            var supportedCultures = new List<CultureInfo> { };
-            culture.DateTimeFormat.ShortDatePattern = "dd/MM/yyyy";
-            culture.DateTimeFormat.DateSeparator = "/";
-            supportedCultures.Add(culture);
             config.AddConfiguration<CompanyConfig>(builder.Services, "Company");
-
             config.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+            builder.Services.AddScoped<IViewRenderService, ViewRenderService>();
+
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30); // Session Timeout nach 30 Minuten
@@ -41,7 +36,7 @@ namespace CleanHub
                 options.Cookie.IsEssential = true;
             });
             builder.Services.AddControllersWithViews();
-    
+
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
@@ -71,12 +66,7 @@ namespace CleanHub
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-            app.UseRequestLocalization(new RequestLocalizationOptions
-            {
-                DefaultRequestCulture = new RequestCulture(culture),
-                SupportedCultures = supportedCultures,
-                SupportedUICultures = supportedCultures
-            });
+       
             app.UseHttpsRedirection();
             app.UseStaticFiles();
 

@@ -36,6 +36,7 @@ namespace CleanHub.ViewModels
         public float? TotalOutput { get; set; }
 
         public DateTime? CreatedTime { get; set; }
+        public bool IsForPdf { get; set; }
 
         public DateTime? DateTimeChanged { get; set; }
         public List<BookViewModel> Books { get; set; }
