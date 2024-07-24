@@ -33,31 +33,32 @@ namespace CleanHub.Infrastructure.Data
         private readonly string _key = "09e88d4fd3c6fa2f9b05a05f166809b7";
         public ApplicationDbContext()
         {
-            byte[] keyBytes = new byte[16];
-            byte[] iv = new byte[16];
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                rng.GetBytes(iv);
-            }
-            _provider = new AesProvider(keyBytes, iv);
+            //byte[] keyBytes = new byte[16];
+            //byte[] iv = new byte[16];
+            //using (var rng = new RNGCryptoServiceProvider())
+            //{
+            //    rng.GetBytes(iv);
+            //}
+            //_provider = new AesProvider(keyBytes, iv);
         }
 
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            byte[] keyBytes = new byte[16];
-            byte[] iv = new byte[16];
-            using (var rng = new RNGCryptoServiceProvider())
-            {
-                rng.GetBytes(iv);
-            }
-            _provider = new AesProvider(keyBytes, iv);
+            ChangeTracker.LazyLoadingEnabled = false;
+            //byte[] keyBytes = new byte[16];
+            //byte[] iv = new byte[16];
+            //using (var rng = new RNGCryptoServiceProvider())
+            //{
+            //    rng.GetBytes(iv);
+            //}
+            //_provider = new AesProvider(keyBytes, iv);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-            modelBuilder.UseEncryption(this._provider);
+           // modelBuilder.UseEncryption(this._provider);
 
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);

@@ -138,6 +138,7 @@ namespace CleanHub.Controllers
                     var buildingToUpdate = App.FullMapper.Map<Building>(building);
                     _context.Update(buildingToUpdate);
                     await _context.SaveChangesAsync();
+                    HttpContext.Session.Remove("Buildings");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -167,8 +168,14 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+            else
+            {
+                _context.Buildings.Remove(building);
+                await _context.SaveChangesAsync();
+                HttpContext.Session.Remove("Buildings");
+            }
 
-            return View(building);
+            return RedirectToAction("Index");
         }
 
         // POST: Buildings/Delete/5

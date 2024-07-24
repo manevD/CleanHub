@@ -272,37 +272,22 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var customer = _context.Customers.FirstOrDefault(m => m.Id == id);
+            var customer =  _context.Customers.FirstOrDefault(m => m.Id == id);
             if (customer == null)
             {
                 return NotFound();
             }
+            else
+            {
+                _context.Customers.Remove(customer);   
+               await  _context.SaveChangesAsync();
+                HttpContext.Session.Remove("Customers");
+            }
 
-            return View(customer);
+            return RedirectToAction("Index");
         }
 
      
-        // POST: customers/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-
-            // Data not in cache, retrieve from database
-            var customers = await _context.Customers.Include(r => r.BookFinancials).Include(i => i.Documents).ToListAsync();
-
-            // Cache the data
-
-            var customer = customers.FirstOrDefault(x => x.Id == id);
-            if (customer != null)
-            {
-                _context.Customers.Remove(customer);
-            }
-
-            await _context.SaveChangesAsync();
-            return RedirectToAction(nameof(Index));
-        }
-
         private bool CustomertExists(int id)
         {
             return _context.Customers.Any(e => e.Id == id);
