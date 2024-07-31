@@ -112,7 +112,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var buildingEntity = _context.Buildings.FirstOrDefault(c => c.Id == id);
+            var buildingEntity = await _context.Buildings.FirstOrDefaultAsync(c => c.Id == id);
             var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
             HttpContext.Session.Remove("Buildings");
 

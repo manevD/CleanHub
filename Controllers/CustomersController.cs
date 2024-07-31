@@ -65,7 +65,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var customer = _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefault(c => c.Id == id);
+            var customer = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
             var customerViewModel = App.FullMapper.Map<CustomerViewModel>(customer);
 
             return View(customerViewModel);
@@ -94,7 +94,7 @@ namespace CleanHub.Controllers
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
                 ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
                 customers = JsonConvert.DeserializeObject<List<Customer>>(customersJson, settings);
-                customer = customers
+                customer =   customers
              .FirstOrDefault(x => x.Id == id);
                 customer.Documents = customer.Documents.Where(inv => inv.DueDate >= DateFrom && inv.DueDate <= DateTo).ToList();
 
