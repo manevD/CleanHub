@@ -1,4 +1,4 @@
-using CleanHub.Attribute;
+﻿using CleanHub.Attribute;
 using CleanHub.Models;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
@@ -20,6 +20,12 @@ namespace CleanHub.Controllers
             return View();
         }
 
+        [Route("Help")]
+        [Route("Помош")]
+        public IActionResult Help()
+        {
+            return View();  
+        }
         public IActionResult Privacy()
         {
             return View();

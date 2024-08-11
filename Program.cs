@@ -87,7 +87,8 @@ namespace CleanHub
             app.MapRazorPages();
             using (var serviceProvider = builder.Services.BuildServiceProvider())
             {
-                CreateAdminWithRole.Create(serviceProvider).Wait();
+                CreateStaticData.CreateUsers(serviceProvider).Wait();
+               // CreateStaticData.SetDocumentStatus();
             }
             app.Run();
         }

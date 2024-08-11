@@ -2,6 +2,7 @@
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
+using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -66,6 +67,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
             var customer = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
+          
             var customerViewModel = App.FullMapper.Map<CustomerViewModel>(customer);
 
             return View(customerViewModel);
@@ -93,51 +95,34 @@ namespace CleanHub.Controllers
                 DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
                 ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
-                customers = JsonConvert.DeserializeObject<List<Customer>>(customersJson, settings);
+                customers = _context.Customers.Include(x=>x.Documents).ToList();
                 customer =   customers
              .FirstOrDefault(x => x.Id == id);
-                customer.Documents = customer.Documents.Where(inv => inv.DueDate >= DateFrom && inv.DueDate <= DateTo).ToList();
-
-                // Iterate through each invoice of the customer
-                foreach (var invoice in customer.Documents)
-                {
-                    // Set the customer property of the invoice to the current customer
-                    invoice.Customer = customer;
-                }
-
+                customer.Documents = customer.Documents.Where(inv => inv.Date >= DateFrom && inv.Date <= DateTo).ToList();
             }
             else if (!string.IsNullOrEmpty(dateFrom))
             {
                 DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
-                customers = JsonConvert.DeserializeObject<List<Customer>>(customersJson, settings);
+                customers = _context.Customers.Include(x => x.Documents).ToList();
                 customer = customers
-             .FirstOrDefault(customer => customer.Id == id && customer.Documents.Any(inv => inv.DueDate >= DateFrom));
-                customer.Documents = customer.Documents.Where(inv => inv.DueDate >= DateFrom).ToList();
-                foreach (var document in customer.Documents)
-                {
-                    // Set the customer property of the invoice to the current customer
-                    document.Customer = customer;
-                }
+             .FirstOrDefault(customer => customer.Id == id && customer.Documents.Any(inv => inv.Date >= DateFrom));
+                customer.Documents = customer.Documents.Where(inv => inv.Date >= DateFrom).ToList();
             }
             else
             {
-                customers = JsonConvert.DeserializeObject<List<Customer>>(customersJson, settings);
+                customers = _context.Customers.Include(x => x.Documents).ToList();
                 customer = customers.FirstOrDefault(x => x.Id == id);
-                foreach (var document in customer.Documents)
-                {
-                    // Set the customer property of the invoice to the current customer
-                    document.Customer = customer;
-                }
             }
 
             if (customer == null)
             {
                 return NotFound();
             }
-
-            return View(customer);
+            var viewModel = App.FullMapper.Map<CustomerViewModel>(customer);
+            return View("Details", viewModel);
         }
+
         // GET: Customers/Create
         public IActionResult CreateWithBuilding(int buildingId)
         {
@@ -197,7 +182,16 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var customerEntity = _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefault(c => c.Id == id);
+            var customerEntity = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
+            foreach( var doc in customerEntity.Documents)
+            {
+                var year  = DocumentService.ExtractYear(doc.ToDocument);
+                var month = DocumentService.ExtractMonth(doc.ToDocument);
+                var searchCriteria = string.Concat( month , "/" , year);
+
+                var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x=>x.Description.Contains(searchCriteria) && x.SmetkaId == 1200);
+                doc.PaymentStatus = DocumentService.GetStatus(bookFinancial,doc);
+            }
             var customer = App.FullMapper.Map<CustomerViewModel>(customerEntity);
 
             ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", customer.BuildingId);

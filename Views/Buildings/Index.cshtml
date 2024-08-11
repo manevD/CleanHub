@@ -16,6 +16,9 @@
                                 Име на Објект
                             </th>
                             <th>
+                               Резервен фонд
+                            </th>
+                            <th>
                                Сметка
                             </th>
                             <th>
@@ -29,6 +32,9 @@
                             <tr>
                                 <td>
                                     @Html.DisplayFor(modelItem => item.Name)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => item.ReserveFund)
                                 </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => item.BankAccount)

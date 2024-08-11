@@ -1,4 +1,6 @@
 ﻿using CleanHub.Config;
+using CleanHub.Entities;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CleanHub.ViewModels
 {
@@ -9,36 +11,58 @@ namespace CleanHub.ViewModels
         public DateOnly? Date { get; set; }
         public int? CustomerId { get; set; }
         public CustomerViewModel Customer { get; set; }
+        [NotMapped]
         public CompanyConfig Company { get; set; }  
         public string? ToDocument { get; set; }
 
         public string? Description { get; set; }
 
-        public DateOnly? DateReceived { get; set; }
+        private DateOnly? _dateReceived;
+        private DateOnly? _dueDate;
 
-        public DateOnly? DueDate
+        public DateOnly? DateReceived
         {
-            get
+            get => _dateReceived;
+            set
             {
-                if (DateReceived.HasValue)
+                _dateReceived = value;
+                // Automatically update DueDate when DateReceived is set
+                if (_dateReceived.HasValue)
                 {
-                    return DateReceived.Value.AddMonths(1);
+                    DueDate = _dateReceived.Value.AddMonths(1);
                 }
                 else
                 {
-                    return null;
+                    return;
+                }
+            }
+        }
+
+        public DateOnly? DueDate
+        {
+            get => _dueDate;
+            set
+            {
+                // Ensure DueDate can only be set if DateReceived has a value
+                if (DateReceived != null && DateReceived.HasValue)
+                {
+                    _dueDate = value;
+                }
+                else
+                {
+                    return;
                 }
             }
         }
 
         public float? TotalInput { get; set; }
 
-        public float? TotalOutput { get; set; }
+        public float? TotalOutput { get; set; } = 0.0f;
 
         public DateTime? CreatedTime { get; set; }
         public bool IsForPdf { get; set; }
-
         public DateTime? DateTimeChanged { get; set; }
         public List<BookViewModel> Books { get; set; }
+        public PaymentStatus PaymentStatus { get; set; }
     }
 }

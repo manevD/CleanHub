@@ -18,29 +18,55 @@ public partial class Document
 
     public string? Description { get; set; }
 
-    public DateOnly? DateReceived { get; set; }
+    private DateOnly? _dateReceived;
+    private DateOnly? _dueDate;
 
-    public DateOnly? DueDate
+    public DateOnly? DateReceived
     {
-        get
+        get => _dateReceived;
+        set
         {
-            if (DateReceived.HasValue)
+            _dateReceived = value;
+            // Automatically update DueDate when DateReceived is set
+            if (_dateReceived.HasValue)
             {
-                return DateReceived.Value.AddMonths(1);
+                DueDate = _dateReceived.Value.AddMonths(1);
             }
             else
             {
-                return null;
+                DueDate = null; // Clear DueDate if DateReceived is null
+            }
+        }
+    }
+
+    public DateOnly? DueDate
+    {
+        get => _dueDate;
+        set
+        {
+            // Ensure DueDate can only be set if DateReceived has a value
+            if (DateReceived != null && DateReceived.HasValue)
+            {
+                _dueDate = value;
+            }
+            else
+            {
+                return;
             }
         }
     }
 
     public float? TotalInput { get; set; }
-
     public float? TotalOutput { get; set; }
-
     public DateTime? CreatedTime { get; set; }
-
     public DateTime? DateTimeChanged { get; set; }
     public List<Book> Books { get; set; }
+    public PaymentStatus PaymentStatus { get; set; }
+}
+public enum PaymentStatus
+{
+    Платено,
+    Неплатено,
+    Делумно,
+    Задоцнето
 }

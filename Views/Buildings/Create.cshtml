@@ -28,6 +28,13 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-group">
+                                                        <label>Резервен фонд</label>
+                                                        <input asp-for="ReserveFund" class="form-control mb-3" />
+                                                        <span asp-validation-for="ReserveFund" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
                                                         <label>Жиро Сметка</label>
                                                         <input asp-for="BankAccount" class="form-control mb-3" />
                                                         <span asp-validation-for="BankAccount" class="text-danger"></span>

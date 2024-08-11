@@ -1,4 +1,5 @@
 ﻿using CleanHub.Config;
+using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace CleanHub.Controllers
 {
@@ -15,12 +17,109 @@ namespace CleanHub.Controllers
         private readonly ApplicationDbContext _context;
         private readonly CompanyConfig _config;
         private SMTPConfig _smtpConfig;
-        public DocumentsController( ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
+        public DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {
             _context = context;
             _smtpConfig = config.Value;
             _config = companyConfig.Value;
         }
+
+        [Route("Unpayed")]
+        [Route("Неплатени")]
+        public async Task<IActionResult> Unpayed()
+        {
+            List<DocumentViewModel> documents = new List<DocumentViewModel>();
+            var documentEntities = await _context.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
+            {
+                Id = c.Id,
+                Number = c.Number,
+                PaymentStatus = c.PaymentStatus,
+                ToDocument = c.ToDocument,
+                TotalOutput = c.TotalOutput,
+                CreatedTime = c.CreatedTime,
+                Customer = c.Customer,
+                DueDate = c.DueDate.Value,
+                DateReceived = c.DateReceived,
+            }).ToListAsync();
+            var documentsWithStatusLate = documentEntities.Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).ToList();
+            if (documentsWithStatusLate != null && documentsWithStatusLate.Any())
+            {
+                foreach (var documentEntity in documentsWithStatusLate)
+                {
+                    // Get today's date as DateOnly
+                    DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+
+                    // Calculate days overdue
+                    int daysOverdue = (currentDate.ToDateTime(TimeOnly.MinValue) - documentEntity.DateReceived.Value.ToDateTime(TimeOnly.MinValue)).Days;
+                    float additionalFeePercentage = 0f;
+
+                    // Determine the additional fee percentage based on the number of days overdue
+                    if (daysOverdue < 30)
+                    {
+                        additionalFeePercentage = 2f;
+                    }
+                    else if (daysOverdue >= 30 && daysOverdue < 60)
+                    {
+                        additionalFeePercentage = 4f;
+                    }
+                    else if (daysOverdue >= 60 && daysOverdue < 90)
+                    {
+                        additionalFeePercentage = 6f;
+                    }
+                    else if (daysOverdue >= 90 && daysOverdue < 180)
+                    {
+                        additionalFeePercentage = 8f;
+                    }
+                    else if (daysOverdue >= 180 && daysOverdue < 360)
+                    {
+                        additionalFeePercentage = 10f;
+                    }
+                    else if (daysOverdue >= 360 && daysOverdue < 730)
+                    {
+                        additionalFeePercentage = 13f;
+                    }
+                    else if (daysOverdue >= 730)
+                    {
+                        additionalFeePercentage = 16f;
+                    }
+
+                    // Calculate the additional fee and apply it to the document's amount due
+                    float additionalFee = documentEntity.TotalOutput.Value * (additionalFeePercentage / 100);
+                    documentEntity.TotalOutput += additionalFee;
+                    _context.Documents.Update(documentEntity);
+
+                }
+                _context.SaveChanges();
+            }
+            documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntities);
+            documents.ForEach(x => x.Company = _config);
+
+            return View(nameof(Index), documents);
+        }
+        [Route("Partially")]
+        [Route("Делумни")]
+        public async Task<IActionResult> Partially()
+        {
+            List<DocumentViewModel> documents = new List<DocumentViewModel>();
+
+            var documentEntity = await _context.Documents.Include(x=>x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
+            {
+                Id = c.Id,
+                Number = c.Number,
+                PaymentStatus = c.PaymentStatus,
+                ToDocument = c.ToDocument,
+                Customer = c.Customer,
+                TotalOutput = c.TotalOutput,
+                CreatedTime = c.CreatedTime,
+                DueDate = c.DueDate.Value,
+                DateReceived = c.DateReceived,
+            }).ToListAsync();
+
+            documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntity);
+            documents.ForEach(x => x.Company = _config);
+            return View(nameof(Index), documents);
+        }
+
         // GET: Documents
         public async Task<IActionResult> Index()
         {
@@ -36,13 +135,14 @@ namespace CleanHub.Controllers
             }
             else
             {
-                var documentEntity = await _context.Documents.AsNoTracking().Select(c => new CleanHub.Entities.Document
+                var documentEntity = await _context.Documents.AsNoTracking().Select(c => new Entities.Document
                 {
                     Id = c.Id,
                     Number = c.Number,
                     ToDocument = c.ToDocument,
                     DateReceived = c.DateReceived,
                 }).ToListAsync();
+
                 documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntity);
 
                 HttpContext.Session.SetString("Documents", JsonConvert.SerializeObject(documents, settings));
@@ -86,7 +186,7 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
-                var entity = App.FullMapper.Map<CleanHub.Entities.Document>(document);
+                var entity = App.FullMapper.Map<Document>(document);
                 _context.Add(document);
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
@@ -193,6 +293,6 @@ namespace CleanHub.Controllers
             return _context.Documents.Any(e => e.Id == id);
         }
 
- 
+
     }
 }

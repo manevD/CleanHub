@@ -7,6 +7,7 @@ using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
 using System.Security.Cryptography;
 using System.Text;
 using CleanHub.ViewModels;
+using CleanHub.Config;
 
 namespace CleanHub.Infrastructure.Data
 {
@@ -58,8 +59,8 @@ namespace CleanHub.Infrastructure.Data
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
-           // modelBuilder.UseEncryption(this._provider);
-
+            // modelBuilder.UseEncryption(this._provider);
+            modelBuilder.Entity<CompanyConfig>().HasNoKey();
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
           //  modelBuilder.Entity<Customer>()
@@ -136,5 +137,6 @@ namespace CleanHub.Infrastructure.Data
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
         "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        public DbSet<CleanHub.ViewModels.DocumentViewModel> DocumentViewModel { get; set; } = default!;
     }
 }
