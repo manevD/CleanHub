@@ -83,6 +83,18 @@ namespace CleanHub.Controllers
         public IActionResult Create()
         {
             BuildingViewModel buildingViewModel = new BuildingViewModel();
+            var products = _context.Products.ToList();
+            if (products != null || products.Any())
+            {
+                foreach (var product in products)
+                {
+                    buildingViewModel.BuildingProducts.Add(new BuildingProductViewModel
+                    {
+                        Building = buildingViewModel,
+                        Product = App.FullMapper.Map<ProductViewModel>(product),
+                    });
+                }
+            }
             return View(buildingViewModel);
         }
 
@@ -258,7 +270,7 @@ namespace CleanHub.Controllers
                         // close pdf document
                         doc.Close();
                     }
-                    catch (Exception ex) { }
+                    catch (Exception ex) { throw; }
                 }
             }
             return RedirectToAction("Details", new { id = id });

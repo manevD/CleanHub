@@ -4,6 +4,8 @@
     <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+	  <RazorCompileOnBuild>true</RazorCompileOnBuild>
+	  <RazorCompileOnPublish>true</RazorCompileOnPublish>
     <UserSecretsId>aspnet-CleanHub-faf50aed-20a4-4e91-9717-549da0bbb08a</UserSecretsId>
   </PropertyGroup>
 

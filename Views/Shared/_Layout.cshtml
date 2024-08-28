@@ -18,6 +18,7 @@
 
     <link rel="stylesheet" type="text/css" href="~/src/plugins/css/light/table/datatable/dt-global_style.css">
     <link rel="stylesheet" type="text/css" href="~/src/plugins/css/light/table/datatable/custom_dt_miscellaneous.css">
+    <link href="~/src/assets/css/light/apps/invoice-add.css" rel="stylesheet" type="text/css" />
 
     <!--  BEGIN CUSTOM STYLE FILE  -->
     <link href="~/src/assets/css/light/components/list-group.css" rel="stylesheet" type="text/css">
@@ -73,7 +74,6 @@
 
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap-select.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
 
     <!-- BEGIN GLOBAL MANDATORY SCRIPTS -->
@@ -87,19 +87,24 @@
     <script src="~/src/plugins/src/table/datatable/custom_miscellaneous.js"></script>
   
     <!-- BEGIN PAGE LEVEL SCRIPTS -->
+        <script src="~/src/filepond/filepond.min.js"></script>
+
     <script src="~/src/plugins/src/table/datatable/datatables.js"></script>
     <script src="~/src/plugins/src/table/datatable/button-ext/dataTables.buttons.min.js"></script>
     <script src="~/src/plugins/src/table/datatable/button-ext/jszip.min.js"></script>    
     <script src="~/src/plugins/src/table/datatable/button-ext/buttons.html5.min.js"></script>
     <script src="~/src/plugins/src/table/datatable/button-ext/buttons.print.min.js"></script>
-<script src="~/src/assets/js/apps/invoice-list.js"></script>
+    <script src="~/src/assets/js/apps/invoice-list.js"></script>
+
     <script src="~/src/plugins/src/highlight/highlight.pack.js"></script>
     <!-- END GLOBAL MANDATORY STYLES -->
     <!-- BEGIN PAGE LEVEL SCRIPTS -->
     <script src="~/src/assets/js/scrollspyNav.js"></script>
-    <script src="~/src/plugins/src/flatpickr/flatpickr.js"></script>
     <script src="~/src/plugins/src/flatpickr/custom-flatpickr.js"></script>
     <script src="~/src/assets/js/users/account-settings.js"></script>
+        <script src="~/src/plugins/src/flatpickr/flatpickr.js"></script>
+    <script src="~/src/assets/js/apps/invoice-add.js"></script>
+
     <!-- END PAGE LEVEL SCRIPTS -->
     @await RenderSectionAsync("Scripts", required: false)
 </body>

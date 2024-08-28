@@ -173,8 +173,10 @@ namespace CleanHub.Controllers
         // GET: Invoices/Create
         public IActionResult Create()
         {
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
-            return View();
+            var documentViewModel = new DocumentViewModel();
+            documentViewModel.Company = _config;
+            //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
+            return View(documentViewModel);
         }
 
         // POST: Invoices/Create

@@ -49,10 +49,36 @@ public class App : Profile
                 .ForMember(dest => dest.InactiveDatum, opts => opts.MapFrom(src => src.InactiveDatum))
                 .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
                 .ForMember(dest => dest.BuildingId, opts => opts.MapFrom(src => src.BuildingId))
-                                .ForMember(dest => dest.Building, opts => opts.MapFrom(src => src.Building))
-
+                .ForMember(dest => dest.Building, opts => opts.MapFrom(src => src.Building))
                 .ForMember(dest => dest.ActivityId, opts => opts.MapFrom(src => src.ActivityId))
                 .ForMember(dest => dest.PhysicalPerson, opts => opts.MapFrom(src => src.PhysicalPerson)).ReverseMap();
+            #endregion
+
+            #region Product
+
+            cfg.CreateMap<Product, ProductViewModel>()
+          .ForMember(dest => dest.BuildingProducts, opts => opts.MapFrom(src => src.BuildingProducts))
+          .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
+          .ForMember(dest => dest.Price, opts => opts.MapFrom(src => src.Price))
+          .ForMember(dest => dest.Input, opts => opts.MapFrom(src => src.Input))
+          .ForMember(dest => dest.Output, opts => opts.MapFrom(src => src.Output))
+          .ForMember(dest => dest.ArticleNotes, opts => opts.MapFrom(src => src.ArticleNotes))
+          .ForMember(dest => dest.UnitOfMeasurement, opts => opts.MapFrom(src => src.UnitOfMeasurement))
+          .ForMember(dest => dest.PriceWithTax, opts => opts.MapFrom(src => src.PriceWithTax))
+          .ForMember(dest => dest.Tax, opts => opts.MapFrom(src => src.Tax))
+          .ForMember(dest => dest.Total, opts => opts.MapFrom(src => src.Total))
+          .ForMember(dest => dest.Quantity, opts => opts.MapFrom(src => src.Quantity)).ReverseMap();
+            #endregion
+
+            #region BuildingProduct
+
+            cfg.CreateMap<BuildingProduct, BuildingProductViewModel>()
+          .ForMember(dest => dest.Product, opts => opts.MapFrom(src => src.Product))
+          .ForMember(dest => dest.ProductId, opts => opts.MapFrom(src => src.ProductId))
+          .ForMember(dest => dest.Building, opts => opts.MapFrom(src => src.Building))
+          .ForMember(dest => dest.BuildingId, opts => opts.MapFrom(src => src.BuildingId))
+          .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id));
+        
             #endregion
 
             #region Building
@@ -61,6 +87,7 @@ public class App : Profile
           .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
           .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
           .ForMember(dest => dest.Customers, opts => opts.MapFrom(src => src.Customers))
+          .ForMember(dest => dest.BuildingProducts, opts => opts.MapFrom(src => src.BuildingProducts))
           .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id)).ReverseMap();
 
             #endregion
@@ -107,7 +134,7 @@ public class App : Profile
         FullMapper = configuration.CreateMapper();
         ReaderMapper = readerMapConfiguration.CreateMapper();
         configuration.AssertConfigurationIsValid();
-       // readerMapConfiguration.AssertConfigurationIsValid();
+        // readerMapConfiguration.AssertConfigurationIsValid();
     }
 
     #region Properties

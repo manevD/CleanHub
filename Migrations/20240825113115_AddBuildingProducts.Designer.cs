@@ -4,6 +4,7 @@ using CleanHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240825113115_AddBuildingProducts")]
+    partial class AddBuildingProducts
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,6 +24,34 @@ namespace CleanHub.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("CleanHub.Config.CompanyConfig", b =>
+                {
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Email")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IBAN")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("InvoiceNotice")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("VATID")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.ToTable("CompanyConfig");
+                });
 
             modelBuilder.Entity("CleanHub.Entities.Activity", b =>
                 {
@@ -401,9 +432,6 @@ namespace CleanHub.Migrations
                     b.Property<float?>("Output")
                         .HasColumnType("real");
 
-                    b.Property<float>("Price")
-                        .HasColumnType("real");
-
                     b.Property<float?>("PriceWithTax")
                         .HasColumnType("real");
 
@@ -562,29 +590,6 @@ namespace CleanHub.Migrations
                     b.ToTable("BookViewModel");
                 });
 
-            modelBuilder.Entity("CleanHub.ViewModels.BuildingProductViewModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("BuildingId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("ProductId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("BuildingId");
-
-                    b.HasIndex("ProductId");
-
-                    b.ToTable("BuildingProductViewModel");
-                });
-
             modelBuilder.Entity("CleanHub.ViewModels.BuildingViewModel", b =>
                 {
                     b.Property<int>("Id")
@@ -709,46 +714,6 @@ namespace CleanHub.Migrations
                     b.HasIndex("CustomerId");
 
                     b.ToTable("DocumentViewModel");
-                });
-
-            modelBuilder.Entity("CleanHub.ViewModels.ProductViewModel", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ArticleNotes")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<float?>("Input")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("Output")
-                        .HasColumnType("real");
-
-                    b.Property<float>("Price")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("PriceWithTax")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("Quantity")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("Tax")
-                        .HasColumnType("real");
-
-                    b.Property<float?>("Total")
-                        .HasColumnType("real");
-
-                    b.Property<string>("UnitOfMeasurement")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ProductViewModel");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>
@@ -1074,25 +1039,6 @@ namespace CleanHub.Migrations
                     b.Navigation("Document");
                 });
 
-            modelBuilder.Entity("CleanHub.ViewModels.BuildingProductViewModel", b =>
-                {
-                    b.HasOne("CleanHub.ViewModels.BuildingViewModel", "Building")
-                        .WithMany("BuildingProducts")
-                        .HasForeignKey("BuildingId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CleanHub.ViewModels.ProductViewModel", "Product")
-                        .WithMany("BuildingProducts")
-                        .HasForeignKey("ProductId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Building");
-
-                    b.Navigation("Product");
-                });
-
             modelBuilder.Entity("CleanHub.ViewModels.CustomerViewModel", b =>
                 {
                     b.HasOne("CleanHub.ViewModels.ActivityViewModel", "Activity")
@@ -1198,8 +1144,6 @@ namespace CleanHub.Migrations
 
             modelBuilder.Entity("CleanHub.ViewModels.BuildingViewModel", b =>
                 {
-                    b.Navigation("BuildingProducts");
-
                     b.Navigation("Customers");
                 });
 
@@ -1213,11 +1157,6 @@ namespace CleanHub.Migrations
             modelBuilder.Entity("CleanHub.ViewModels.DocumentViewModel", b =>
                 {
                     b.Navigation("Books");
-                });
-
-            modelBuilder.Entity("CleanHub.ViewModels.ProductViewModel", b =>
-                {
-                    b.Navigation("BuildingProducts");
                 });
 #pragma warning restore 612, 618
         }

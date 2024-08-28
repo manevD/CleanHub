@@ -1,4 +1,6 @@
-﻿namespace CleanHub.ViewModels
+﻿using CleanHub.Entities;
+
+namespace CleanHub.ViewModels
 {
     public class BuildingViewModel
     {
@@ -8,7 +10,8 @@
 
         public string? BankAccount { get; set; }
         public int? ReserveFund {  get; set; }
+        public List<BuildingProductViewModel> BuildingProducts { get; set; } = new List<BuildingProductViewModel>();
 
-        public List<CustomerViewModel> Customers { get; set; }  
+        public ICollection<CustomerViewModel>? Customers { get; set; }  
     }
 }

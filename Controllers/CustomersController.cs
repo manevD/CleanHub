@@ -95,19 +95,19 @@ namespace CleanHub.Controllers
                 DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
                 ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
-                customers = _context.Customers.Include(x=>x.Documents).ToList();
+                customers = await _context.Customers.Include(x=>x.Documents).ToListAsync();
                 customer =   customers
              .FirstOrDefault(x => x.Id == id);
-                customer.Documents = customer.Documents.Where(inv => inv.Date >= DateFrom && inv.Date <= DateTo).ToList();
+                customer.Documents =  customer.Documents?.Where(inv => inv.Date >= DateFrom && inv.Date <= DateTo).ToList();
             }
             else if (!string.IsNullOrEmpty(dateFrom))
             {
                 DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
-                customers = _context.Customers.Include(x => x.Documents).ToList();
+                customers = await _context.Customers.Include(x => x.Documents).ToListAsync();
                 customer = customers
              .FirstOrDefault(customer => customer.Id == id && customer.Documents.Any(inv => inv.Date >= DateFrom));
-                customer.Documents = customer.Documents.Where(inv => inv.Date >= DateFrom).ToList();
+                customer.Documents = customer?.Documents?.Where(inv => inv.Date >= DateFrom).ToList();
             }
             else
             {

@@ -1,18 +1,18 @@
-﻿using CleanHub.Entities;
+﻿using CleanHub.Config;
+using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.DataEncryption;
-using Microsoft.EntityFrameworkCore.DataEncryption.Providers;
 using System.Security.Cryptography;
 using System.Text;
-using CleanHub.ViewModels;
-using CleanHub.Config;
 
 namespace CleanHub.Infrastructure.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
+        public virtual DbSet<Product> Products { get; set; }
+        public virtual DbSet<BuildingProduct> BuildingProducts { get; set; }
 
         public virtual DbSet<Article> Articles { get; set; }
         public virtual DbSet<Building> Buildings { get; set; }
@@ -60,7 +60,7 @@ namespace CleanHub.Infrastructure.Data
         {
             base.OnModelCreating(modelBuilder);
             // modelBuilder.UseEncryption(this._provider);
-            modelBuilder.Entity<CompanyConfig>().HasNoKey();
+           // modelBuilder.Entity<CompanyConfig>().HasNoKey();
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
           //  modelBuilder.Entity<Customer>()
