@@ -94,6 +94,44 @@ namespace CleanHub.Controllers
                         Product = App.FullMapper.Map<ProductViewModel>(product),
                     });
                 }
+                var bProducts = new List<BuildingProductViewModel>
+                {
+                    new BuildingProductViewModel()
+                    {
+                        Building = buildingViewModel,
+                        Product = new ProductViewModel
+                        {
+                            Id = 0,
+                            Input = 0,
+                            Output = 0,
+                            Quantity = 1,
+                            PriceWithTax = 0,
+                            Tax = 18,
+                            Total = 0,
+                            Price = 0,
+                            ArticleNotes = string.Empty,
+                            UnitOfMeasurement = "br.",
+                        }
+                    },
+                    new BuildingProductViewModel()
+                    {
+                        Building = buildingViewModel,
+                        Product = new ProductViewModel
+                        {
+                            Id = 0,
+                            Input = 0,
+                            Output = 0,
+                            Quantity = 1,
+                            PriceWithTax = 0,
+                            Tax = 18,
+                            Total = 0,
+                            Price = 0,
+                            ArticleNotes = string.Empty,
+                            UnitOfMeasurement = "br.",
+                        }
+                    },
+                };
+                buildingViewModel.BuildingProducts.AddRange(bProducts);
             }
             return View(buildingViewModel);
         }
@@ -124,8 +162,62 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var buildingEntity = await _context.Buildings.FirstOrDefaultAsync(c => c.Id == id);
+            var buildingEntity = await _context.Buildings.Include(x=>x.BuildingProducts).ThenInclude(pr=>pr.Product).FirstOrDefaultAsync(c => c.Id == id);
+            
             var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
+            if ( !buildingEntity.BuildingProducts.Any())
+            {
+                var products = _context.Products.ToList();
+                if (products != null || products.Any())
+                {
+                    foreach (var product in products)
+                    {
+                        building.BuildingProducts.Add(new BuildingProductViewModel
+                        {
+                            Building = building,
+                            Product = App.FullMapper.Map<ProductViewModel>(product),
+                        });
+                    }
+                    var bProducts = new List<BuildingProductViewModel>
+                    {
+                        new BuildingProductViewModel()
+                        {
+                            Building = building,
+                            Product = new ProductViewModel
+                            {
+                                Id = 0,
+                                Input = 0,
+                                Output = 0,
+                                Quantity = 1,
+                                PriceWithTax = 0,
+                                Tax = 18,
+                                Total = 0,
+                                Price = 0,
+                                ArticleNotes = string.Empty,
+                                UnitOfMeasurement = "br.",
+                            }
+                        },
+                        new BuildingProductViewModel()
+                        {
+                            Building = building,
+                            Product = new ProductViewModel
+                            {
+                                Id = 0,
+                                Input = 0,
+                                Output = 0,
+                                Quantity = 1,
+                                PriceWithTax = 0,
+                                Tax = 18,
+                                Total = 0,
+                                Price = 0,
+                                ArticleNotes = string.Empty,
+                                UnitOfMeasurement = "br.",
+                            }
+                        },
+                    };
+                    building.BuildingProducts.AddRange(bProducts);
+                }
+            }
             HttpContext.Session.Remove("Buildings");
 
             return View(building);

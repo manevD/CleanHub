@@ -46,7 +46,7 @@ namespace CleanHub.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
             : base(options)
         {
-            ChangeTracker.LazyLoadingEnabled = false;
+            ChangeTracker.LazyLoadingEnabled = true;
             //byte[] keyBytes = new byte[16];
             //byte[] iv = new byte[16];
             //using (var rng = new RNGCryptoServiceProvider())
