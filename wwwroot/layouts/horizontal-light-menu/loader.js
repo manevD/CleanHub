@@ -3,7 +3,9 @@ window.addEventListener("load", function(){
     // Remove Loader
     var load_screen = document.getElementById("load_screen");
     document.body.removeChild(load_screen);
-
+    if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+    }
     var layoutName = 'Horizontal Light Menu';
 
     var settingsObject = {

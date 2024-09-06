@@ -141,8 +141,12 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(BuildingViewModel building)
+        public async Task<IActionResult> Create( BuildingViewModel building)
         {
+            if (building.BuildingProducts != null && building.BuildingProducts.Any(x=>string.IsNullOrEmpty(x.Product.ArticleNotes)))
+            {
+                building.BuildingProducts.RemoveAll(x => string.IsNullOrEmpty(x.Product.ArticleNotes));
+            }
             if (ModelState.IsValid)
             {
                 var entity = App.FullMapper.Map<Building>(building);
