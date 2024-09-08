@@ -327,21 +327,19 @@ namespace CleanHub.Controllers
                     var request = _httpContextAccessor?.HttpContext?.Request;
                     string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                     HtmlToPdf converter = new HtmlToPdf();
-                    try
-                    {
-                        // create a new pdf document converting an url
-                        PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
+                    // create a new pdf document converting an url
+                    PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
 
-                        // create memory stream to save PDF
-                        MemoryStream pdfStream = new MemoryStream();
+                    // create memory stream to save PDF
+                    MemoryStream pdfStream = new MemoryStream();
 
-                        // save pdf document into a MemoryStream
-                        doc.Save(pdfStream);
+                    // save pdf document into a MemoryStream
+                    doc.Save(pdfStream);
 
-                        // reset stream position
-                        pdfStream.Position = 0;
-                        string emailBody = 
-                            @$"Почитувани,
+                    // reset stream position
+                    pdfStream.Position = 0;
+                    string emailBody = 
+                        @$"Почитувани,
 
                             Во прилог ви ја праќаме сметката за {month}/{year}. Ве молиме, проверете ја прикачената сметка и извршете ги потребните активности за плаќање.
 
@@ -352,21 +350,19 @@ namespace CleanHub.Controllers
                             {_config.PhoneNumber}
                             {_config.Email}
                             {_config.Address}";
-                        // create email message
-                        MailMessage message = new MailMessage();
-                        message.From = new MailAddress(_smtpConfig.Email);
-                        message.To.Add(_smtpConfig.Recipient);
-                        message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/", year);
-                        message.Body = emailBody;
-                        message.Attachments.Add(new Attachment(pdfStream, string.Concat("МартиХигиена", month, "/", year,".pdf")));
+                    // create email message
+                    MailMessage message = new MailMessage();
+                    message.From = new MailAddress(_smtpConfig.Email);
+                    message.To.Add(_smtpConfig.Recipient);
+                    message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/", year);
+                    message.Body = emailBody;
+                    message.Attachments.Add(new Attachment(pdfStream, string.Concat("МартиХигиена", month, "/", year,".pdf")));
 
-                        // send email
-                        smtpClient.Send(message);
+                    // send email
+                    smtpClient.Send(message);
 
-                        // close pdf document
-                        doc.Close();
-                    }
-                    catch (Exception ex) { throw; }
+                    // close pdf document
+                    doc.Close();
                 }
             }
             return RedirectToAction("Details", new { id = id });

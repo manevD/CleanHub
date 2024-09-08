@@ -1,0 +1,51 @@
+﻿@model CleanHub.ViewModels.DocumentViewModel
+
+@{
+
+    DateTime currentDate = DateTime.Now;
+
+    // Calculate the previous month
+    DateTime previousMonthDate = currentDate.AddMonths(-1);
+
+    // Format the previous month date
+    string formattedPreviousMonth = previousMonthDate.ToString("MM/yyyy");
+}
+<div class="invoice-detail-items">
+    <div class="table-responsive">
+        <table class="table item-table">
+            <thead>
+            <tr>
+                <th>Опис</th>
+                <th class="">Ед.м</th>
+                <th class="">Кол.</th>
+                <th class="text-right">Цена без ДДВ</th>
+                <th class="text-center">Цена</th>
+                <th class="text-center">Вк.распл.</th>
+                <th class="text-center">Вкупно</th>
+            </tr>
+            <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
+            </thead>
+            <tbody>
+            @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
+            {
+                <tr>
+                    <td class="description">
+                            <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.ArticleNotes" @formattedPreviousMonth />
+                    </td>
+                    <td class="rate">
+                        <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.UnitOfMeasurement" @formattedPreviousMonth />
+                    </td>
+                    <td class="rate">
+                        <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.Price" @formattedPreviousMonth />
+                    </td>
+                    <td class="rate">
+                        <input type="text" class="form-control form-control-sm" value="@{
+                                                                                           var productPriceWithTax = Model.Building.BuildingProducts[i].Product.PriceWithTax;
+                                                                                       }@if (productPriceWithTax != null) {@productPriceWithTax.Value }" @formattedPreviousMonth />
+                    </td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+</div>

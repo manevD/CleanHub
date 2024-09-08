@@ -2,141 +2,275 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     var plainTextNotice = System.Text.RegularExpressions.Regex.Replace(@Model.Company.InvoiceNotice, "<.*?>", string.Empty);
+
 }
 
-<div id="content" class="main-content">
-    <div class="middle-content container-xxl p-0">
-        <div class="row invoice layout-top-spacing layout-spacing">
-            <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
-                <div class="doc-container">
-                    <div class="row">
-                        <div class="col-xl-9">
-                            <div class="invoice-content">
-                                <div class="invoice-detail-body">
-                                    <div class="invoice-detail-items">
-                                        <div class="table-responsive">
-                                            <table class="table item-table">
-                                                <thead>
-                                                    <tr>
-                                                        <th class=""></th>
-                                                        <th>Description</th>
-                                                        <th class="">Rate</th>
-                                                        <th class="">Qty</th>
-                                                        <th class="text-right">Amount</th>
-                                                        <th class="text-center">Tax</th>
-                                                    </tr>
-                                                    <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
-                                                </thead>
-                                                <tbody>
-                                                    <tr>
-                                                        <td class="delete-item-row">
-                                                            <ul class="table-controls">
-                                                                <li><a href="javascript:void(0);" class="delete-item" data-toggle="tooltip" data-placement="top" title="" data-original-title="Delete"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-x-circle"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg></a></li>
-                                                            </ul>
-                                                        </td>
-                                                        <td class="description"><input type="text" class="form-control form-control-sm" placeholder="Item Description"> <textarea class="form-control" placeholder="Additional Details"></textarea></td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" placeholder="Price">
-                                                        </td>
-                                                        <td class="text-right qty"><input type="text" class="form-control form-control-sm" placeholder="Quantity"></td>
-                                                        <td class="text-right amount"><span class="editable-amount"><span class="currency">$</span> <span class="amount">100.00</span></span></td>
-                                                        <td class="text-center tax">
-                                                            <div class="n-chk">
-                                                                <div class="form-check form-check-primary form-check-inline me-0 mb-0">
-                                                                    <input class="form-check-input inbox-chkbox contact-chkbox" type="checkbox">
-                                                                </div>
-                                                            </div>
-                                                        </td>
-                                                    </tr>
-                                                </tbody>
-                                            </table>
+<div class="middle-content container-xxl p-0">
+    <!--  BEGIN BREADCRUMBS  -->
+    <div class="secondary-nav">
+        <div class="breadcrumbs-container" data-page-heading="Analytics">
+            <header class="header navbar navbar-expand-sm">
+                <a href="javascript:void(0);" class="btn-toggle sidebarCollapse" data-placement="bottom">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                </a>
+                <div class="d-flex breadcrumb-content">
+                    <div class="page-header">
+
+                        <div class="page-title">
+                        </div>
+
+                        <nav class="breadcrumb-style-one" aria-label="breadcrumb">
+                            <ol class="breadcrumb">
+                                <li class="breadcrumb-item"><a href="#">App</a></li>
+                                <li class="breadcrumb-item"><a href="#">Invoice</a></li>
+                                <li class="breadcrumb-item active" aria-current="page">Add</li>
+                            </ol>
+                        </nav>
+
+                    </div>
+                </div>
+                <ul class="navbar-nav flex-row ms-auto breadcrumb-action-dropdown">
+                    <li class="nav-item more-dropdown">
+                        <div class="dropdown  custom-dropdown-icon">
+                            <a class="dropdown-toggle btn" href="#" role="button" id="customDropdown" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                <span>Settings</span>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down custom-dropdown-arrow"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                            </a>
+
+                            <div class="dropdown-menu dropdown-menu-right" aria-labelledby="customDropdown">
+
+                                <a class="dropdown-item" data-value="Settings" data-icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; class=&quot;feather feather-settings&quot;><circle cx=&quot;12&quot; cy=&quot;12&quot; r=&quot;3&quot;></circle><path d=&quot;M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z&quot;></path></svg>" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-settings"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg> Settings
+                                </a>
+
+                                <a class="dropdown-item" data-value="Mail" data-icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; class=&quot;feather feather-mail&quot;><path d=&quot;M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z&quot;></path><polyline points=&quot;22,6 12,13 2,6&quot;></polyline></svg>" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-mail"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg> Mail
+                                </a>
+
+                                <a class="dropdown-item" data-value="Print" data-icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; class=&quot;feather feather-printer&quot;><polyline points=&quot;6 9 6 2 18 2 18 9&quot;></polyline><path d=&quot;M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2&quot;></path><rect x=&quot;6&quot; y=&quot;14&quot; width=&quot;12&quot; height=&quot;8&quot;></rect></svg>" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-printer"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg> Print
+                                </a>
+
+                                <a class="dropdown-item" data-value="Download" data-icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; class=&quot;feather feather-download&quot;><path d=&quot;M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4&quot;></path><polyline points=&quot;7 10 12 15 17 10&quot;></polyline><line x1=&quot;12&quot; y1=&quot;15&quot; x2=&quot;12&quot; y2=&quot;3&quot;></line></svg>" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-download"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg> Download
+                                </a>
+
+                                <a class="dropdown-item" data-value="Share" data-icon="<svg xmlns=&quot;http://www.w3.org/2000/svg&quot; width=&quot;24&quot; height=&quot;24&quot; viewBox=&quot;0 0 24 24&quot; fill=&quot;none&quot; stroke=&quot;currentColor&quot; stroke-width=&quot;2&quot; stroke-linecap=&quot;round&quot; stroke-linejoin=&quot;round&quot; class=&quot;feather feather-share-2&quot;><circle cx=&quot;18&quot; cy=&quot;5&quot; r=&quot;3&quot;></circle><circle cx=&quot;6&quot; cy=&quot;12&quot; r=&quot;3&quot;></circle><circle cx=&quot;18&quot; cy=&quot;19&quot; r=&quot;3&quot;></circle><line x1=&quot;8.59&quot; y1=&quot;13.51&quot; x2=&quot;15.42&quot; y2=&quot;17.49&quot;></line><line x1=&quot;15.41&quot; y1=&quot;6.51&quot; x2=&quot;8.59&quot; y2=&quot;10.49&quot;></line></svg>" href="javascript:void(0);">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-share-2"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg> Share
+                                </a>
+
+                            </div>
+
+                        </div>
+                    </li>
+                </ul>
+            </header>
+        </div>
+    </div>
+    <!--  END BREADCRUMBS  -->
+
+    <div class="row invoice layout-top-spacing layout-spacing">
+        <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
+
+            <div class="doc-container">
+
+                <div class="row">
+                    <div class="col-xl-9">
+
+                        <div class="invoice-content">
+
+                            <div class="invoice-detail-body">
+
+
+
+                                <div class="invoice-detail-header">
+
+                                    <div class="row justify-content-between">
+                                        <div class="col-xl-5 invoice-address-company">
+
+                                            <h4>Фирма:-</h4>
+
+                                            <div class="invoice-address-company-fields">
+
+                                                <div class="form-group row">
+                                                    <label for="company-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-name" placeholder="Business Name" value="@Model.Company.Name">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="company-email" class="col-sm-3 col-form-label col-form-label-sm">Е-Маил</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-email" placeholder="@Model.Company.Email" value="@Model.Company.Email">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="company-address" class="col-sm-3 col-form-label col-form-label-sm">Адреса</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-address" placeholder="@Model.Company.Address" value="@Model.Company.Address">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="company-phone" class="col-sm-3 col-form-label col-form-label-sm">Телефон</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-phone" placeholder="@Model.Company.PhoneNumber" value="@Model.Company.PhoneNumber">
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
                                         </div>
 
-                                        <button class="btn btn-dark additem">Add Item</button>
+
+                                        <div class="col-xl-5 invoice-address-client">
+
+                                            <h4>Сметка за:-</h4>
+                                            <div class="invoice-address-client-fields">
+
+                                                <div class="form-group row">
+                                                    <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Name</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="client-name" placeholder="Client Name">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="client-email" class="col-sm-3 col-form-label col-form-label-sm">Email</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="client-email" placeholder="name@company.com">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="client-address" class="col-sm-3 col-form-label col-form-label-sm">Address</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="client-address" placeholder="XYZ Street">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="client-phone" class="col-sm-3 col-form-label col-form-label-sm">Phone</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="client-phone" placeholder="(123) 456 789">
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
 
                                     </div>
 
+                                </div>
 
-                                    <div class="invoice-detail-total">
+                                <div id="building-products">
+                                    @if (@Model?.Building != null)
+                                    {
+                                        @await Html.PartialAsync("_BuildingProductsPartial", Model.Building)
+                                    }
+                                </div>
+                               
 
-                                        <div class="row">
+                                <div class="invoice-detail-total">
 
-                                            <div class="col-md-6">
+                                    <div class="row">
+
+                                        <div class="col-md-6">
+
+                                            <div class="form-group row invoice-created-by">
+                                                <label for="payment-method-account" class="col-sm-3 col-form-label col-form-label-sm">Account #:</label>
+                                                <div class="col-sm-9">
+                                                    <input type="text" class="form-control form-control-sm" id="payment-method-account" placeholder="Bank Account Number">
+                                                </div>
                                             </div>
 
-                                            <div class="col-md-6">
-                                                <div class="totals-row">
-                                                    <div class="invoice-totals-row invoice-summary-subtotal">
+                                            <div class="form-group row invoice-created-by">
+                                                <label for="payment-method-bank-name" class="col-sm-3 col-form-label col-form-label-sm">Bank Name:</label>
+                                                <div class="col-sm-9">
+                                                    <input type="text" class="form-control form-control-sm" id="payment-method-bank-name" placeholder="Insert Bank Name">
+                                                </div>
+                                            </div>
 
-                                                        <div class="invoice-summary-label">Subtotal</div>
+                                            <div class="form-group row invoice-created-by">
+                                                <label for="payment-method-code" class="col-sm-3 col-form-label col-form-label-sm">SWIFT code:</label>
+                                                <div class="col-sm-9">
+                                                    <input type="text" class="form-control form-control-sm" id="payment-method-code" placeholder="Insert Code">
+                                                </div>
+                                            </div>
 
-                                                        <div class="invoice-summary-value">
-                                                            <div class="subtotal-amount">
-                                                                <span class="currency">$</span><span class="amount">0.00</span>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-
-
-
-                                                    <div class="invoice-totals-row invoice-summary-total">
-
-                                                        <div class="invoice-summary-label">Discount</div>
-
-                                                        <div class="invoice-summary-value">
-                                                            <div class="total-amount">
-                                                                <span class="currency">$</span><span>0.00</span>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="invoice-totals-row invoice-summary-tax">
-
-                                                        <div class="invoice-summary-label">Tax</div>
-
-                                                        <div class="invoice-summary-value">
-                                                            <div class="tax-amount">
-                                                                <span>0%</span>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
-
-                                                    <div class="invoice-totals-row invoice-summary-balance-due">
-
-                                                        <div class="invoice-summary-label">Total</div>
-
-                                                        <div class="invoice-summary-value">
-                                                            <div class="balance-due-amount">
-                                                                <span class="currency">$</span><span>0.00</span>
-                                                            </div>
-                                                        </div>
-
-                                                    </div>
+                                            <div class="form-group row invoice-created-by">
+                                                <label for="payment-method-country" class="col-sm-3 col-form-label col-form-label-sm">Country:</label>
+                                                <div class="col-sm-9">
                                                 </div>
                                             </div>
 
                                         </div>
 
+                                        <div class="col-md-6">
+                                            <div class="totals-row">
+                                                <div class="invoice-totals-row invoice-summary-subtotal">
+
+                                                    <div class="invoice-summary-label">Subtotal</div>
+
+                                                    <div class="invoice-summary-value">
+                                                        <div class="subtotal-amount">
+                                                            <span class="currency">$</span><span class="amount">0.00</span>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+
+
+                                                <div class="invoice-totals-row invoice-summary-total">
+
+                                                    <div class="invoice-summary-label">Discount</div>
+
+                                                    <div class="invoice-summary-value">
+                                                        <div class="total-amount">
+                                                            <span class="currency">$</span><span>0.00</span>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+
+
+
+                                                <div class="invoice-totals-row invoice-summary-balance-due">
+
+                                                    <div class="invoice-summary-label">Total</div>
+
+                                                    <div class="invoice-summary-value">
+                                                        <div class="balance-due-amount">
+                                                            <span class="currency">$</span><span>0.00</span>
+                                                        </div>
+                                                    </div>
+
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     </div>
 
-                                    <div class="invoice-detail-note">
+                                </div>
 
-                                        <div class="row">
+                                <div class="invoice-detail-note">
 
-                                            <div class="col-md-12 align-self-center">
+                                    <div class="row">
 
-                                                <div class="form-group row invoice-note">
-                                                    <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Notes:</label>
-                                                    <div class="col-sm-12">
-                                                        <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
-                                                            @plainTextNotice
+                                        <div class="col-md-12 align-self-center">
+
+                                            <div class="form-group row invoice-note">
+                                                <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Notes:</label>
+                                                <div class="col-sm-12">
+                                                    <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
+                                                        @plainTextNotice
                                                        </textarea>
-                                                    </div>
                                                 </div>
-
 
                                             </div>
 
@@ -144,6 +278,117 @@
 
                                     </div>
 
+                                </div>
+
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <div class="col-xl-3">
+
+                        <div class="invoice-actions">
+
+                            <div class="invoice-action-currency">
+
+                                <div class="form-group mb-0">
+                                    <label>Објект</label>
+                                    <div class="dropdown selectable-dropdown invoice-select">
+                                        <input type="text" id="dropdownSearch" class="form-control form-control-sm" placeholder="Пребарувај..." />
+                                        <select id="buildingSelect" name="buildingId" class="form-control" onchange="handleBuildingChange()">
+                                            <option value="">Одбери објект</option>
+                                            @foreach (var building in Model.Buildings)
+                                            {
+                                                <option value="@building.Id">@building.Name</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+
+                            </div>
+
+                            <div class="invoice-action-tax">
+
+                                <h5>Tax</h5>
+
+                                <div class="invoice-action-tax-fields">
+
+                                    <div class="row">
+
+                                        <div class="col-6">
+
+
+                                            <div class="form-group mb-0">
+                                                <label for="date">Invoice Date</label>
+                                                <input type="text" class="form-control form-control-sm" id="date" placeholder="Add date picker">
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-6">
+                                            <div class="form-group mb-0 tax-rate-deducted" style="display: none;">
+                                                <label for="rate1">Rate (%)</label>
+                                                <input type="number" class="form-control input-rate" id="rate1" placeholder="Rate" value="10">
+                                            </div>
+
+                                            <div class="form-group mb-0 tax-rate-per-item" style="display: none;">
+                                                <label for="rate2">Rate (%)</label>
+                                                <input type="number" class="form-control input-rate" id="rate2" placeholder="Rate" value="5">
+                                            </div>
+
+                                            <div class="form-group mb-0 tax-rate-on-total" style="display: none;">
+                                                <label for="rate3">Rate (%)</label>
+                                                <input type="number" class="form-control input-rate" id="rate3" placeholder="Rate" value="25">
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                            </div>
+
+
+                            <div class="invoice-action-discount">
+
+                                <h5>Discount</h5>
+
+                                <div class="invoice-action-discount-fields">
+
+                                    <div class="row">
+
+                                        <div class="col-6">
+                                            <div class="form-group mb-0">
+                                                <label>Type</label>
+
+                                                <div class="dropdown selectable-dropdown invoice-discount-select">
+                                                    <a id="discountDropdown" href="javascript:void(0);" class="dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> <span class="selectable-text">None</span> <span class="selectable-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></span></a>
+                                                    <div class="dropdown-menu" aria-labelledby="discountDropdown">
+                                                        <a class="dropdown-item" data-value="Percent" href="javascript:void(0);">Percent</a>
+                                                        <a class="dropdown-item" data-value="Flat Amount" href="javascript:void(0);">Flat Amount</a>
+                                                        <a class="dropdown-item" data-value="None" href="javascript:void(0);">None</a>
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+
+                                        <div class="col-6">
+                                            <div class="form-group mb-0 discount-amount" style="display: none;">
+                                                <label for="ratet1">Amount</label>
+                                                <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
+                                            </div>
+
+                                            <div class="form-group mb-0 discount-percent" style="display: none;">
+                                                <label for="ratet2">Percent</label>
+                                                <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
+                                            </div>
+                                        </div>
+
+                                    </div>
 
                                 </div>
 
@@ -151,16 +396,65 @@
 
                         </div>
 
+                        <div class="invoice-actions-btn">
+
+                            <div class="invoice-action-btn">
+
+                                <div class="row">
+                                    <div class="col-xl-12 col-md-4">
+                                        <a href="javascript:void(0);" class="btn btn-success btn-download">Save</a>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
 
                     </div>
-
                 </div>
+
+
             </div>
 
         </div>
     </div>
-    @section Scripts {
-        @{
-            await Html.RenderPartialAsync("_ValidationScriptsPartial");
-        }
+
+</div>
+
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script src="~/src/plugins/src/flatpickr/flatpickr.js"></script>
+
+    <script>
+        document.getElementById('dropdownSearch').addEventListener('input', function () {
+            var filter = this.value.toLowerCase();
+            var select = document.getElementById('buildingSelect');
+            var options = select.querySelectorAll('option');
+
+            options.forEach(function (option) {
+                var text = option.textContent.toLowerCase();
+                if (text.indexOf(filter) > -1 || filter === '') {
+                    option.style.display = ''; // Show item
+                } else {
+                    option.style.display = 'none'; // Hide item
+                }
+            });
+        });
+
+        // document.getElementById('dropdownSearch').addEventListener('input', function () {
+        //     var filter = this.value.toLowerCase();
+        //     var dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown-item');
+
+        //     dropdownItems.forEach(function (item) {
+        //         var text = item.textContent.toLowerCase();
+        //         if (text.indexOf(filter) > -1) {
+        //             item.style.display = ""; // Show item
+        //         } else {
+        //             item.style.display = "none"; // Hide item
+        //         }
+        //     });
+        // });
+    </script>
+}

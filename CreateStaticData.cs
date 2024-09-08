@@ -15,50 +15,36 @@ namespace CleanHub
             using (var context = new ApplicationDbContext())
             {
                 var customers =  context.Customers/*.Include(x => x.Activity).*/.Include(d => d.Documents).ToList();
-                try
+                foreach (var customer in customers)
                 {
-                    foreach (var customer in customers)
+                    foreach (var doc in customer.Documents)
                     {
-                        foreach (var doc in customer.Documents)
+                        if (doc.ToDocument != null)
                         {
-                            if (doc.ToDocument != null)
-                            {
-                                var year = DocumentService.ExtractYear(doc.ToDocument);
-                                var month = DocumentService.GetMonthAsInteger(doc.ToDocument);
+                            var year = DocumentService.ExtractYear(doc.ToDocument);
+                            var month = DocumentService.GetMonthAsInteger(doc.ToDocument);
 
-                                var searchCriteria = string.Concat(month, "/", year);
-                                string likePattern = $"%{searchCriteria.Replace("/", "%")}%";
-                                if (!string.IsNullOrEmpty(likePattern))
+                            var searchCriteria = string.Concat(month, "/", year);
+                            string likePattern = $"%{searchCriteria.Replace("/", "%")}%";
+                            if (!string.IsNullOrEmpty(likePattern))
+                            {
+                                var bookFinancial = context.BookFinancials
+                                    .FirstOrDefault(x => EF.Functions.Like(x.Description, likePattern)
+                                                         && x.SmetkaId == 1200
+                                                         && x.CustomerId == customer.Id);
+                                if (bookFinancial == null)
                                 {
-                                    var bookFinancial = context.BookFinancials
-                                                                  .FirstOrDefault(x => EF.Functions.Like(x.Description, likePattern)
-                                                                                         && x.SmetkaId == 1200
-                                                                                         && x.CustomerId == customer.Id);
-                                    if (bookFinancial == null)
-                                    {
-                                        doc.PaymentStatus = PaymentStatus.Неплатено;
-                                    }
-                                    else
-                                    {
-                                        doc.PaymentStatus = DocumentService.GetStatus(bookFinancial, doc);
-                                    }
+                                    doc.PaymentStatus = PaymentStatus.Неплатено;
+                                }
+                                else
+                                {
+                                    doc.PaymentStatus = DocumentService.GetStatus(bookFinancial, doc);
                                 }
                             }
-                            else
-                            {
-                                continue;
-                            }
-                            
                         }
                     }
-                    context.SaveChanges();
                 }
-                catch (Exception ex)
-                {
-
-                    throw;
-                }
-                
+                context.SaveChanges();
             }
         }
 

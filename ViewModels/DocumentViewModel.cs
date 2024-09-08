@@ -31,10 +31,6 @@ namespace CleanHub.ViewModels
                 {
                     DueDate = _dateReceived.Value.AddMonths(1);
                 }
-                else
-                {
-                    return;
-                }
             }
         }
 
@@ -64,5 +60,7 @@ namespace CleanHub.ViewModels
         public DateTime? DateTimeChanged { get; set; }
         public List<BookViewModel> Books { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
+        public List<BuildingViewModel> Buildings { get; set; }
+        public BuildingViewModel Building { get; set; }
     }
 }

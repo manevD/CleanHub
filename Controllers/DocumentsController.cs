@@ -8,7 +8,6 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
-using System.Text.RegularExpressions;
 
 namespace CleanHub.Controllers
 {
@@ -102,7 +101,7 @@ namespace CleanHub.Controllers
         {
             List<DocumentViewModel> documents = new List<DocumentViewModel>();
 
-            var documentEntity = await _context.Documents.Include(x=>x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
+            var documentEntity = await _context.Documents.Include(x => x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
             {
                 Id = c.Id,
                 Number = c.Number,
@@ -175,10 +174,88 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             documentViewModel.Company = _config;
+            documentViewModel.Company = _config;
+            var buildings = _context.Buildings
+                .Include(b => b.BuildingProducts)
+                .ThenInclude(bp => bp.Product)
+                .Select(b => new Building()
+                {
+                    Name = b.Name,
+                    BuildingProducts = b.BuildingProducts
+                })
+                .ToList();
+            documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
+        // GET: Invoices/Create
+        public IActionResult CreatePartially()
+        {
+            var documentViewModel = new DocumentViewModel();
+            documentViewModel.Company = _config;
+            var buildings = _context.Buildings
+                .Include(b => b.BuildingProducts)
+                .ThenInclude(bp => bp.Product)
+                .Select(b => new Building()
+                {
+                    Id = b.Id,
+                    Name = b.Name,
+                    BuildingProducts = b.BuildingProducts
+                })
+                .ToList();
+            HttpContext.Session.Remove("Buildings");
 
+            documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
+            documentViewModel.Building = new BuildingViewModel();
+            return View(nameof(Create), documentViewModel);
+        }
+
+        [HttpGet]
+        public IActionResult LoadBuildingProducts(int? buildingId, string searchQuery)
+        {
+            if (buildingId.HasValue)
+            {
+
+                string buildingsJson = HttpContext.Session.GetString("Buildings");
+                var settings = new JsonSerializerSettings
+                {
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+                };
+                List<BuildingViewModel> buildings = new List<BuildingViewModel>();
+                if (!string.IsNullOrEmpty(buildingsJson))
+                {
+                    buildings = JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
+                }
+                else
+                {
+                    var buildingsEntity = _context.Buildings
+                        .Include(b => b.BuildingProducts)
+                        .ThenInclude(bp => bp.Product)
+                        .Select(b => new Building()
+                        {
+                            Name = b.Name,
+                            BuildingProducts = b.BuildingProducts
+                        })
+                        .ToList();
+                    buildings = App.ReaderMapper.Map<List<BuildingViewModel>>(buildingsEntity);
+
+                    HttpContext.Session.SetString("Buldings", JsonConvert.SerializeObject(buildings, settings));
+                }
+
+                var building = buildings.FirstOrDefault(x => x.Id == x.Id);
+                if (building == null)
+                {
+                    return NotFound();
+                }
+                var documentViewModel = new DocumentViewModel();
+                documentViewModel.Company = _config;
+                documentViewModel.Buildings = buildings;
+                documentViewModel.Building = building;
+                return PartialView("_BuildingProductsPartial", documentViewModel);
+            }
+
+            return RedirectToAction(nameof(Create));
+        }
         // POST: Invoices/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
