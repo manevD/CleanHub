@@ -14,6 +14,7 @@ using SelectPdf;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using CleanHub.Extensions;
 
 namespace CleanHub.Controllers
 {
@@ -74,6 +75,9 @@ namespace CleanHub.Controllers
             var building = await _context.Buildings.Include(x => x.Customers).FirstOrDefaultAsync(c => c.Id == id);
 
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
+            buildingViewModel.Customers = buildingViewModel.Customers
+                .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
+                .ToList();
             ViewBag.Month = Month;
             ViewBag.Year = Year;
             return View(buildingViewModel);
@@ -254,10 +258,8 @@ namespace CleanHub.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }

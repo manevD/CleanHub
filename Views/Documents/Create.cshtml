@@ -119,61 +119,25 @@
                                                         <input type="text" class="form-control form-control-sm" id="company-phone" placeholder="@Model.Company.PhoneNumber" value="@Model.Company.PhoneNumber">
                                                     </div>
                                                 </div>
-
                                             </div>
-
                                         </div>
-
-
                                         <div class="col-xl-5 invoice-address-client">
-
                                             <h4>Сметка за:-</h4>
                                             <div class="invoice-address-client-fields">
-
                                                 <div class="form-group row">
-                                                    <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Name</label>
+                                                    <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-name" placeholder="Client Name">
+                                                        <input type="text" class="form-control form-control-sm" id="client-name" placeholder="Име на Фирмата/Станарот" value="@Model.Building.Name">
                                                     </div>
                                                 </div>
-
-                                                <div class="form-group row">
-                                                    <label for="client-email" class="col-sm-3 col-form-label col-form-label-sm">Email</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-email" placeholder="name@company.com">
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group row">
-                                                    <label for="client-address" class="col-sm-3 col-form-label col-form-label-sm">Address</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-address" placeholder="XYZ Street">
-                                                    </div>
-                                                </div>
-
-                                                <div class="form-group row">
-                                                    <label for="client-phone" class="col-sm-3 col-form-label col-form-label-sm">Phone</label>
-                                                    <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-phone" placeholder="(123) 456 789">
-                                                    </div>
-                                                </div>
-
                                             </div>
-
                                         </div>
-
-
                                     </div>
-
                                 </div>
-
-                                <div id="building-products">
-                                    @if (@Model?.Building != null)
-                                    {
-                                        @await Html.PartialAsync("_BuildingProductsPartial", Model.Building)
-                                    }
-                                </div>
-                               
+                                @if (@Model?.Building != null)
+                                {
+                                    @Html.Partial("_BuildingProductsPartial", @Model)
+                                }
 
                                 <div class="invoice-detail-total">
 
@@ -271,190 +235,91 @@
                                                         @plainTextNotice
                                                        </textarea>
                                                 </div>
-
                                             </div>
-
                                         </div>
-
                                     </div>
-
                                 </div>
-
-
                             </div>
-
                         </div>
-
                     </div>
-
                     <div class="col-xl-3">
-
                         <div class="invoice-actions">
-
                             <div class="invoice-action-currency">
-
                                 <div class="form-group mb-0">
                                     <label>Објект</label>
                                     <div class="dropdown selectable-dropdown invoice-select">
-                                        <input type="text" id="dropdownSearch" class="form-control form-control-sm" placeholder="Пребарувај..." />
-                                        <select id="buildingSelect" name="buildingId" class="form-control" onchange="handleBuildingChange()">
-                                            <option value="">Одбери објект</option>
-                                            @foreach (var building in Model.Buildings)
-                                            {
-                                                <option value="@building.Id">@building.Name</option>
-                                            }
-                                        </select>
+                                        <form method="GET" asp-action="LoadBuildingProducts" asp-controller="Documents">
+                                            <select id="buildingSelect" name="buildingId" class="form-control" onchange="this.form.submit()">
+                                                @foreach (var building in Model?.Buildings)
+                                                {
+                                                    var isSelected = Model.Building != null && building.Id == Model.Building.Id;
+                                                    <option value="@building.Id" selected="@isSelected">
+                                                        @building.Name
+                                                    </option>
+                                                }
+                                            </select>
+                                        </form>
                                     </div>
                                 </div>
-
-
                             </div>
-
-                            <div class="invoice-action-tax">
-
-                                <h5>Tax</h5>
-
-                                <div class="invoice-action-tax-fields">
-
-                                    <div class="row">
-
-                                        <div class="col-6">
-
-
-                                            <div class="form-group mb-0">
-                                                <label for="date">Invoice Date</label>
-                                                <input type="text" class="form-control form-control-sm" id="date" placeholder="Add date picker">
-
-                                            </div>
-
-                                        </div>
-
-                                        <div class="col-6">
-                                            <div class="form-group mb-0 tax-rate-deducted" style="display: none;">
-                                                <label for="rate1">Rate (%)</label>
-                                                <input type="number" class="form-control input-rate" id="rate1" placeholder="Rate" value="10">
-                                            </div>
-
-                                            <div class="form-group mb-0 tax-rate-per-item" style="display: none;">
-                                                <label for="rate2">Rate (%)</label>
-                                                <input type="number" class="form-control input-rate" id="rate2" placeholder="Rate" value="5">
-                                            </div>
-
-                                            <div class="form-group mb-0 tax-rate-on-total" style="display: none;">
-                                                <label for="rate3">Rate (%)</label>
-                                                <input type="number" class="form-control input-rate" id="rate3" placeholder="Rate" value="25">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                            </div>
-
-
-                            <div class="invoice-action-discount">
-
-                                <h5>Discount</h5>
-
-                                <div class="invoice-action-discount-fields">
-
-                                    <div class="row">
-
-                                        <div class="col-6">
-                                            <div class="form-group mb-0">
-                                                <label>Type</label>
-
-                                                <div class="dropdown selectable-dropdown invoice-discount-select">
-                                                    <a id="discountDropdown" href="javascript:void(0);" class="dropdown-toggle" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false"> <span class="selectable-text">None</span> <span class="selectable-arrow"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-down"><polyline points="6 9 12 15 18 9"></polyline></svg></span></a>
-                                                    <div class="dropdown-menu" aria-labelledby="discountDropdown">
-                                                        <a class="dropdown-item" data-value="Percent" href="javascript:void(0);">Percent</a>
-                                                        <a class="dropdown-item" data-value="Flat Amount" href="javascript:void(0);">Flat Amount</a>
-                                                        <a class="dropdown-item" data-value="None" href="javascript:void(0);">None</a>
-                                                    </div>
+                            <div class="invoice-actions">
+                                <div class="invoice-action-currency">
+                                    <div class="form-group mb-0">
+                                        <label>Станари</label>
+                                        <div class="invoice-action-btn">
+                                            <div class="row">
+                                                <div class="col-xl-12 col-md-4">
+                                                   @if (@Model.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
+                                                   {
+                                                       @foreach (var  customer in @Model.Building.Customers)
+                                                       {
+                                                           <h6>@customer.CustomerInfo</h6>
+                                                       }
+                                                   }
                                                 </div>
-
-                                            </div>
-
-                                        </div>
-
-                                        <div class="col-6">
-                                            <div class="form-group mb-0 discount-amount" style="display: none;">
-                                                <label for="ratet1">Amount</label>
-                                                <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
-                                            </div>
-
-                                            <div class="form-group mb-0 discount-percent" style="display: none;">
-                                                <label for="ratet2">Percent</label>
-                                                <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
                                             </div>
                                         </div>
-
+                                    </div>
+                                </div>
+                            </div>
+                                <div class="invoice-actions-btn">
+                                    <div class="invoice-action-btn">
+                                        <div class="row">
+                                            <div class="col-xl-12 col-md-4">
+                                                <a href="javascript:void(0);" class="btn btn-success btn-download">Save</a>
+                                            </div>
+                                        </div>
                                     </div>
 
                                 </div>
 
                             </div>
-
                         </div>
-
-                        <div class="invoice-actions-btn">
-
-                            <div class="invoice-action-btn">
-
-                                <div class="row">
-                                    <div class="col-xl-12 col-md-4">
-                                        <a href="javascript:void(0);" class="btn btn-success btn-download">Save</a>
-                                    </div>
-                                </div>
-                            </div>
-
-                        </div>
-
                     </div>
                 </div>
-
-
             </div>
-
         </div>
-    </div>
 
-</div>
+        @section Scripts {
+            @{
+                await Html.RenderPartialAsync("_ValidationScriptsPartial");
+            }
+            <script src="~/src/plugins/src/flatpickr/flatpickr.js"></script>
 
+            <script>
 
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
-    <script src="~/src/plugins/src/flatpickr/flatpickr.js"></script>
+                // document.getElementById('dropdownSearch').addEventListener('input', function () {
+                //     var filter = this.value.toLowerCase();
+                //     var dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown-item');
 
-    <script>
-        document.getElementById('dropdownSearch').addEventListener('input', function () {
-            var filter = this.value.toLowerCase();
-            var select = document.getElementById('buildingSelect');
-            var options = select.querySelectorAll('option');
-
-            options.forEach(function (option) {
-                var text = option.textContent.toLowerCase();
-                if (text.indexOf(filter) > -1 || filter === '') {
-                    option.style.display = ''; // Show item
-                } else {
-                    option.style.display = 'none'; // Hide item
-                }
-            });
-        });
-
-        // document.getElementById('dropdownSearch').addEventListener('input', function () {
-        //     var filter = this.value.toLowerCase();
-        //     var dropdownItems = document.querySelectorAll('.dropdown-menu .dropdown-item');
-
-        //     dropdownItems.forEach(function (item) {
-        //         var text = item.textContent.toLowerCase();
-        //         if (text.indexOf(filter) > -1) {
-        //             item.style.display = ""; // Show item
-        //         } else {
-        //             item.style.display = "none"; // Hide item
-        //         }
-        //     });
-        // });
-    </script>
-}
+                //     dropdownItems.forEach(function (item) {
+                //         var text = item.textContent.toLowerCase();
+                //         if (text.indexOf(filter) > -1) {
+                //             item.style.display = ""; // Show item
+                //         } else {
+                //             item.style.display = "none"; // Hide item
+                //         }
+                //     });
+                // });
+            </script>
+        }

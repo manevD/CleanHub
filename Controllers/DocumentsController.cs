@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
+using CleanHub.Extensions;
 
 namespace CleanHub.Controllers
 {
@@ -174,7 +175,6 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             documentViewModel.Company = _config;
-            documentViewModel.Company = _config;
             var buildings = _context.Buildings
                 .Include(b => b.BuildingProducts)
                 .ThenInclude(bp => bp.Product)
@@ -206,7 +206,7 @@ namespace CleanHub.Controllers
             HttpContext.Session.Remove("Buildings");
 
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-            documentViewModel.Building = new BuildingViewModel();
+            documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
             return View(nameof(Create), documentViewModel);
         }
 
@@ -215,7 +215,6 @@ namespace CleanHub.Controllers
         {
             if (buildingId.HasValue)
             {
-
                 string buildingsJson = HttpContext.Session.GetString("Buildings");
                 var settings = new JsonSerializerSettings
                 {
@@ -228,21 +227,22 @@ namespace CleanHub.Controllers
                 }
                 else
                 {
-                    var buildingsEntity = _context.Buildings
+                    buildings = _context.Buildings.Include(x=>x.Customers)
                         .Include(b => b.BuildingProducts)
                         .ThenInclude(bp => bp.Product)
-                        .Select(b => new Building()
+                        .Select(b => new BuildingViewModel()
                         {
+                            Id = b.Id,
                             Name = b.Name,
-                            BuildingProducts = b.BuildingProducts
+                            BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(b.BuildingProducts),
+                            Customers = App.ReaderSmall.Map<List<CustomerViewModel>>(b.Customers).OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt()).ToList()
                         })
                         .ToList();
-                    buildings = App.ReaderMapper.Map<List<BuildingViewModel>>(buildingsEntity);
-
-                    HttpContext.Session.SetString("Buldings", JsonConvert.SerializeObject(buildings, settings));
+                    
+                    HttpContext.Session.SetString("Buildings", JsonConvert.SerializeObject(buildings, settings));
                 }
 
-                var building = buildings.FirstOrDefault(x => x.Id == x.Id);
+                var building = buildings.FirstOrDefault(x => x.Id == buildingId.Value);
                 if (building == null)
                 {
                     return NotFound();
@@ -251,7 +251,7 @@ namespace CleanHub.Controllers
                 documentViewModel.Company = _config;
                 documentViewModel.Buildings = buildings;
                 documentViewModel.Building = building;
-                return PartialView("_BuildingProductsPartial", documentViewModel);
+                return View("Create", documentViewModel);
             }
 
             return RedirectToAction(nameof(Create));

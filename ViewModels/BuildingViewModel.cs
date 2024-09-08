@@ -6,7 +6,7 @@
         public string? Name { get; set; }
         public string? BankAccount { get; set; }
         public int? ReserveFund {  get; set; }
-        public List<BuildingProductViewModel> BuildingProducts { get; set; } = new();
+        public List<BuildingProductViewModel> BuildingProducts { get; set; }
         public ICollection<CustomerViewModel>? Customers { get; set; }  
     }
 }

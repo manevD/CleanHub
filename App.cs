@@ -11,6 +11,20 @@ public class App : Profile
 {
     public App()
     {
+        var readerSmallMapConfiguration = new MapperConfiguration(cfg =>
+        {
+         
+
+            cfg.CreateMap<Customer, CustomerViewModel>()
+                .ForMember(dest => dest.CustomerInfo, opts => opts.MapFrom(src => src.CustomerInfo))
+                .ForMember(dest => dest.Email, opts => opts.Ignore())
+                .ForMember(dest => dest.PhoneNumber, opts =>opts.Ignore())
+                .ForMember(dest => dest.Adress, opts => opts.Ignore())
+                .ForMember(dest => dest.Inactive, opts => opts.Ignore())
+                .ForMember(dest => dest.Building, opts => opts.Ignore())
+                .ForMember(dest => dest.Activity, opts => opts.Ignore())
+                .ForMember(dest => dest.Id, opts => opts.Ignore()).ReverseMap();
+        });
         var readerMapConfiguration = new MapperConfiguration(cfg =>
         {
             cfg.CreateMap<Document, DocumentViewModel>().ReverseMap();
@@ -39,25 +53,13 @@ public class App : Profile
         {
             #region Customer
 
-            cfg.CreateMap<Customer, CustomerViewModel>()
-                .ForMember(dest => dest.CustomerInfo, opts => opts.MapFrom(src => src.CustomerInfo))
-                .ForMember(dest => dest.Email, opts => opts.MapFrom(src => src.Email))
-                .ForMember(dest => dest.PhoneNumber, opts => opts.MapFrom(src => src.PhoneNumber))
-                .ForMember(dest => dest.Web, opts => opts.MapFrom(src => src.Web))
-                .ForMember(dest => dest.Adress, opts => opts.MapFrom(src => src.Adress))
-                .ForMember(dest => dest.Inactive, opts => opts.MapFrom(src => src.Inactive))
-                .ForMember(dest => dest.InactiveDatum, opts => opts.MapFrom(src => src.InactiveDatum))
-                .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
-                .ForMember(dest => dest.BuildingId, opts => opts.MapFrom(src => src.BuildingId))
-                .ForMember(dest => dest.Building, opts => opts.MapFrom(src => src.Building))
-                .ForMember(dest => dest.ActivityId, opts => opts.MapFrom(src => src.ActivityId))
-                .ForMember(dest => dest.PhysicalPerson, opts => opts.MapFrom(src => src.PhysicalPerson)).ReverseMap();
+            cfg.CreateMap<Customer, CustomerViewModel>().ReverseMap();
             #endregion
 
             #region Product
 
             cfg.CreateMap<Product, ProductViewModel>()
-          .ForMember(dest => dest.BuildingProducts, opts => opts.MapFrom(src => src.BuildingProducts))
+          .ForMember(dest => dest.BuildingProducts, opts => opts.Ignore())
           .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
           .ForMember(dest => dest.Price, opts => opts.MapFrom(src => src.Price))
           .ForMember(dest => dest.Input, opts => opts.MapFrom(src => src.Input))
@@ -72,24 +74,18 @@ public class App : Profile
 
             #region BuildingProduct
 
-            cfg.CreateMap<BuildingProduct, BuildingProductViewModel>()
-          .ForMember(dest => dest.Product, opts => opts.MapFrom(src => src.Product))
-          .ForMember(dest => dest.ProductId, opts => opts.MapFrom(src => src.ProductId))
-          .ForMember(dest => dest.Building, opts => opts.MapFrom(src => src.Building))
-          .ForMember(dest => dest.BuildingId, opts => opts.MapFrom(src => src.BuildingId))
-          .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id));
-        
+            cfg.CreateMap<BuildingProduct, BuildingProductViewModel>().ReverseMap();
+
             #endregion
 
             #region Building
-
             cfg.CreateMap<Building, BuildingViewModel>()
-          .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
-          .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
-          .ForMember(dest => dest.Customers, opts => opts.MapFrom(src => src.Customers))
-          .ForMember(dest => dest.BuildingProducts, opts => opts.MapFrom(src => src.BuildingProducts))
-          .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id)).ReverseMap();
-
+                .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
+                .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
+                .ForMember(dest => dest.Customers, opts => opts.MapFrom(src => src.Customers))
+                .ForMember(dest => dest.BuildingProducts, opts => opts.MapFrom(src => src.BuildingProducts))
+                .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
+                .ReverseMap();
             #endregion
 
             #region BookFinancial
@@ -133,7 +129,7 @@ public class App : Profile
             #endregion
 
         });
-
+        ReaderSmall = readerSmallMapConfiguration.CreateMapper();
         FullMapper = configuration.CreateMapper();
         ReaderMapper = readerMapConfiguration.CreateMapper();
         configuration.AssertConfigurationIsValid();
@@ -141,6 +137,7 @@ public class App : Profile
     }
 
     #region Properties
+    public static IMapper ReaderSmall { get; set; }
 
     public static IMapper ReaderMapper { get; set; }
     public static IMapper FullMapper { get; set; }
