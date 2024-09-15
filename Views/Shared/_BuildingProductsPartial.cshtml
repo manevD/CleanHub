@@ -16,8 +16,6 @@
                 <tr>
                     <th>Опис</th>
                     <th class="">Ед.м</th>
-                    <th class="">Кол.</th>
-                    <th class="text-center">Данок</th>
                     <th class="text-right">Цена без ДДВ</th>
                     <th class="text-center">Цена</th>
                     <th class="text-center">Вк.распл.</th>
@@ -35,14 +33,9 @@
                                 <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Quantity" />
-                            </td>
-                            <td class="rate">
                                 <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                             </td>
-                            <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Tax" />
-                            </td>
+
                             <td class="rate">
                                 <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Price" />
                             </td>
@@ -73,19 +66,11 @@
 </div>
 @if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
 {
-    <div class="invoice-detail-total">
-        <div class="row">
-            <div class="col-md-6">
-                <div class="totals-row">
-                    <div class="invoice-totals-row invoice-summary-balance-due">
-                        <div class="invoice-summary-label">Вкупно</div>
-                        <div class="invoice-summary-value">
-                            <div class="balance-due-amount">
-                                <span>@Model.Building.BuildingProducts.Sum(x => x.PriceWithTax)</span> <span class="currency">МКД</span>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <div class="invoice-detail-total" style="text-align: right;">
+        <div class="invoice-summary-label" style="color:black;">Вкупно</div>
+        <div class="invoice-summary-value">
+            <div class="balance-due-amount">
+                <span>@Model.Building.BuildingProducts.Sum(x => x.PriceWithTax)</span> <span class="currency">МКД</span>
             </div>
         </div>
     </div>

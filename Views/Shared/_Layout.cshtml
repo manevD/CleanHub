@@ -67,7 +67,7 @@
         }
     </style>
 </head>
-<body>
+<body class="layout-boxed">
 
     @if (SignInManager.IsSignedIn(User))
     {
@@ -76,7 +76,7 @@
             <partial name="_HeaderNav.cshtml" />
         </div>
     }
-    <div class="main-container" id="container">
+    <div class="main-container " id="container">
 
         <div class="overlay"></div>
         <div class="search-overlay"></div>
@@ -87,9 +87,14 @@
             {
                 <partial name="_NavMenu" />
             }
-            <div class="row layout-top-spacing">
 
-                @RenderBody()
+        </div>
+
+        <div id="content" class="main-content">
+            <div class="layout-px-spacing">
+                <div class="middle-content container-xxl p-0">
+                    @RenderBody()
+                </div>
             </div>
         </div>
     </div>

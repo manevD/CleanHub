@@ -7,6 +7,7 @@
         : System.Text.RegularExpressions.Regex.Replace(invoiceNotice, "<.*?>", string.Empty);
     var routeId = @ViewBag.RouteId;
 }
+
 <div class="middle-content container-xxl p-0">
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
@@ -78,7 +79,7 @@
                                         <div class="col-md-12 align-self-center">
 
                                             <div class="form-group row invoice-note">
-                                                <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Notes:</label>
+                                                <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Забелешки:</label>
                                                 <div class="col-sm-12">
                                                     <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
                                                         @plainTextNotice
