@@ -9,6 +9,7 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
 using CleanHub.Extensions;
+using CleanHub.Providers.Interfaces;
 
 namespace CleanHub.Controllers
 {
@@ -17,9 +18,12 @@ namespace CleanHub.Controllers
         private readonly ApplicationDbContext _context;
         private readonly CompanyConfig _config;
         private SMTPConfig _smtpConfig;
-        public DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
+        private readonly IStaticDataProvider _staticDataProvider;
+
+        public DocumentsController(IStaticDataProvider staticDataProvider, ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {
             _context = context;
+            _staticDataProvider = staticDataProvider;
             _smtpConfig = config.Value;
             _config = companyConfig.Value;
         }
@@ -171,20 +175,21 @@ namespace CleanHub.Controllers
         }
 
         // GET: Invoices/Create
-        public IActionResult Create()
+        public IActionResult Create(int id)
         {
             var documentViewModel = new DocumentViewModel();
+            ViewBag.RouteId = id;
+
             documentViewModel.Company = _config;
-            var buildings = _context.Buildings
-                .Include(b => b.BuildingProducts)
-                .ThenInclude(bp => bp.Product)
+            var buildings = _staticDataProvider.GetBuildings().Result
                 .Select(b => new Building()
                 {
+                    Id = b.Id,
                     Name = b.Name,
-                    BuildingProducts = b.BuildingProducts
                 })
                 .ToList();
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
+            documentViewModel.Building = new BuildingViewModel();
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
@@ -195,12 +200,11 @@ namespace CleanHub.Controllers
             documentViewModel.Company = _config;
             var buildings = _context.Buildings
                 .Include(b => b.BuildingProducts)
-                .ThenInclude(bp => bp.Product)
                 .Select(b => new Building()
                 {
                     Id = b.Id,
                     Name = b.Name,
-                    BuildingProducts = b.BuildingProducts
+                    BuildingProducts = (ICollection<BuildingProduct>)b.BuildingProducts.Where(x => x.ArticleNotes == "Чистење на влез за")
                 })
                 .ToList();
             HttpContext.Session.Remove("Buildings");
@@ -211,47 +215,37 @@ namespace CleanHub.Controllers
         }
 
         [HttpGet]
-        public IActionResult LoadBuildingProducts(int? buildingId, string searchQuery)
+        public IActionResult LoadBuildingProducts(int id, int? buildingId)
         {
             if (buildingId.HasValue)
             {
-                string buildingsJson = HttpContext.Session.GetString("Buildings");
-                var settings = new JsonSerializerSettings
-                {
-                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-                };
                 List<BuildingViewModel> buildings = new List<BuildingViewModel>();
-                if (!string.IsNullOrEmpty(buildingsJson))
+
+                buildings = _staticDataProvider.GetBuildings().Result.Select(b => new BuildingViewModel()
                 {
-                    buildings = JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
-                }
-                else
-                {
-                    buildings = _context.Buildings.Include(x=>x.Customers)
-                        .Include(b => b.BuildingProducts)
-                        .ThenInclude(bp => bp.Product)
-                        .Select(b => new BuildingViewModel()
-                        {
-                            Id = b.Id,
-                            Name = b.Name,
-                            BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(b.BuildingProducts),
-                            Customers = App.ReaderSmall.Map<List<CustomerViewModel>>(b.Customers).OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt()).ToList()
-                        })
-                        .ToList();
-                    
-                    HttpContext.Session.SetString("Buildings", JsonConvert.SerializeObject(buildings, settings));
-                }
+                    Id = b.Id,
+                    Name = b.Name,
+                    Customers = App.FullMapper.Map<ICollection<CustomerViewModel>>(b.Customers),
+                    BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(b.BuildingProducts),
+                }).ToList();
 
                 var building = buildings.FirstOrDefault(x => x.Id == buildingId.Value);
                 if (building == null)
                 {
                     return NotFound();
                 }
+
+                var filteredProducts = (id == 0)
+                    ? building.BuildingProducts
+                    : building.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("Чистење на влез за")).ToList();
+
+                building.BuildingProducts = filteredProducts;
                 var documentViewModel = new DocumentViewModel();
                 documentViewModel.Company = _config;
+
                 documentViewModel.Buildings = buildings;
                 documentViewModel.Building = building;
-                return View("Create", documentViewModel);
+                return View(nameof(Create), documentViewModel);
             }
 
             return RedirectToAction(nameof(Create));

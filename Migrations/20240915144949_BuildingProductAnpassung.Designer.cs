@@ -4,6 +4,7 @@ using CleanHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20240915144949_BuildingProductAnpassung")]
+    partial class BuildingProductAnpassung
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -248,6 +251,9 @@ namespace CleanHub.Migrations
                     b.Property<float?>("PriceWithTax")
                         .HasColumnType("real");
 
+                    b.Property<int?>("ProductId")
+                        .HasColumnType("int");
+
                     b.Property<float?>("Quantity")
                         .HasColumnType("real");
 
@@ -263,6 +269,8 @@ namespace CleanHub.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BuildingId");
+
+                    b.HasIndex("ProductId");
 
                     b.ToTable("BuildingProducts");
                 });
@@ -1017,6 +1025,10 @@ namespace CleanHub.Migrations
                         .HasForeignKey("BuildingId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("CleanHub.Entities.Product", null)
+                        .WithMany("BuildingProducts")
+                        .HasForeignKey("ProductId");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Customer", b =>
@@ -1199,6 +1211,11 @@ namespace CleanHub.Migrations
             modelBuilder.Entity("CleanHub.Entities.Document", b =>
                 {
                     b.Navigation("Books");
+                });
+
+            modelBuilder.Entity("CleanHub.Entities.Product", b =>
+                {
+                    b.Navigation("BuildingProducts");
                 });
 
             modelBuilder.Entity("CleanHub.ViewModels.BuildingViewModel", b =>

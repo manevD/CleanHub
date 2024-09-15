@@ -709,9 +709,7 @@ var App = function() {
                     
                     dropMenu.classList.add('scale-up-top-left')
                     var element = document.querySelector('.your-element-class');
-                    if (element && element.classList) {
-                        element.classList.forEach(...);
-                    }
+                  
                     subSubmenu.forEach(subMenu => {
                         // var subDropMenu = subMenu.querySelector('.dropdown-menu.sub-submenu');
                         // console.log(subDropMenu)
@@ -720,9 +718,6 @@ var App = function() {
                     });
                 }
             });
-
-
-            
         }
     }
 

@@ -20,6 +20,5 @@
         public string? ArticleNotes { get; set; }
 
         public string? UnitOfMeasurement { get; set; }
-        public ICollection<BuildingProduct> BuildingProducts { get; set; } = new List<BuildingProduct>();
     }
 }

@@ -13,8 +13,6 @@ public class App : Profile
     {
         var readerSmallMapConfiguration = new MapperConfiguration(cfg =>
         {
-         
-
             cfg.CreateMap<Customer, CustomerViewModel>()
                 .ForMember(dest => dest.CustomerInfo, opts => opts.MapFrom(src => src.CustomerInfo))
                 .ForMember(dest => dest.Email, opts => opts.Ignore())
@@ -59,7 +57,6 @@ public class App : Profile
             #region Product
 
             cfg.CreateMap<Product, ProductViewModel>()
-          .ForMember(dest => dest.BuildingProducts, opts => opts.Ignore())
           .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
           .ForMember(dest => dest.Price, opts => opts.MapFrom(src => src.Price))
           .ForMember(dest => dest.Input, opts => opts.MapFrom(src => src.Input))
@@ -75,6 +72,8 @@ public class App : Profile
             #region BuildingProduct
 
             cfg.CreateMap<BuildingProduct, BuildingProductViewModel>().ReverseMap();
+            cfg.CreateMap<BuildingProduct, Product>().ReverseMap();
+            cfg.CreateMap<BuildingProductViewModel, Product>().ReverseMap();
 
             #endregion
 
@@ -137,10 +136,10 @@ public class App : Profile
     }
 
     #region Properties
-    public static IMapper ReaderSmall { get; set; }
+    public static IMapper ReaderSmall { get; set; } = null!;
 
-    public static IMapper ReaderMapper { get; set; }
-    public static IMapper FullMapper { get; set; }
+    public static IMapper ReaderMapper { get; set; } = null!;
+    public static IMapper FullMapper { get; set; } = null!;
 
     #endregion
 }

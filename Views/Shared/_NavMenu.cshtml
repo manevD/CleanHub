@@ -76,14 +76,14 @@
             </a>
             <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
                 <li class="active">
-                    <a asp-action="Create" asp-controller="Documents" aria-expanded="true" class="dropdown-toggle">
+                    <a asp-action="Create" asp-controller="Documents" aria-expanded="true" asp-route-id="0" class="dropdown-toggle">
                         <div class="">
                             <span>Збирна</span>
                         </div>
                     </a>
                 </li>
                 <li class="active">
-                    <a asp-action="CreatePartially" asp-controller="Documents" aria-expanded="true" class="dropdown-toggle">
+                    <a asp-action="Create" asp-controller="Documents" aria-expanded="true" asp-route-id="1" class="dropdown-toggle">
                         <div class="">
                             <span>Поединечна</span>
                         </div>

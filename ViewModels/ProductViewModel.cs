@@ -22,6 +22,5 @@ namespace CleanHub.ViewModels
         public string? ArticleNotes { get; set; }
 
         public string? UnitOfMeasurement { get; set; }
-        public ICollection<BuildingProductViewModel> BuildingProducts { get; set; } = new List<BuildingProductViewModel>();
     }
 }

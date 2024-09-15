@@ -17,6 +17,7 @@
                     <th>Опис</th>
                     <th class="">Ед.м</th>
                     <th class="">Кол.</th>
+                    <th class="text-center">Данок</th>
                     <th class="text-right">Цена без ДДВ</th>
                     <th class="text-center">Цена</th>
                     <th class="text-center">Вк.распл.</th>
@@ -25,25 +26,43 @@
                 <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
             </thead>
             <tbody>
-                @if (@Model?.Building != null)
+                @if (@Model?.Building != null && @Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
                 {
                     @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                     {
                         <tr>
                             <td class="description">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.ArticleNotes @formattedPreviousMonth" />
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.Quantity" />
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Quantity" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.UnitOfMeasurement" />
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.Price" />
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Tax" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Product.PriceWithTax" />
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Price" />
+                            </td>
+                            <td class="rate">
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].PriceWithTax" />
+                            </td>
+                            <td class="rate">
+                                @{
+                                    var product = Model.Building.BuildingProducts[i];
+                                    var isSpecialProduct = product.ArticleNotes.Contains("Потрошена елект.") ||
+                                    product.ArticleNotes.Contains("Комунална такса") ||
+                                    product.ArticleNotes.Contains("лифт");
+                                    var value = isSpecialProduct
+                                    ? (product.PriceWithTax * Model.Building.Customers.Count)
+                                    : 0;
+                                }
+                                <input type="text" class="form-control form-control-sm" value="@value" />
+                            </td>
+                            <td class="rate">
+                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
                             </td>
                         </tr>
                     }
@@ -52,3 +71,22 @@
         </table>
     </div>
 </div>
+@if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+{
+    <div class="invoice-detail-total">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="totals-row">
+                    <div class="invoice-totals-row invoice-summary-balance-due">
+                        <div class="invoice-summary-label">Вкупно</div>
+                        <div class="invoice-summary-value">
+                            <div class="balance-due-amount">
+                                <span>@Model.Building.BuildingProducts.Sum(x => x.PriceWithTax)</span> <span class="currency">МКД</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
