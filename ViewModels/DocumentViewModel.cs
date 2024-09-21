@@ -10,6 +10,7 @@ namespace CleanHub.ViewModels
         public int? Number { get; set; }
         public DateOnly? Date { get; set; }
         public int? CustomerId { get; set; }
+
         public CustomerViewModel Customer { get; set; }
         [NotMapped]
         public CompanyConfig Company { get; set; }  
@@ -61,6 +62,8 @@ namespace CleanHub.ViewModels
         public List<BookViewModel> Books { get; set; }
         public PaymentStatus PaymentStatus { get; set; }
         public List<BuildingViewModel> Buildings { get; set; }
+        public int BuildingId { get; set; }
+
         public BuildingViewModel Building { get; set; }
     }
 }

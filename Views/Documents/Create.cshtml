@@ -12,44 +12,39 @@
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
-                <div class="row">
+                <form method="post" class="row">
                     <div class="col-xl-9">
                         <div class="invoice-content">
                             <div class="invoice-detail-body">
                                 <div class="invoice-detail-header">
-
                                     <div class="row justify-content-between">
                                         <div class="col-xl-5 invoice-address-company">
-
                                             <h4>Фирма:-</h4>
-
                                             <div class="invoice-address-company-fields">
-
                                                 <div class="form-group row">
                                                     <label for="company-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-name" placeholder="Business Name" value="@Model.Company.Name">
+                                                        <input type="text" class="form-control form-control-sm" id="company-name" value="@Model.Company.Name">
                                                     </div>
                                                 </div>
-
                                                 <div class="form-group row">
                                                     <label for="company-email" class="col-sm-3 col-form-label col-form-label-sm">Е-Маил</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-email" placeholder="@Model.Company.Email" value="@Model.Company.Email">
+                                                        <input type="text" class="form-control form-control-sm" id="company-email" value="@Model.Company.Email">
                                                     </div>
                                                 </div>
 
                                                 <div class="form-group row">
                                                     <label for="company-address" class="col-sm-3 col-form-label col-form-label-sm">Адреса</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-address" placeholder="@Model.Company.Address" value="@Model.Company.Address">
+                                                        <input type="text" class="form-control form-control-sm" id="company-address" value="@Model.Company.Address">
                                                     </div>
                                                 </div>
 
                                                 <div class="form-group row">
                                                     <label for="company-phone" class="col-sm-3 col-form-label col-form-label-sm">Телефон</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-phone" placeholder="@Model.Company.PhoneNumber" value="@Model.Company.PhoneNumber">
+                                                        <input type="text" class="form-control form-control-sm" id="company-phone" value="@Model.Company.PhoneNumber">
                                                     </div>
                                                 </div>
                                             </div>
@@ -60,9 +55,21 @@
                                                 <div class="form-group row">
                                                     <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-name" placeholder="Име на Фирмата/Станарот" value="@Model.Building?.Name">
+                                                        <input type="text" class="form-control form-control-sm" id="client-name" value="@Model.Building?.Name">
                                                     </div>
                                                 </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="invoice-detail-terms" style="display: none;">
+
+                                    <div class="row justify-content-between">
+                                        <div class="col-md-3">
+
+                                            <div class="form-group mb-4">
+                                                <label for="date">Invoice Date</label>
+                                                <input type="text" class="form-control form-control-sm" id="date">
                                             </div>
                                         </div>
                                     </div>
@@ -83,7 +90,7 @@
                                                 <div class="col-sm-12">
                                                     <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
                                                         @plainTextNotice
-                                                       </textarea>
+                                                                   </textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -98,9 +105,8 @@
                                 <div class="form-group mb-0">
                                     <label>Објект</label>
                                     <div class="dropdown selectable-dropdown invoice-select">
-                                        <form method="GET" asp-action="LoadBuildingProducts" asp-controller="Documents" asp-route-id="@routeId">
                                             <input type="hidden" name="id" value="@routeId" />
-                                            <select id="buildingSelect" name="buildingId" class="form-control" onchange="this.form.submit()">
+                                        <select class="form-control" asp-for="@Model.BuildingId" id="buildingDropdown">
                                                 @foreach (var building in Model?.Buildings)
                                                 {
                                                     var isSelected = Model.Building != null && building.Id == Model.Building.Id;
@@ -109,30 +115,83 @@
                                                     </option>
                                                 }
                                             </select>
-                                        </form>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="invoice-actions-btn">
-                                <div class="invoice-action-btn">
-                                    <div class="row">
-                                        <div class="col-xl-12 col-md-4">
-                                            <a href="javascript:void(0);" class="btn btn-success btn-download">Save</a>
+                                <div class="invoice-action-discount">
+                                    <h5>За месец :</h5>
+                                    <div class="invoice-action-discount-fields">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group mb-0">
+                                                    <input type="text" class="form-control form-control-sm" id="due" asp-for="@Model.Date" placeholder="None">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-action-discount">
+                                    <h5>Станари</h5>
+                                    <div class="invoice-action-discount-fields">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group mb-0">
+                                                    @if (@Model.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
+                                                    {
+                                                        @foreach (var customer in @Model.Building.Customers)
+                                                        {
+                                                            <h6>@customer.CustomerInfo</h6>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-group mb-0 discount-amount" style="display: none;">
+                                                    <label for="ratet1">Amount</label>
+                                                    <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
+                                                </div>
+                                                <div class="form-group mb-0 discount-percent" style="display: none;">
+                                                    <label for="ratet2">Percent</label>
+                                                    <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-actions-btn">
+                                    <div class="invoice-action-btn">
+                                        <div class="row">
+                                            <div class="col-xl-12 col-md-4">
+                                                <input type="submit" value="Зачувај" asp-action="Create" asp-controller="Documents" class="btn btn-primary" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
+
+                </form>
             </div>
         </div>
     </div>
 </div>
-
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+    <script>
+        document.getElementById("buildingDropdown").addEventListener("change", function () {
+            var buildingId = this.value;
+            var id = document.querySelector('input[name="id"]').value; // Verstecktes Feld für id
+
+            // URL mit id zuerst, dann buildingId
+            var url = '@Url.Action("Create")' + '?id=' + id + '&buildingId=' + buildingId;
+
+            // GET-Anfrage ausführen
+            window.location.href = url;
+        });
+    </script>
 }

@@ -27,13 +27,13 @@ namespace CleanHub.Providers
             if (!_cache.TryGetValue(cacheKey, out List<Building> buildings))
             {
                 buildings = await _context.Buildings.Include(x => x.Customers)
-                   .Include(b => b.BuildingProducts)
+                   .Include(b => b.BuildingProducts).AsNoTrackingWithIdentityResolution()
                    .ToListAsync();
 
                 var cacheEntryOptions = new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                    SlidingExpiration = TimeSpan.FromHours(2)
+                    SlidingExpiration = TimeSpan.FromSeconds(10)
                 };
                 _cache.Set(cacheKey, buildings, cacheEntryOptions);
             }
@@ -53,7 +53,7 @@ namespace CleanHub.Providers
                 var cacheEntryOptions = new MemoryCacheEntryOptions
                 {
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10),
-                    SlidingExpiration = TimeSpan.FromHours(24)
+                    SlidingExpiration = TimeSpan.FromSeconds(10)
                 };
 
                 _cache.Set(cacheKey, products, cacheEntryOptions);

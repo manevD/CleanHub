@@ -47,13 +47,23 @@ namespace CleanHub.Controllers
         // GET: Buildings
         public async Task<IActionResult> Index()
         {
-            List<BuildingViewModel> buildings;
-            buildings = App.FullMapper.Map<List<BuildingViewModel>>(_staticDataProvider.GetBuildings().Result.Select(x => new BuildingViewModel()
+            string buildingsJson = HttpContext.Session.GetString("Buildings");
+            var settings = new JsonSerializerSettings
             {
-                Name = x.Name,
-                ReserveFund = x.ReserveFund,
-                BankAccount = x.BankAccount
-            }));
+                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
+            };
+            List<BuildingViewModel> buildings;
+            if (!string.IsNullOrEmpty(buildingsJson))
+            {
+                buildings = JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
+            }
+            else
+            {
+                var buildingssEntity = await _context.Buildings.AsNoTracking().ToListAsync();
+                buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildingssEntity);
+                HttpContext.Session.SetString("Buildings", JsonConvert.SerializeObject(buildings, settings));
+            }
+
             return View(buildings);
         }
 
@@ -64,19 +74,26 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var building = _staticDataProvider.GetBuildings().Result.FirstOrDefault(c => c.Id == id);
+
+            var building = await _context.Buildings.Include(x => x.Customers).FirstOrDefaultAsync(c => c.Id == id);
 
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
-            if (buildingViewModel.Customers != null && buildingViewModel.Customers.Any())
+
+            if (buildingViewModel != null)
             {
-                buildingViewModel.Customers = buildingViewModel.Customers
-                    .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
-                    .ToList();
+                if (buildingViewModel.Customers != null && buildingViewModel.Customers.Any())
+                {
+                    buildingViewModel.Customers = buildingViewModel.Customers
+                        .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
+                        .ToList();
+                }
+
+                ViewBag.Month = Month;
+                ViewBag.Year = Year;
+                return View(buildingViewModel);
             }
 
-            ViewBag.Month = Month;
-            ViewBag.Year = Year;
-            return View(buildingViewModel);
+            return RedirectToAction(nameof(Index));
         }
 
         // GET: Buildings/Create
@@ -154,13 +171,12 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var buildingEntity =
-                 App.FullMapper.Map<BuildingViewModel>(_staticDataProvider.GetBuildings().Result
-                     .FirstOrDefault(x => x.Id == id));
+            var buildingEntity = await _context.Buildings.Include(x => x.BuildingProducts).FirstOrDefaultAsync(c => c.Id == id);
+            var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
 
-            if (!buildingEntity.BuildingProducts.Any())
+            if (!building.BuildingProducts.Any())
             {
-                buildingEntity.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_staticDataProvider.GetProducts());
+                building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_staticDataProvider.GetProducts());
                 var bProducts = new List<BuildingProductViewModel>
                     {
                         new ()
@@ -190,10 +206,10 @@ namespace CleanHub.Controllers
                                 UnitOfMeasurement = "br.",
                         }
                     };
-                buildingEntity.BuildingProducts.AddRange(bProducts);
+                building.BuildingProducts.AddRange(bProducts);
             }
 
-            return View(buildingEntity);
+            return View(building);
         }
 
         // POST: Buildings/Edit/5
@@ -258,7 +274,7 @@ namespace CleanHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var building = _staticDataProvider.GetBuildings().Result.FirstOrDefault(x => x.Id == id);
+            var building = _context.Buildings.FirstOrDefault(m => m.Id == id);
             if (building != null)
             {
                 _context.Buildings.Remove(building);
@@ -276,7 +292,7 @@ namespace CleanHub.Controllers
         [HttpPost, ActionName("SendInvoiceEmail")]
         public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
         {
-            var customers = _staticDataProvider.GetBuildings().Result.SelectMany(d => d.Customers).Where(x => x.BuildingId == id);
+            var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers).SelectMany(d => d.Customers!).ToList();
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
             {
                 foreach (var item in customers.Where(x => x.Email != null))

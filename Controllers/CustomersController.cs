@@ -47,7 +47,7 @@ namespace CleanHub.Controllers
                 var customersEntity = await _context.Customers.AsNoTracking().Select(c => new Customer
                 {
                     Id = c.Id,
-                    CustomerInfo = c.CustomerInfo ?? string.Empty, // Handle null
+                    CustomerInfo = c.CustomerInfo ?? string.Empty, 
                     Email = c.Email,
                     PhoneNumber = c.PhoneNumber,
                     Inactive = c.Inactive,

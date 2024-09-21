@@ -174,8 +174,14 @@ namespace CleanHub.Controllers
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
 
-        // GET: Invoices/Create
-        public IActionResult Create(int id)
+        /// <summary>
+        /// 0 Zbirna 1 Poedinecna
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="buildingId"></param>
+        /// <returns></returns>
+        [HttpGet]
+        public IActionResult Create(int? id, int? buildingId)
         {
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
@@ -186,13 +192,29 @@ namespace CleanHub.Controllers
                 {
                     Id = b.Id,
                     Name = b.Name,
+                    Customers = b.Customers,
+                    BuildingProducts = b.BuildingProducts
                 })
                 .ToList();
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-            documentViewModel.Building = new BuildingViewModel();
+            if (buildingId.HasValue)
+            {
+                documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId);
+
+            }
+            else
+            {
+                documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
+            }
+            var filteredProducts = (id == 0)
+                ? documentViewModel.Building.BuildingProducts
+                : documentViewModel.Building.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
+
+            documentViewModel.Building.BuildingProducts = filteredProducts;
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
+
         // GET: Invoices/Create
         public IActionResult CreatePartially()
         {
@@ -208,48 +230,14 @@ namespace CleanHub.Controllers
                 })
                 .ToList();
             HttpContext.Session.Remove("Buildings");
-
+          
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
             return View(nameof(Create), documentViewModel);
         }
 
-        [HttpGet]
-        public IActionResult LoadBuildingProducts(int id, int? buildingId)
-        {
-            if (buildingId.HasValue)
-            {
-                List<BuildingViewModel> buildings = new List<BuildingViewModel>();
 
-                buildings = _staticDataProvider.GetBuildings().Result.Select(b => new BuildingViewModel()
-                {
-                    Id = b.Id,
-                    Name = b.Name,
-                    Customers = App.FullMapper.Map<ICollection<CustomerViewModel>>(b.Customers),
-                    BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(b.BuildingProducts),
-                }).ToList();
-
-                var building = buildings.FirstOrDefault(x => x.Id == buildingId.Value);
-                if (building == null)
-                {
-                    return NotFound();
-                }
-
-                var filteredProducts = (id == 0)
-                    ? building.BuildingProducts
-                    : building.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("Чистење на влез за")).ToList();
-
-                building.BuildingProducts = filteredProducts;
-                var documentViewModel = new DocumentViewModel();
-                documentViewModel.Company = _config;
-
-                documentViewModel.Buildings = buildings;
-                documentViewModel.Building = building;
-                return View(nameof(Create), documentViewModel);
-            }
-
-            return RedirectToAction(nameof(Create));
-        }
+  
         // POST: Invoices/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.

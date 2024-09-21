@@ -25,7 +25,14 @@ public class App : Profile
         });
         var readerMapConfiguration = new MapperConfiguration(cfg =>
         {
-            cfg.CreateMap<Document, DocumentViewModel>().ReverseMap();
+            cfg.CreateMap<Document, DocumentViewModel>()
+                .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
+
+                // Ignoriere die anderen Felder, die nur im ViewModel sind
+                .ForMember(dest => dest.Buildings, opts => opts.Ignore()) // Liste von Buildings
+                .ForMember(dest => dest.Building, opts => opts.Ignore())  // Einzelnes Building-Objekt
+
+                .ReverseMap();
             //.ForMember(dest => dest.Number, opts => opts.MapFrom(src => src.Number))
             //.ForMember(dest => dest.ToDocument, opts => opts.MapFrom(src => src.ToDocument))
             //.ForMember(dest => dest.Company, opts => opts.Ignore())
@@ -117,8 +124,8 @@ public class App : Profile
                       .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
                       .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default
                       .ForMember(dest => dest.Buildings, opt => opt.Ignore()) 
-                      .ForMember(dest => dest.Building, opt => opt.Ignore()) 
-
+                      .ForMember(dest => dest.Building, opt => opt.Ignore())
+                      .ForMember(dest => dest.BuildingId, opt => opt.Ignore())
                       .ForMember(dest => dest.Books, opt => opt.MapFrom(src => src.Books));
             #endregion
 
