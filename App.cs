@@ -63,17 +63,7 @@ public class App : Profile
 
             #region Product
 
-            cfg.CreateMap<Product, ProductViewModel>()
-          .ForMember(dest => dest.Id, opts => opts.MapFrom(src => src.Id))
-          .ForMember(dest => dest.Price, opts => opts.MapFrom(src => src.Price))
-          .ForMember(dest => dest.Input, opts => opts.MapFrom(src => src.Input))
-          .ForMember(dest => dest.Output, opts => opts.MapFrom(src => src.Output))
-          .ForMember(dest => dest.ArticleNotes, opts => opts.MapFrom(src => src.ArticleNotes))
-          .ForMember(dest => dest.UnitOfMeasurement, opts => opts.MapFrom(src => src.UnitOfMeasurement))
-          .ForMember(dest => dest.PriceWithTax, opts => opts.MapFrom(src => src.PriceWithTax))
-          .ForMember(dest => dest.Tax, opts => opts.MapFrom(src => src.Tax))
-          .ForMember(dest => dest.Total, opts => opts.MapFrom(src => src.Total))
-          .ForMember(dest => dest.Quantity, opts => opts.MapFrom(src => src.Quantity)).ReverseMap();
+            cfg.CreateMap<Product, ProductViewModel>().ReverseMap();
             #endregion
 
             #region BuildingProduct

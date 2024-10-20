@@ -5,7 +5,6 @@
 
     // Calculate the previous month
     DateTime previousMonthDate = currentDate.AddMonths(-1);
-
     // Format the previous month date
     string formattedPreviousMonth = previousMonthDate.ToString("MM/yyyy");
 }
@@ -17,6 +16,7 @@
                     <th>Опис</th>
                     <th class="">Ед.м</th>
                     <th class="text-right">Цена без ДДВ</th>
+                    <th class="text-right">ДДВ</th>
                     <th class="text-center">Цена</th>
                     <th class="text-center">Вк.распл.</th>
                     <th class="text-center">Вкупно</th>
@@ -37,22 +37,16 @@
                             </td>
 
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].Price" />
+                                <input type="text" class="form-control form-control-sm" id="Price_@i" value="@Model.Building.BuildingProducts[i].Price" />
                             </td>
                             <td class="rate">
-                                <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].PriceWithTax" />
+                                <input type="text" class="form-control form-control-sm" id="Tax_@i" value="@Model.Building.BuildingProducts[i].Tax" />
                             </td>
                             <td class="rate">
-                                @{
-                                    var product = Model.Building.BuildingProducts[i];
-                                    var isSpecialProduct = product.ArticleNotes.Contains("Потрошена елект.") ||
-                                    product.ArticleNotes.Contains("Комунална такса") ||
-                                    product.ArticleNotes.Contains("лифт");
-                                    var value = isSpecialProduct
-                                    ? (product.PriceWithTax * Model.Building.Customers.Count)
-                                    : 0;
-                                }
-                                <input type="text" class="form-control form-control-sm" value="@value" />
+                                <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                            </td>
+                            <td class="rate">
+                                <input type="text" class="form-control form-control-sm" id="Total_@i" value="@Model.Building.BuildingProducts[i].Total" />
                             </td>
                             <td class="rate">
                                 <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
@@ -74,4 +68,85 @@
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get all rows in the tbody
+            var rows = document.querySelectorAll('tbody tr');
+
+            // Get the number of customers
+            var customerCount = @Model.Building.Customers.Count;
+
+            // Function to calculate and update values
+            function calculatePrice(row) {
+                // Get elements in the row
+                var priceInput = row.querySelector('input[id^="Price_"]');
+                var taxInput = row.querySelector('input[id^="Tax_"]');
+                var priceWithTaxInput = row.querySelector('input[id^="PriceWithTax_"]');
+                var totalInput = row.querySelector('input[id^="Total_"]');
+
+                // Parse total value
+                var total = parseFloat(totalInput.value) || 0;
+
+                // Debugging: Log total value
+                console.log("Total:", total);
+
+                // If total is provided, calculate price per customer
+                if (total > 0) {
+                    var pricePerCustomer = total / customerCount;
+                    // Round to the nearest whole number
+                    priceInput.value = Math.round(pricePerCustomer);
+                }
+
+                // Recalculate PriceWithTax based on the new Price
+                var price = parseFloat(priceInput.value) || 0; // Price без ДДВ
+                var tax = parseFloat(taxInput.value) || 0; // ДДВ
+
+                // Debugging: Log price and tax values
+                console.log("Price:", price, "Tax:", tax);
+
+                // Calculate PriceWithTax
+                var priceWithTax;
+                if (tax === 0 || tax === '') {
+                    // If tax is 0 or empty, set PriceWithTax to 0
+                    priceWithTax = 0;
+                } else {
+                    // Calculate tax amount and add it to the price
+                    var taxAmount = (price * tax) / 100; // Calculate tax based on the price
+                    priceWithTax = price + taxAmount; // Цена без ДДВ + ДДВ = Цена
+                }
+
+                // Round PriceWithTax to the nearest whole number
+                priceWithTaxInput.value = Math.round(priceWithTax);
+
+                // Debugging: Log the PriceWithTax
+                console.log("PriceWithTax:", priceWithTaxInput.value);
+            }
+
+            // For each row, add input event listeners
+            rows.forEach(function (row) {
+                // Get elements in the row
+                var totalInput = row.querySelector('input[id^="Total_"]');
+                var taxInput = row.querySelector('input[id^="Tax_"]');
+
+                // Add input event listeners
+                totalInput.addEventListener('input', function () {
+                    calculatePrice(row);
+                });
+
+                taxInput.addEventListener('input', function () {
+                    calculatePrice(row);
+                });
+
+                // Perform initial calculation on page load
+                calculatePrice(row);
+            });
+        });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
 }

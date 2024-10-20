@@ -7,9 +7,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
-using System.Text;
-using CleanHub.Extensions;
-using CleanHub.Providers.Interfaces;
 
 namespace CleanHub.Controllers
 {
@@ -18,12 +15,10 @@ namespace CleanHub.Controllers
         private readonly ApplicationDbContext _context;
         private readonly CompanyConfig _config;
         private SMTPConfig _smtpConfig;
-        private readonly IStaticDataProvider _staticDataProvider;
 
-        public DocumentsController(IStaticDataProvider staticDataProvider, ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
+        public DocumentsController( ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {
             _context = context;
-            _staticDataProvider = staticDataProvider;
             _smtpConfig = config.Value;
             _config = companyConfig.Value;
         }
@@ -125,6 +120,8 @@ namespace CleanHub.Controllers
         }
 
         // GET: Documents
+
+        [Route("Сметки")]
         public async Task<IActionResult> Index()
         {
             string documentsJson = HttpContext.Session.GetString("Documents");
@@ -187,7 +184,7 @@ namespace CleanHub.Controllers
             ViewBag.RouteId = id;
 
             documentViewModel.Company = _config;
-            var buildings = _staticDataProvider.GetBuildings().Result
+            var buildings = _context.Buildings.Include(x=>x.BuildingProducts)
                 .Select(b => new Building()
                 {
                     Id = b.Id,
@@ -200,17 +197,29 @@ namespace CleanHub.Controllers
             if (buildingId.HasValue)
             {
                 documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId);
-
             }
             else
             {
                 documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
             }
+
             var filteredProducts = (id == 0)
                 ? documentViewModel.Building.BuildingProducts
                 : documentViewModel.Building.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
 
-            documentViewModel.Building.BuildingProducts = filteredProducts;
+            if (filteredProducts.Any())
+            {
+                documentViewModel.Building.BuildingProducts = filteredProducts;
+            }
+            else
+            {
+                var basicProducts = (id == 0)
+                    ? _context.Products.ToList()
+                    : _context.Products.ToList().Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
+
+                documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
+            }
+
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
@@ -304,10 +313,8 @@ namespace CleanHub.Controllers
                     {
                         return NotFound();
                     }
-                    else
-                    {
-                        throw;
-                    }
+
+                    throw;
                 }
                 return RedirectToAction(nameof(Index));
             }

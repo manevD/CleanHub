@@ -45,10 +45,6 @@ namespace CleanHub.ViewModels
                 {
                     _dueDate = value;
                 }
-                else
-                {
-                    return;
-                }
             }
         }
 

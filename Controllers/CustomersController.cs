@@ -30,6 +30,8 @@ namespace CleanHub.Controllers
         }
 
         // GET: Customers
+        [Route("Станари")]
+        [Route("")]
         public async Task<IActionResult> Index()
         {
             string customersJson = HttpContext.Session.GetString("Customers");
@@ -271,12 +273,10 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            else
-            {
-                _context.Customers.Remove(customer);   
-               await  _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Customers");
-            }
+
+            _context.Customers.Remove(customer);   
+            await  _context.SaveChangesAsync();
+            HttpContext.Session.Remove("Customers");
 
             return RedirectToAction("Index");
         }

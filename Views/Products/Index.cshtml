@@ -1,0 +1,61 @@
+﻿@model IEnumerable<CleanHub.ViewModels.ProductViewModel>
+@{
+    ViewData["Title"] = "Продукти";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<hr />
+
+<div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
+    <p>
+        <a class="btn btn-primary" asp-action="Create">Креирај Продукт</a>
+    </p>
+    </br>
+
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Опис</th>
+                        <th>Ед.м</th>
+                        <th>Количина</th>
+                        <th>Цена без ДДВ</th>
+                        <th>ДДВ</th>
+                        <th>Цена</th>
+                        <th>Функции</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.ArticleNotes)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.UnitOfMeasurement)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.Quantity)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.Price)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.Tax)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => product.PriceWithTax)
+                            </td>
+                            <td>
+                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="Products" asp-route-id="@product.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></a>
+                                <a class="badge badge-light-danger text-start action-delete" asp-action="Delete" asp-controller="Products" asp-route-id="@product.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

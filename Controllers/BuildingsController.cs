@@ -13,10 +13,7 @@ using Newtonsoft.Json;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
-using System.Text;
 using CleanHub.Extensions;
-using CleanHub.Providers;
-using CleanHub.Providers.Interfaces;
 
 namespace CleanHub.Controllers
 {
@@ -29,14 +26,12 @@ namespace CleanHub.Controllers
         private readonly ICompositeViewEngine _viewEngine;
         private readonly IWebHostEnvironment _env;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IStaticDataProvider _staticDataProvider;
 
         private static int Month = DateTime.Now.Month;
         private static int Year = DateTime.Now.Year;
-        public BuildingsController(IStaticDataProvider staticDataProvider, ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig> config)
+        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig> config)
         {
             _httpContextAccessor = httpContextAccessor;
-            _staticDataProvider = staticDataProvider;
             _env = env;
             _viewEngine = viewEngine;
             _context = context;
@@ -44,6 +39,7 @@ namespace CleanHub.Controllers
             _config = config.Value;
         }
 
+        [Route("Згради")]
         // GET: Buildings
         public async Task<IActionResult> Index()
         {
@@ -101,7 +97,7 @@ namespace CleanHub.Controllers
         {
             BuildingViewModel buildingViewModel = new BuildingViewModel();
 
-            buildingViewModel.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_staticDataProvider.GetProducts().Result);
+            buildingViewModel.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_context.BuildingProducts.ToList());
 
             var bProducts = new List<BuildingProductViewModel>
                 {
@@ -176,7 +172,7 @@ namespace CleanHub.Controllers
 
             if (!building.BuildingProducts.Any())
             {
-                building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_staticDataProvider.GetProducts());
+                building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_context.Products.ToList());
                 var bProducts = new List<BuildingProductViewModel>
                     {
                         new ()
@@ -204,6 +200,32 @@ namespace CleanHub.Controllers
                                 Price = 0,
                                 ArticleNotes = string.Empty,
                                 UnitOfMeasurement = "br.",
+                        },
+                         new ()
+                        {
+                                Id = 0,
+                                Input = 0,
+                                Output = 0,
+                                Quantity = 1,
+                                PriceWithTax = 0,
+                                Tax = 18,
+                                Total = 0,
+                                Price = 0,
+                                ArticleNotes = string.Empty,
+                                UnitOfMeasurement = "br.",
+                        },
+                        new ()
+                        {
+                            Id = 0,
+                            Input = 0,
+                            Output = 0,
+                            Quantity = 1,
+                            PriceWithTax = 0,
+                            Tax = 18,
+                            Total = 0,
+                            Price = 0,
+                            ArticleNotes = string.Empty,
+                            UnitOfMeasurement = "br.",
                         }
                     };
                 building.BuildingProducts.AddRange(bProducts);
@@ -254,7 +276,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var building = _staticDataProvider.GetBuildings().Result.FirstOrDefault(m => m.Id == id);
+            var building = _context.Buildings.FirstOrDefault(m => m.Id == id);
             if (building == null)
             {
                 return NotFound();
@@ -286,7 +308,7 @@ namespace CleanHub.Controllers
 
         private bool BuildingExists(int id)
         {
-            return _staticDataProvider.GetBuildings().Result.Any(e => e.Id == id);
+            return _context.Buildings.Any(e => e.Id == id);
         }
 
         [HttpPost, ActionName("SendInvoiceEmail")]

@@ -1,5 +1,4 @@
-﻿using CleanHub.Entities;
-
+﻿
 namespace CleanHub.ViewModels
 {
     public class ProductViewModel

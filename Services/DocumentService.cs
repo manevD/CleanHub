@@ -41,23 +41,7 @@ namespace CleanHub.Services
             if (match.Success)
             {
                 year = int.Parse(match.Value);
-                Console.WriteLine("Year: " + year);
             }
-            //Regex regex = new Regex(@"(?:\b(\d{1,2})/(\d{4})\b|\((\d{1,2})\) is the month and (\d{4}) is the year)");
-            //Match match = regex.Match(input);
-            //if (match.Success)
-            //{
-            //    if (match.Groups[2].Success)
-            //    {
-            //        // First format (e.g., "12/2020")
-            //        year = int.Parse(match.Groups[2].Value);
-            //    }
-            //    else if (match.Groups[4].Success)
-            //    {
-            //        // Second format (e.g., "(08) is the month and 2021 is the year")
-            //        year = int.Parse(match.Groups[4].Value);
-            //    }
-            //}
             return year;
         }
 

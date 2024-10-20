@@ -1,0 +1,124 @@
+﻿@model CleanHub.ViewModels.ProductViewModel
+
+@{
+    ViewData["Title"] = "Измени Продукт";
+}
+
+<hr />
+
+<div class="tab-content" id="animateLineContent-4">
+    <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 layout-spacing">
+                <form class="section general-info" asp-action="Edit" id="customerForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <div class="info">
+                        <h6 class="">Информации за Продуктот</h6>
+                        <div class="row">
+                            <div class="col-lg-11 mx-auto">
+                                <div class="row">
+                                    <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
+                                        <div class="form">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис</label>
+                                                        <input asp-for="ArticleNotes" type="text" class="form-control mb-3" placeholder="Опис">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Количина</label>
+                                                        <input asp-for="Quantity" type="text" class="form-control mb-3" id="Quantity" placeholder="Количина">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Ед.м</label>
+                                                        <input asp-for="UnitOfMeasurement" type="text" class="form-control mb-3" id="UnitOfMeasurement" placeholder="Ед.м">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>ДДВ</label>
+                                                        <input asp-for="Tax" type="text" class="form-control mb-3" id="Tax" placeholder="ДДВ">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Цена</label>
+                                                        <input asp-for="Price" type="text" class="form-control mb-3" id="Price" placeholder="Цена">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Цена сo ДДВ</label>
+                                                        <input asp-for="PriceWithTax" type="text" class="form-control mb-3" id="PriceWithTax" placeholder="Цена сo ДДВ" readonly>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="form-group text-end">
+                                                        <input type="submit" value="Зачувај" class="btn btn-primary" />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get the price, tax, and price with tax input elements
+            var priceInput = document.getElementById('Price');
+            var taxInput = document.getElementById('Tax');
+            var priceWithTaxInput = document.getElementById('PriceWithTax');
+
+            function calculatePriceWithTax() {
+                // Get the values of price and tax
+                var price = parseFloat(priceInput.value) || 0;
+                var tax = parseFloat(taxInput.value);
+
+                // If the tax is empty or not a valid number, set PriceWithTax to 0
+                if (isNaN(tax)) {
+                    priceWithTaxInput.value = 0;
+                } else {
+                    // Calculate the price with tax
+                    var priceWithTax = price + (price * tax / 100);
+
+                    // Convert to a whole number by rounding
+                    var wholeNumberPriceWithTax = Math.round(priceWithTax);
+
+                    // Set the whole number value in the PriceWithTax field
+                    priceWithTaxInput.value = wholeNumberPriceWithTax;  // Store as an integer (whole number)
+                }
+            }
+
+            // Add event listeners to recalculate when the price or tax fields change
+            priceInput.addEventListener('input', calculatePriceWithTax);
+            taxInput.addEventListener('input', calculatePriceWithTax);
+
+            // Perform initial calculation in case the form is loaded with values
+            calculatePriceWithTax();
+        });
+    </script>
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
