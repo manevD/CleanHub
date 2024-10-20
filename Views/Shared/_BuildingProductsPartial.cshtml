@@ -90,9 +90,6 @@
                 // Parse total value
                 var total = parseFloat(totalInput.value) || 0;
 
-                // Debugging: Log total value
-                console.log("Total:", total);
-
                 // If total is provided, calculate price per customer
                 if (total > 0) {
                     var pricePerCustomer = total / customerCount;
@@ -101,28 +98,22 @@
                 }
 
                 // Recalculate PriceWithTax based on the new Price
-                var price = parseFloat(priceInput.value) || 0; // Price без ДДВ
-                var tax = parseFloat(taxInput.value) || 0; // ДДВ
-
-                // Debugging: Log price and tax values
-                console.log("Price:", price, "Tax:", tax);
+                var price = parseFloat(priceInput.value) || 0; // Price without VAT
+                var tax = parseFloat(taxInput.value) || 0; // VAT
 
                 // Calculate PriceWithTax
                 var priceWithTax;
-                if (tax === 0 || tax === '') {
-                    // If tax is 0 or empty, set PriceWithTax to 0
-                    priceWithTax = 0;
+                if (tax === 0) {
+                    // If tax is 0, set PriceWithTax to Price
+                    priceWithTax = price;
                 } else {
                     // Calculate tax amount and add it to the price
                     var taxAmount = (price * tax) / 100; // Calculate tax based on the price
-                    priceWithTax = price + taxAmount; // Цена без ДДВ + ДДВ = Цена
+                    priceWithTax = price + taxAmount; // Price without VAT + VAT = Total Price
                 }
 
                 // Round PriceWithTax to the nearest whole number
                 priceWithTaxInput.value = Math.round(priceWithTax);
-
-                // Debugging: Log the PriceWithTax
-                console.log("PriceWithTax:", priceWithTaxInput.value);
             }
 
             // For each row, add input event listeners
@@ -145,7 +136,6 @@
             });
         });
     </script>
-
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }

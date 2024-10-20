@@ -6,6 +6,12 @@
         ? string.Empty
         : System.Text.RegularExpressions.Regex.Replace(invoiceNotice, "<.*?>", string.Empty);
     var routeId = @ViewBag.RouteId;
+    DateTime currentDate = DateTime.Now;
+
+    // Calculate the previous month
+    DateTime previousMonthDate = currentDate.AddMonths(-1);
+    // Format the previous month date
+    string formattedPreviousMonth = previousMonthDate.ToString("MM/yyyy");
 }
 
 <div class="middle-content container-xxl p-0">
@@ -76,8 +82,69 @@
                                 </div>
                                 @if (@Model?.Building != null)
                                 {
-                                    @Html.Partial("_BuildingProductsPartial", @Model)
-                                }
+                                    <div class="invoice-detail-items">
+                                        <div class="table-responsive">
+                                            <table class="table item-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Опис</th>
+                                                        <th class="">Ед.м</th>
+                                                        <th class="text-right">Цена без ДДВ</th>
+                                                        <th class="text-right">ДДВ</th>
+                                                        <th class="text-center">Цена</th>
+                                                        <th class="text-center">Вк.распл.</th>
+                                                        <th class="text-center">Вкупно</th>
+                                                    </tr>
+                                                    <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
+                                                </thead>
+                                                <tbody>
+                                                    @if (@Model?.Building != null && @Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+                                                    {
+                                                        @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
+                                                        {
+                                                            <tr>
+                                                                <td class="description">
+                                                                    <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
+                                                                </td>
+
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" value="@Model.Building.BuildingProducts[i].Price" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" value="@Model.Building.BuildingProducts[i].Total" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                </td>
+                                                            </tr>
+                                                        }
+                                                    }
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    @if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+                                    {
+                                        <div class="invoice-detail-total" style="text-align: right;">
+                                            <div class="invoice-summary-label" style="color:black;">Вкупно</div>
+                                            <div class="invoice-summary-value">
+                                                <div class="balance-due-amount">
+                                                    <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                    @*                                     @Html.Partial("_BuildingProductsPartial", @Model)
+                                *@                                }
 
                                 <div class="invoice-detail-note">
 
@@ -90,7 +157,7 @@
                                                 <div class="col-sm-12">
                                                     <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
                                                         @plainTextNotice
-                                                                   </textarea>
+                                                    </textarea>
                                                 </div>
                                             </div>
                                         </div>
@@ -105,16 +172,16 @@
                                 <div class="form-group mb-0">
                                     <label>Објект</label>
                                     <div class="dropdown selectable-dropdown invoice-select">
-                                            <input type="hidden" name="id" value="@routeId" />
+                                        <input type="hidden" name="id" value="@routeId" />
                                         <select class="form-control" asp-for="@Model.BuildingId" id="buildingDropdown">
-                                                @foreach (var building in Model?.Buildings)
-                                                {
-                                                    var isSelected = Model.Building != null && building.Id == Model.Building.Id;
-                                                    <option value="@building.Id" selected="@isSelected">
-                                                        @building.Name
-                                                    </option>
-                                                }
-                                            </select>
+                                            @foreach (var building in Model?.Buildings)
+                                            {
+                                                var isSelected = Model.Building != null && building.Id == Model.Building.Id;
+                                                <option value="@building.Id" selected="@isSelected">
+                                                    @building.Name
+                                                </option>
+                                            }
+                                        </select>
                                     </div>
                                 </div>
 
@@ -183,6 +250,106 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Get all rows in the tbody
+            var rows = document.querySelectorAll('tbody tr');
+
+            // Get the number of customers
+            var customerCount = @Model.Building.Customers.Count;
+
+            // Function to calculate and update values
+            function calculatePrice(row) {
+                // Get elements in the row
+                var priceInput = row.querySelector('input[id^="Price_"]');
+                var taxInput = row.querySelector('input[id^="Tax_"]');
+                var priceWithTaxInput = row.querySelector('input[id^="PriceWithTax_"]');
+                var totalInput = row.querySelector('input[id^="Total_"]');
+                var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]'); // This should match PriceWithTaxInput
+
+                // Parse total value
+                var total = parseFloat(totalInput.value) || 0;
+
+                // If total is provided, calculate price per customer
+                if (total > 0) {
+                    var pricePerCustomer = total / customerCount;
+                    // Round to two decimal places
+                    priceInput.value = (Math.round(pricePerCustomer * 100) / 100).toFixed(2);
+                }
+
+                // Recalculate PriceWithTax based on the new Price
+                var price = parseFloat(priceInput.value) || 0; // Price without VAT
+                var tax = parseFloat(taxInput.value) || 0; // VAT
+
+                // Calculate PriceWithTax
+                var priceWithTax;
+                if (tax === 0) {
+                    // If tax is 0, set PriceWithTax to Price
+                    priceWithTax = price;
+                } else {
+                    // Calculate tax amount and add it to the price
+                    var taxAmount = (price * tax) / 100; // Calculate tax based on the price
+                    priceWithTax = price + taxAmount; // Price without VAT + VAT = Total Price
+                }
+
+                // Round PriceWithTax to two decimal places
+                priceWithTaxInput.value = (Math.round(priceWithTax * 100) / 100).toFixed(2);
+
+                // Ensure priceWithTaxTotal matches priceWithTaxInput
+                priceWithTaxTotal.value = priceWithTaxInput.value;
+
+                // Update the total PriceWithTax sum
+                updatePriceWithTaxTotal();
+            }
+
+            // Function to calculate and update the sum of all PriceWithTaxTotal values
+            function updatePriceWithTaxTotal() {
+                var totalSum = 0;
+
+                // Loop through all rows and sum the PriceWithTaxTotal values
+                rows.forEach(function (row) {
+                    var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]');
+                    var priceWithTax = parseFloat(priceWithTaxTotal.value) || 0;
+                    totalSum += priceWithTax;
+                });
+
+                // Round the total sum: round up if the decimal value >= 5, else round down
+                var roundedSum = Math.round(totalSum);
+
+                // Update the total sum on the page (replace `#totalPriceWithTax` with your total span's ID or class)
+                document.querySelector('#totalPriceWithTax').innerText = roundedSum;
+            }
+
+            // For each row, add input event listeners
+            rows.forEach(function (row) {
+                // Get elements in the row
+                var priceInput = row.querySelector('input[id^="Price_"]');
+                var totalInput = row.querySelector('input[id^="Total_"]');
+                var taxInput = row.querySelector('input[id^="Tax_"]');
+
+                // Add input event listeners
+                priceInput.addEventListener('input', function () {
+                    calculatePrice(row);
+                });
+
+                totalInput.addEventListener('input', function () {
+                    calculatePrice(row);
+                });
+
+                taxInput.addEventListener('input', function () {
+                    calculatePrice(row);
+                });
+
+                // Perform initial calculation on page load
+                calculatePrice(row);
+            });
+
+            // Perform initial sum calculation on page load
+            updatePriceWithTaxTotal();
+        });
+
+
+
+
         document.getElementById("buildingDropdown").addEventListener("change", function () {
             var buildingId = this.value;
             var id = document.querySelector('input[name="id"]').value; // Verstecktes Feld für id
