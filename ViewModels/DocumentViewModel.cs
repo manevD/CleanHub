@@ -1,5 +1,6 @@
 ﻿using CleanHub.Config;
 using CleanHub.Entities;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CleanHub.ViewModels
@@ -49,9 +50,7 @@ namespace CleanHub.ViewModels
         }
 
         public float? TotalInput { get; set; }
-
-        public float? TotalOutput { get; set; } = 0.0f;
-
+        public float? TotalOutput { get; set; }
         public DateTime? CreatedTime { get; set; }
         public bool IsForPdf { get; set; }
         public DateTime? DateTimeChanged { get; set; }
@@ -59,7 +58,7 @@ namespace CleanHub.ViewModels
         public PaymentStatus PaymentStatus { get; set; }
         public List<BuildingViewModel> Buildings { get; set; }
         public int BuildingId { get; set; }
+        public BuildingViewModel Building { get; set; } = new BuildingViewModel();
 
-        public BuildingViewModel Building { get; set; }
     }
 }

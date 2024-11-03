@@ -1,4 +1,4 @@
-﻿using CleanHub.Entities;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CleanHub.ViewModels
 {
@@ -13,6 +13,9 @@ namespace CleanHub.ViewModels
 
         public float? Quantity { get; set; }
 
+        [Display(Name = "Price with Tax")]
+        [DataType(DataType.Currency)]
+        [DisplayFormat(DataFormatString = "{0:C2}", ApplyFormatInEditMode = true)]
         public float? PriceWithTax { get; set; }
         public float Price { get; set; }
 

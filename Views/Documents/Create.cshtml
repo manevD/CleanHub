@@ -104,23 +104,23 @@
                                                         {
                                                             <tr>
                                                                 <td class="description">
-                                                                    <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                                                                 </td>
 
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" value="@Model.Building.BuildingProducts[i].Price" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" value="@Model.Building.BuildingProducts[i].Total" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total" />
                                                                 </td>
                                                                 <td class="rate">
                                                                     <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
@@ -177,7 +177,7 @@
                                             @foreach (var building in Model?.Buildings)
                                             {
                                                 var isSelected = Model.Building != null && building.Id == Model.Building.Id;
-                                                <option value="@building.Id" selected="@isSelected">
+                                                <option value="@building.Id" selected="@(isSelected ? "selected" : null)">
                                                     @building.Name
                                                 </option>
                                             }

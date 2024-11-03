@@ -1,6 +1,7 @@
 ﻿using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
+using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -16,7 +17,7 @@ namespace CleanHub.Controllers
         private readonly CompanyConfig _config;
         private SMTPConfig _smtpConfig;
 
-        public DocumentsController( ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
+        public DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {
             _context = context;
             _smtpConfig = config.Value;
@@ -182,9 +183,9 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
-
+            documentViewModel.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentViewModel.Company = _config;
-            var buildings = _context.Buildings.Include(x=>x.BuildingProducts)
+            var buildings = _context.Buildings.Include(x => x.BuildingProducts)
                 .Select(b => new Building()
                 {
                     Id = b.Id,
@@ -239,14 +240,14 @@ namespace CleanHub.Controllers
                 })
                 .ToList();
             HttpContext.Session.Remove("Buildings");
-          
+
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
             return View(nameof(Create), documentViewModel);
         }
 
 
-  
+
         // POST: Invoices/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -256,12 +257,55 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
+                var building = _context.Buildings.Include(x => x.Customers)
+                    .FirstOrDefault(x => x.Id == document.BuildingId);
+                if (building != null)
+                {
+                    foreach (var customer in building.Customers.ToList())
+                    {
+                        var documentCustomer = new DocumentViewModel();
+                        documentCustomer.CustomerId = customer.Id;
+                        documentCustomer.Number = _context!.Documents.OrderBy(x => x.Number).LastOrDefault().Number + 1;
+                        documentCustomer.Date = document.Date;
+                        documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
+                                                      document.Date.Value.Year;
+                        documentCustomer.Description = building.Name;
+                        documentCustomer.CreatedTime = DateTime.UtcNow;
+                        documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow);
+                        decimal totalSum = document.Building.BuildingProducts.Sum(x => (decimal)x.PriceWithTax);
+
+                        // Round correctly to the nearest integer (up if .50 or more)
+                        int roundedTotal = (int)Math.Round(totalSum, MidpointRounding.AwayFromZero);
+
+                        // Assign to TotalOutput
+                        documentCustomer.TotalOutput = roundedTotal;
+                        documentCustomer.TotalOutput = document.Building.BuildingProducts.Sum(x => x.PriceWithTax);
+                        documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+                        var docEntity = App.FullMapper.Map<Document>(documentCustomer);
+                        foreach (var book in document.Building.BuildingProducts)
+                        {
+                            var bookEntity = new BookViewModel
+                            {
+                                DocId = docEntity.Id,
+                                Output = 1,
+                                Quantity = book.Quantity,
+                                PriceWithTax = book.PriceWithTax,
+                                Tax = book.Tax,
+                                Total = book.Total,
+                                ArticleNotes = book.ArticleNotes,
+                                UnitOfMeasurement = book.UnitOfMeasurement,
+                            };
+                        }
+
+                    }
+                }
+
                 var entity = App.FullMapper.Map<Document>(document);
                 _context.Add(document);
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
 
-                return RedirectToAction(nameof(Index));
+                return RedirectToAction(nameof(Index), document);
             }
             ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
             return View(document);

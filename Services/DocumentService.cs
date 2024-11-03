@@ -45,6 +45,39 @@ namespace CleanHub.Services
             return year;
         }
 
+        public static string GetMonthAsString(int month)
+        {
+            switch (month)
+            {
+                case 1:
+                    return "Јануари";
+                case 2:
+                    return "Февруари";
+                case 3:
+                    return "Март";
+                case 4:
+                    return "Април";
+                case 5:
+                    return "Мај";
+                case 6:
+                    return "Јуни";
+                case 7:
+                    return "Јули";
+                case 8:
+                    return "Август";
+                case 9:
+                    return "Септември";
+                case 10:
+                    return "Октомври";
+                case 11:
+                    return "Ноември";
+                case 12:
+                    return "Декември";
+                default:
+                    return "";
+            }
+        }
+
         public static int GetMonthAsInteger(string input)
         {
             Regex regex = new Regex(@"^\w+");
@@ -95,20 +128,21 @@ namespace CleanHub.Services
                 {
                     return PaymentStatus.Задоцнето;
                 }
-                else if (bookFinancial.Owes <= 0)
+
+                if (bookFinancial.Owes <= 0)
                 {
                     return PaymentStatus.Платено;
                 }
 
-                else if (bookFinancial.Owes > 0 && bookFinancial.Owes < bookFinancial.Demands)
+                if (bookFinancial.Owes > 0 && bookFinancial.Owes < bookFinancial.Demands)
                 {
                     return PaymentStatus.Делумно;
                 }
-                else if (bookFinancial.Owes != 0 && bookFinancial.Demands == 0)
+
+                if (bookFinancial.Owes != 0 && bookFinancial.Demands == 0)
                 {
                     return PaymentStatus.Неплатено;
                 }
-
             }
             return PaymentStatus.Неплатено;
         }
