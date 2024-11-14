@@ -1,5 +1,6 @@
 ﻿using CleanHub.Config;
 using CleanHub.Entities;
+using CleanHub.Helpers;
 using CleanHub.Infrastructure.Data;
 using CleanHub.Services;
 using CleanHub.ViewModels;
@@ -137,7 +138,7 @@ namespace CleanHub.Controllers
             }
             else
             {
-                var documentEntity = await _context.Documents.AsNoTracking().Select(c => new Entities.Document
+                var documentEntity = await _context.Documents.Include(x=>x.Customer).AsNoTracking().Select(c => new Entities.Document
                 {
                     Id = c.Id,
                     Number = c.Number,
@@ -272,36 +273,53 @@ namespace CleanHub.Controllers
                         documentCustomer.Description = building.Name;
                         documentCustomer.CreatedTime = DateTime.UtcNow;
                         documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow);
-                        decimal totalSum = document.Building.BuildingProducts.Sum(x => (decimal)x.PriceWithTax);
+                        var calculator = new PriceCalculator(building.Customers.Count());
 
-                        // Round correctly to the nearest integer (up if .50 or more)
-                        int roundedTotal = (int)Math.Round(totalSum, MidpointRounding.AwayFromZero);
+                        // Calculate prices for each product
+                        calculator.CalculatePrices(document.Building.BuildingProducts);
 
-                        // Assign to TotalOutput
-                        documentCustomer.TotalOutput = roundedTotal;
-                        documentCustomer.TotalOutput = document.Building.BuildingProducts.Sum(x => x.PriceWithTax);
+                        // Calculate the total PriceWithTax sum
+                        float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(document.Building.BuildingProducts);
+                        documentCustomer.TotalOutput = totalPriceWithTax;
                         documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
                         var docEntity = App.FullMapper.Map<Document>(documentCustomer);
+
+                        _context.Documents.Add(docEntity);
+                        await _context.SaveChangesAsync();
+
                         foreach (var book in document.Building.BuildingProducts)
                         {
+                            float price = 0;
+                            float priceWithTax = 0;
+                            if (int.TryParse(book.Price.ToString(), out int priceInt))
+                            {
+                                price = priceInt / 100f;
+                            }
+                            if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
+                            {
+                                priceWithTax = priceWithTaxInt / 100f;
+                            }
+
                             var bookEntity = new BookViewModel
                             {
                                 DocId = docEntity.Id,
                                 Output = 1,
                                 Quantity = book.Quantity,
-                                PriceWithTax = book.PriceWithTax,
+                                PriceWithTax = priceWithTax,
                                 Tax = book.Tax,
-                                Total = book.Total,
+                                ArticleId =book.Id,
+                                Total = priceWithTax,
                                 ArticleNotes = book.ArticleNotes,
                                 UnitOfMeasurement = book.UnitOfMeasurement,
                             };
+                            var entityBook = App.FullMapper.Map<Book>(bookEntity);
+                            _context.Books.Add(entityBook);
                         }
-
                     }
                 }
-
-                var entity = App.FullMapper.Map<Document>(document);
-                _context.Add(document);
+                
+                //var entity = App.FullMapper.Map<Document>(document);
+                //_context.Documents.Add(entity);
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
 

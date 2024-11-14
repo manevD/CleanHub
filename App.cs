@@ -110,6 +110,8 @@ public class App : Profile
 
             #region Document
 
+            cfg.CreateMap<DocumentViewModel, Document>();
+
             cfg.CreateMap<Document, DocumentViewModel>()
                       .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
                       .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default
