@@ -138,7 +138,7 @@ namespace CleanHub.Controllers
             }
             else
             {
-                var documentEntity = await _context.Documents.Include(x=>x.Customer).AsNoTracking().Select(c => new Entities.Document
+                var documentEntity = await _context.Documents.Include(x => x.Customer).AsNoTracking().Select(c => new Entities.Document
                 {
                     Id = c.Id,
                     Number = c.Number,
@@ -264,69 +264,117 @@ namespace CleanHub.Controllers
                 {
                     foreach (var customer in building.Customers.ToList())
                     {
-                        var documentCustomer = new DocumentViewModel();
-                        documentCustomer.CustomerId = customer.Id;
-                        documentCustomer.Number = _context!.Documents.OrderBy(x => x.Number).LastOrDefault().Number + 1;
-                        documentCustomer.Date = document.Date;
-                        documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
-                                                      document.Date.Value.Year;
-                        documentCustomer.Description = building.Name;
-                        documentCustomer.CreatedTime = DateTime.UtcNow;
-                        documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow);
-                        var calculator = new PriceCalculator(building.Customers.Count());
+                        var docEntity = await CreateCustomerDocument(customer.Id, document, building);
 
-                        // Calculate prices for each product
-                        calculator.CalculatePrices(document.Building.BuildingProducts);
-
-                        // Calculate the total PriceWithTax sum
-                        float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(document.Building.BuildingProducts);
-                        documentCustomer.TotalOutput = totalPriceWithTax;
-                        documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
-                        var docEntity = App.FullMapper.Map<Document>(documentCustomer);
-
-                        _context.Documents.Add(docEntity);
-                        await _context.SaveChangesAsync();
-
-                        foreach (var book in document.Building.BuildingProducts)
+                        foreach (var buildingProduct in document.Building.BuildingProducts)
                         {
-                            float price = 0;
-                            float priceWithTax = 0;
-                            if (int.TryParse(book.Price.ToString(), out int priceInt))
+                            try
                             {
-                                price = priceInt / 100f;
+                               CreateBook(buildingProduct, docEntity);
                             }
-                            if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
+                         
+                            catch (Exception e)
                             {
-                                priceWithTax = priceWithTaxInt / 100f;
+                                Console.WriteLine(e);
+                                throw;
                             }
-
-                            var bookEntity = new BookViewModel
-                            {
-                                DocId = docEntity.Id,
-                                Output = 1,
-                                Quantity = book.Quantity,
-                                PriceWithTax = priceWithTax,
-                                Tax = book.Tax,
-                                ArticleId =book.Id,
-                                Total = priceWithTax,
-                                ArticleNotes = book.ArticleNotes,
-                                UnitOfMeasurement = book.UnitOfMeasurement,
-                            };
-                            var entityBook = App.FullMapper.Map<Book>(bookEntity);
-                            _context.Books.Add(entityBook);
                         }
+                        var bookFinancialViewModel = new BookFinancialViewModel
+                        {
+                            SmetkaId = 1200,
+                            DocumentId = docEntity.Id,
+                            Demands = docEntity!.TotalOutput!.Value!,
+                            Owes = 0,
+                            CustomerId = customer.Id,
+                            Time = DateTime.Now,
+                            DatumF = document.Date,
+                            Description = string.Empty,
+                        };
+
+                        var bookFinancialViewModelReserve = new BookFinancialViewModel
+                        {
+                            SmetkaId = 1201,
+                            DocumentId = docEntity.Id,
+                            Demands = docEntity!.TotalOutput!.Value!,
+                            Owes = 0,
+                            DatumF = document.Date,
+                            CustomerId = customer.Id,
+                            Time = DateTime.Now,
+                            Description = string.Empty,
+                        };
+                        var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
+                        var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+                        _context.BookFinancials.Add(bookFinancial);
+                        _context.BookFinancials.Add(bookFinancialReserve);
                     }
                 }
-                
+
                 //var entity = App.FullMapper.Map<Document>(document);
                 //_context.Documents.Add(entity);
                 await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Buildings");
+                HttpContext.Session.Remove("Documents");
 
                 return RedirectToAction(nameof(Index), document);
             }
             ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
             return View(document);
+        }
+
+        private void CreateBook(BuildingProductViewModel book, Document docEntity)
+        {
+            float price = 0;
+            float priceWithTax = 0;
+            if (int.TryParse(book.Price.ToString(), out int priceInt))
+            {
+                price = priceInt / 100f;
+            }
+            if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
+            {
+                priceWithTax = priceWithTaxInt / 100f;
+            }
+
+            var bookEntity = new BookViewModel
+            {
+                DocId = docEntity.Id,
+                Output = 1,
+                Quantity = book.Quantity,
+                PriceWithTax = priceWithTax,
+                Tax = book.Tax,
+                ArticleId = book.Id,
+                Total = priceWithTax,
+                ArticleNotes = book.ArticleNotes,
+                UnitOfMeasurement = book.UnitOfMeasurement,
+            };
+            var entityBook = App.FullMapper.Map<Book>(bookEntity);
+            _context.Books.Add(entityBook);
+            _context.SaveChanges();
+        }
+
+        private async Task<Document> CreateCustomerDocument(int customerId, DocumentViewModel document, Building building)
+        {
+            var documentCustomer = new DocumentViewModel();
+            documentCustomer.CustomerId = customerId;
+            documentCustomer.Number = _context!.Documents.OrderBy(x => x.Number).LastOrDefault()?.Number + 1;
+            documentCustomer.Date = document.Date;
+            documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
+                                          document.Date.Value.Year;
+            documentCustomer.Description = building.Name;
+            documentCustomer.CreatedTime = DateTime.UtcNow;
+            documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow);
+            var calculator = new PriceCalculator(building.Customers.Count());
+
+            // Calculate prices for each product
+            calculator.CalculatePrices(document.Building.BuildingProducts);
+
+            // Calculate the total PriceWithTax sum
+            float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(document.Building.BuildingProducts);
+            documentCustomer.TotalOutput = totalPriceWithTax;
+            documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+            var docEntity = App.FullMapper.Map<Document>(documentCustomer);
+
+            _context.Documents.Add(docEntity);
+            await _context.SaveChangesAsync();
+            return docEntity;
         }
 
         // GET: Invoices/Edit/5

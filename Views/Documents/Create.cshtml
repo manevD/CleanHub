@@ -89,6 +89,7 @@
                                                     <tr>
                                                         <th>Опис</th>
                                                         <th class="">Ед.м</th>
+                                                        <th class="">Кол.</th>
                                                         <th class="text-right">Цена без ДДВ</th>
                                                         <th class="text-right">ДДВ</th>
                                                         <th class="text-center">Цена</th>
@@ -109,7 +110,9 @@
                                                                 <td class="rate">
                                                                     <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                                                                 </td>
-
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity" />
+                                                                </td>
                                                                 <td class="rate">
                                                                     <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
                                                                 </td>

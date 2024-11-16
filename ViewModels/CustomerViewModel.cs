@@ -1,6 +1,4 @@
-﻿using CleanHub.Entities;
-using DataAnnotationsExtensions;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using DataAnnotationsExtensions;
 
 namespace CleanHub.ViewModels
 {

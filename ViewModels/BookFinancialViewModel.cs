@@ -12,7 +12,8 @@ namespace CleanHub.ViewModels
         [ForeignKey(nameof(Invoice))]
         public int? SmetkaId { get; set; }
         public Invoice Invoice { get; set; }
-
+        public int? DocumentId { get; set; }
+        public DocumentViewModel Document { get; set; }
         public int? CustomerId { get; set; }
         public CustomerViewModel Customer { get; set; }
 

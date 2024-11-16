@@ -1,5 +1,4 @@
-﻿using CleanHub.Config;
-using CleanHub.Entities;
+﻿using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -137,6 +136,5 @@ namespace CleanHub.Infrastructure.Data
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
         "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
-        public DbSet<CleanHub.ViewModels.DocumentViewModel> DocumentViewModel { get; set; } = default!;
     }
 }
