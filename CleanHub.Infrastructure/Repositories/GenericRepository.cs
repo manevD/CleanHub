@@ -1,7 +1,7 @@
 ﻿using CleanHub.Core.Interfaces;
-using CleanHub.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
+using CleanHub.CleanHub.Infrastructure.Data;
 
 namespace CleanHub.Infrastructure.Repositories
 {

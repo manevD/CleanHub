@@ -16,6 +16,6 @@
         }
 
         public List<BuildingProductViewModel> BuildingProducts { get; set; }
-        public ICollection<CustomerViewModel> Customers { get; set; }  
+        public ICollection<CustomerViewModel>? Customers { get; set; }  
     }
 }

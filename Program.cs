@@ -1,8 +1,7 @@
 using AutoMapper;
+using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Extensions;
-using CleanHub.Infrastructure.Data;
-
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 

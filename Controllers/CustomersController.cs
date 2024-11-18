@@ -1,7 +1,8 @@
 ﻿using CleanHub.Attribute;
+using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
-using CleanHub.Infrastructure.Data;
+using CleanHub.Helpers;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -191,7 +192,7 @@ namespace CleanHub.Controllers
                 var month = DocumentService.ExtractMonth(doc.ToDocument);
                 var searchCriteria = string.Concat( month , "/" , year);
 
-                var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x=>x.Description.Contains(searchCriteria) && x.SmetkaId == 1200);
+                var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x=>x.Description.Contains(searchCriteria) && x.InvoiceId == Constants.Recieve);
                 doc.PaymentStatus = DocumentService.GetStatus(bookFinancial,doc);
             }
             var customer = App.FullMapper.Map<CustomerViewModel>(customerEntity);

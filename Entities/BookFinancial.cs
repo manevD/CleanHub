@@ -1,5 +1,4 @@
-﻿using CleanHub.ViewModels;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CleanHub.Entities;
 
@@ -10,7 +9,7 @@ public partial class BookFinancial
     public int? OrderN { get; set; }
 
     [ForeignKey(nameof(Invoice))]
-    public int? SmetkaId { get; set; }
+    public int? InvoiceId { get; set; }
     public Invoice Invoice { get; set; }
 
     [ForeignKey(nameof(Document))]

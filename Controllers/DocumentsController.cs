@@ -1,7 +1,7 @@
-﻿using CleanHub.Config;
+﻿using CleanHub.CleanHub.Infrastructure.Data;
+using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Helpers;
-using CleanHub.Infrastructure.Data;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -279,45 +279,73 @@ namespace CleanHub.Controllers
                                 throw;
                             }
                         }
-                        var bookFinancialViewModel = new BookFinancialViewModel
-                        {
-                            SmetkaId = 1200,
-                            DocumentId = docEntity.Id,
-                            Demands = docEntity!.TotalOutput!.Value!,
-                            Owes = 0,
-                            CustomerId = customer.Id,
-                            Time = DateTime.Now,
-                            DatumF = document.Date,
-                            Description = string.Empty,
-                        };
-
-                        var bookFinancialViewModelReserve = new BookFinancialViewModel
-                        {
-                            SmetkaId = 1201,
-                            DocumentId = docEntity.Id,
-                            Demands = docEntity!.TotalOutput!.Value!,
-                            Owes = 0,
-                            DatumF = document.Date,
-                            CustomerId = customer.Id,
-                            Time = DateTime.Now,
-                            Description = string.Empty,
-                        };
-                        var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
-                        var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
-                        _context.BookFinancials.Add(bookFinancial);
-                        _context.BookFinancials.Add(bookFinancialReserve);
+                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id);
                     }
                 }
 
-                //var entity = App.FullMapper.Map<Document>(document);
-                //_context.Documents.Add(entity);
+                CreateSpecialInvoice(document);
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
 
                 return RedirectToAction(nameof(Index), document);
             }
-            ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
+            //ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
             return View(document);
+        }
+
+        private void CreateSpecialInvoice(DocumentViewModel document)
+        {
+            int sum = 0;
+            var energyValues = document.Building.BuildingProducts
+                .Where(x => x.ArticleNotes.ToLower().Contains("енер.")
+                            || x.ArticleNotes.ToLower().Contains("осветлување"))
+                .ToList();
+            if (energyValues != null && energyValues.Any())
+            {
+                sum = (int)Math.Round((decimal)energyValues.Sum(x => x.PriceWithTax), MidpointRounding.AwayFromZero);
+            }
+
+            var specialInvoiceViewModel = new SpecialInvoiceViewModel
+            {
+                ForDate = document.Date.Value,
+                Total = sum,
+                InvoiceId = Constants.Energy,
+                BuildingId = document.BuildingId,
+                Status = PaymentStatus.Неплатено
+            };
+            var specialInvoice = App.FullMapper.Map<SpecialInvoice>(specialInvoiceViewModel);
+            _context.SpecialInvoices.Add(specialInvoice);
+        }
+
+        private void CreateBookFinancialAndReserve(Document docEntity, DateOnly? date, int customerId)
+        {
+            var bookFinancialViewModel = new BookFinancialViewModel
+            {
+                InvoiceId = Constants.Recieve,
+                DocumentId = docEntity.Id,
+                Demands = docEntity!.TotalOutput!.Value!,
+                Owes = 0,
+                CustomerId = customerId,
+                Time = DateTime.Now,
+                DatumF = date,
+                Description = string.Empty,
+            };
+
+            var bookFinancialViewModelReserve = new BookFinancialViewModel
+            {
+                InvoiceId = Constants.Reserve,
+                DocumentId = docEntity.Id,
+                Demands = docEntity!.TotalOutput!.Value!,
+                Owes = 0,
+                DatumF = date,
+                CustomerId = customerId,
+                Time = DateTime.Now,
+                Description = string.Empty,
+            };
+            var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
+            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+            _context.BookFinancials.Add(bookFinancial);
+            _context.BookFinancials.Add(bookFinancialReserve);
         }
 
         private void CreateBook(BuildingProductViewModel book, Document docEntity)

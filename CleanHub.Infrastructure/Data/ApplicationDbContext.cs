@@ -1,12 +1,12 @@
-﻿using CleanHub.Entities;
+﻿using System.Security.Cryptography;
+using System.Text;
+using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.DataEncryption;
-using System.Security.Cryptography;
-using System.Text;
 
-namespace CleanHub.Infrastructure.Data
+namespace CleanHub.CleanHub.Infrastructure.Data
 {
     public class ApplicationDbContext : IdentityDbContext
     {
@@ -26,6 +26,8 @@ namespace CleanHub.Infrastructure.Data
         public virtual DbSet<BookFinancial> BookFinancials { get; set; }
 
         public virtual DbSet<BookFinancialSub> BookFinancialSub { get; set; }
+        
+        public virtual DbSet<SpecialInvoice> SpecialInvoices { get; set; }
 
         public virtual DbSet<Customer> Customers { get; set; }
 

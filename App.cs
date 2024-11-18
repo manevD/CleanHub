@@ -126,6 +126,14 @@ public class App : Profile
 
             #endregion
 
+            #region SpecialInvoice
+
+            cfg.CreateMap<SpecialInvoice, SpecialInvoiceViewModel>()
+                .ForMember(dest => dest.BuildingName, opt => opt.MapFrom(src => src.Building.Name))
+                .ReverseMap();
+
+            #endregion
+
         });
         ReaderSmall = readerSmallMapConfiguration.CreateMapper();
         FullMapper = configuration.CreateMapper();

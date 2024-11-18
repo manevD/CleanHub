@@ -1,6 +1,6 @@
-﻿using CleanHub.Config;
+﻿using CleanHub.CleanHub.Infrastructure.Data;
+using CleanHub.Config;
 using CleanHub.Entities;
-using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -14,7 +14,6 @@ namespace CleanHub.Controllers
     public class ProductsController : Controller
     {
         private readonly ApplicationDbContext _context;
-
 
         public ProductsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
         {

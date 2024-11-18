@@ -1,5 +1,6 @@
-﻿using CleanHub.Entities;
-using CleanHub.Infrastructure.Data;
+﻿using CleanHub.CleanHub.Infrastructure.Data;
+using CleanHub.Entities;
+using CleanHub.Helpers;
 using CleanHub.Services;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -30,7 +31,7 @@ namespace CleanHub
                             {
                                 var bookFinancial = context.BookFinancials
                                     .FirstOrDefault(x => EF.Functions.Like(x.Description, likePattern)
-                                                         && x.SmetkaId == 1200
+                                                         && x.InvoiceId == Constants.Recieve
                                                          && x.CustomerId == customer.Id);
                                 if (bookFinancial == null)
                                 {

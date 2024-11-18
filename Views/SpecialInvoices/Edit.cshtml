@@ -1,0 +1,53 @@
+﻿@model CleanHub.ViewModels.SpecialInvoiceViewModel
+
+@{
+    ViewData["Title"] = "Измени Сметка";
+}
+<hr />  
+<div class="tab-content" id="animateLineContent-4">
+    <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
+        <div class="row">
+            <div class="col-xl-12 col-lg-12 col-md-12 layout-spacing">
+                <form class="section general-info" asp-action="Edit" id="customerForm">
+                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+                    <input type="hidden" asp-for="Id" />
+                    <div class="info">
+                        <div class="row">
+                            <div class="col-lg-11 mx-auto">
+                                <div class="row">
+                                    <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
+                                        <div class="form">
+                                            <div class="row">
+                                                <h6 class="">Информации за Сметката</h6>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Објект</label>
+                                                        <input asp-for="Building.Name" type="text" class="form-control mb-3" placeholder="Објект" readonly>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="Status" class="control-label"></label>
+                                                        <select asp-for="Status" class="form-control"></select>
+                                                        <span asp-validation-for="Status" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}

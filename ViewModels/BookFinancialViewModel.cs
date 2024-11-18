@@ -6,11 +6,10 @@ namespace CleanHub.ViewModels
     public class BookFinancialViewModel
     {
         public int Id { get; set; }
-
         public int? OrderN { get; set; }
 
         [ForeignKey(nameof(Invoice))]
-        public int? SmetkaId { get; set; }
+        public int? InvoiceId { get; set; }
         public Invoice Invoice { get; set; }
         public int? DocumentId { get; set; }
         public DocumentViewModel Document { get; set; }

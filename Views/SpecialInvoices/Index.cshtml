@@ -1,0 +1,64 @@
+﻿@using CleanHub.Entities
+@model IEnumerable<CleanHub.ViewModels.SpecialInvoiceViewModel>
+
+@{
+    ViewData["Title"] = "Сметки";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<hr />
+
+<div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
+    </br>
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Објект</th>
+                        <th>Вкупно</th>
+                        <th>За месец</th>
+                        <th>Статус</th>
+                        <th>Функции</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var invoice in Model)
+                    {
+                        <tr>
+                            <td>
+                                @Html.DisplayFor(modelItem => invoice.Building.Name)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => invoice.Total)
+                            </td>
+                            <td>
+                                @Html.DisplayFor(modelItem => invoice.ForDate)
+                            </td>
+                            @if (@invoice.Status == PaymentStatus.Платено)
+                            {
+                                <td><span class="badge badge-light-success inv-status">@invoice.Status </span></td>
+                            }
+                            @if (@invoice.Status == PaymentStatus.Неплатено)
+                            {
+                                <td><span class="badge badge-light-warning inv-status">@invoice.Status </span></td>
+                            }
+                            @if (@invoice.Status == PaymentStatus.Делумно)
+                            {
+                                <td><span class="badge badge-light-warning inv-status">@invoice.Status</span></td>
+                            }
+                            @if (@invoice.Status == PaymentStatus.Задоцнето)
+                            {
+                                <td><span class="badge badge-light-danger inv-status">@invoice.Status</span></td>
+                            }
+
+                            <td>
+                                <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="SpecialInvoices" asp-route-id="@invoice.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg></a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
