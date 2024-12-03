@@ -287,7 +287,7 @@ namespace CleanHub.Controllers
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
 
-                return RedirectToAction(nameof(Index), document);
+                return RedirectToAction(nameof(Create));
             }
             //ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
             return View(document);
@@ -304,7 +304,17 @@ namespace CleanHub.Controllers
             {
                 sum = (int)Math.Round((decimal)energyValues.Sum(x => x.PriceWithTax), MidpointRounding.AwayFromZero);
             }
-
+            float price = 0;
+            float priceWithTax = 0;
+            foreach (var energy in energyValues)
+            {
+                if (int.TryParse(energy.PriceWithTax.ToString(), out int priceInt))
+                {
+                    price = priceInt / 100f;
+                    sum += (int)(price);
+                }
+            }
+           
             var specialInvoiceViewModel = new SpecialInvoiceViewModel
             {
                 ForDate = document.Date.Value,
@@ -314,6 +324,14 @@ namespace CleanHub.Controllers
                 Status = PaymentStatus.Неплатено
             };
             var specialInvoice = App.FullMapper.Map<SpecialInvoice>(specialInvoiceViewModel);
+            // Ensure the BuildingId is treated as a foreign key reference
+            _context.Entry(specialInvoice).Property(s => s.BuildingId).IsModified = true;
+
+            // Alternatively, attach the entity and set the BuildingId explicitly
+            _context.Attach(specialInvoice);
+            specialInvoice.BuildingId = document.BuildingId;
+
+            // Add the SpecialInvoice to the context
             _context.SpecialInvoices.Add(specialInvoice);
         }
 

@@ -11423,7 +11423,7 @@
 			 *    $(document).ready( function() {
 			 *      $('#example').dataTable( {
 			 *        "language": {
-			 *          "info": "Showing page _PAGE_ of _PAGES_"
+			 *          "info": "Страна _PAGE_ of _PAGES_"
 			 *        }
 			 *      } );
 			 *    } );

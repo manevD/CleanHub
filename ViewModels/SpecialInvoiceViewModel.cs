@@ -1,5 +1,5 @@
-﻿using CleanHub.Entities;
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.Runtime.Serialization;
+using CleanHub.Entities;
 
 namespace CleanHub.ViewModels
 {
@@ -16,5 +16,10 @@ namespace CleanHub.ViewModels
         public decimal Total { get; set; }
         public PaymentStatus Status { get; set; }
         public string BuildingName { get; set; }
+        public string CustomerName { get; set; }
+
+        [IgnoreDataMember]
+        public List<InvoiceViewModel> Invoices { get; set; }
+
     }
 }
