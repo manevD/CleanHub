@@ -19,5 +19,23 @@ namespace CleanHub.Helpers
 
             return attribute != null ? attribute.Description : enumValue.ToString();
         }
+
+        public static List<KeyValuePair<int, string>> GetEnumDescriptions<T>() where T : Enum
+        {
+            return Enum.GetValues(typeof(T))
+                .Cast<T>()
+                .Select(e => new KeyValuePair<int, string>(
+                    Convert.ToInt32(e),
+                    GetEnumDescription(e)
+                ))
+                .ToList();
+        }
+
+        private static string GetEnumDescription<T>(T enumValue) where T : Enum
+        {
+            var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
+            var attributes = fieldInfo?.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+            return attributes?.FirstOrDefault()?.Description ?? enumValue.ToString();
+        }
     }
 }

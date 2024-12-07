@@ -24,4 +24,5 @@ public partial class BookFinancial
     public double Demands { get; set; }
     public DateTime? Time { get; set; }
     public DateTime? DateTimeChanges { get; set; }
+    public PaymentStatus Status { get; set; }
 }

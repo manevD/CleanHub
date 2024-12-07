@@ -29,5 +29,6 @@ namespace CleanHub.ViewModels
         public double Demands { get; set; }
         public DateTime? Time { get; set; }
         public DateTime? DateTimeChanges { get; set; }
+        public PaymentStatus Status {get; set; }
     }
 }

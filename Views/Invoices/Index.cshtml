@@ -1,110 +1,140 @@
-﻿@* @using Microsoft.EntityFrameworkCore.Metadata.Internal
-@model IEnumerable<CleanHub.Entities.Invoice>
-
+﻿@using CleanHub.Entities
+@model List<CleanHub.ViewModels.BookFinancialInfoViewModel>
 @{
-    ViewData["Title"] = "Index";
+    ViewData["Title"] = "Сметки";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var invoiceId = @ViewBag.InvoiceId;
 }
 
-<h1>Index</h1>
-
-<p>
-    <a asp-action="Create">Create New</a>
-</p>
-<div class="row">
-    <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-        <div class="statbox widget box box-shadow">
-            <div class="widget-content widget-content-area">
-
-                <table class="multi-table table dt-table-hover" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Office</th>
-                            <th>Age</th>
-                            <th>Salary</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center dt-no-sorting">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Tiger Nixon</td>
-                            <td>System Architect</td>
-                            <td>Edinburgh</td>
-                            <td>61</td>
-                            <td>$320,800</td>
-                            <td>
-                                <div class="t-dot bg-primary" data-bs-toggle="tooltip" data-bs-placement="top" data-original-title="Normal"></div>
-                            </td>
-                            <td class="text-center"> <button class="btn btn-primary">view</button> </td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Office</th>
-                            <th>Age</th>
-                            <th>Salary</th>
-                            <th class="text-center">Status</th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <table class="multi-table table table-striped dt-table-hover table-bordered" style="width:100%">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Progress</th>
-                            <th>Office</th>
-                            <th>Age</th>
-                            <th>Salary</th>
-                            <th class="text-center dt-no-sorting">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Jena Gaines</td>
-                            <td>Office Manager</td>
-                            <td>
-                                <div class="progress br-30">
-                                    <div class="progress-bar br-30 bg-warning" role="progressbar" style="width: 67%" aria-valuenow="67" aria-valuemin="0" aria-valuemax="100"></div>
-                                </div>
-                            </td>
-                            <td>London</td>
-                            <td>30</td>
-                            <td>$90,560</td>
-                            <td class="text-center">
-                                <div class="dropdown">
-                                    <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink1" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="true">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-more-horizontal"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                    </a>
-                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuLink1">
-                                        <a class="dropdown-item" href="javascript:void(0);">View</a>
-                                        <a class="dropdown-item" href="javascript:void(0);">Edit</a>
-                                        <a class="dropdown-item" href="javascript:void(0);">Delete</a>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th>Name</th>
-                            <th>Position</th>
-                            <th>Progress</th>
-                            <th>Office</th>
-                            <th>Age</th>
-                            <th>Salary</th>
-                            <th class="text-center">Action</th>
-                        </tr>
-                    </tfoot>
-                </table>
+<hr />
+<form asp-action="InvoiceFiltered" asp-controller="Invoices" method="get">
+    <div class="row ">
+        @if (ViewBag.Buildings != null)
+        {
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="form-group mb-0">
+                    <label for="buildingId">Објект</label>
+                    <select id="buildingId" name="buildingId" class="form-control">
+                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                        {
+                            <option value="@building.Value">@building.Text</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Нема пронајдено објекти!</p>
+        }
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0">
+                <h6>Од</h6>
+                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <h6>До</h6>
+            <div class="form-group mb-0">
+                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+            </div>
+        </div>
+        <li class="divider"></li> <!-- Optional: Trennlinie -->
+        <input type="hidden" id="invoiceId" name="invoiceId" value="@ViewBag.InvoiceId" />
+        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0">
+                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
             </div>
         </div>
     </div>
+
+</form>
+<div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
+    </br>
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Објект</th>
+                        <th>Станар</th>
+                        <th>Опис</th>
+                        <th>Должи</th>
+                        <th>Побарува</th>
+                        <th>Сметка</th>
+                        <th>Статус</th>
+                        <th>Датум</th>
+                        <th>Функции</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        @foreach (var invoice in Model)
+                        {
+                            <tr>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.BuildingName)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.CustomerInfo)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Description)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Owes)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Demands)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.InvoiceId)
+                                </td>
+                                <td>
+                                    @if (invoice.Status == PaymentStatus.Платено)
+                                    {
+                                        <span class="badge badge-light-success inv-status">@invoice.Status</span>
+                                    }
+                                    else if (invoice.Status == PaymentStatus.Неплатено)
+                                    {
+                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                    }
+                                    else if (invoice.Status == PaymentStatus.Делумно)
+                                    {
+                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                    }
+                                    else if (invoice.Status == PaymentStatus.Задоцнето)
+                                    {
+                                        <span class="badge badge-light-danger inv-status">@invoice.Status</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Неопределен статус</span>
+                                    }
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.FormattedDatumF)
+                                </td>
+                                <td>
+                                    <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="Invoices" asp-route-id="@invoice.Id">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-edit-3">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
- *@

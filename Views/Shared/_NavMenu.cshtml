@@ -1,4 +1,6 @@
 ﻿@using CleanHub.Helpers
+@using CleanHub.Entities
+@using System.ComponentModel
 
 <nav id="sidebar">
     <div class="navbar-nav theme-brand flex-row  text-center">
@@ -100,28 +102,24 @@
             </ul>
         </li>
         <li class="menu active">
-            <a asp-action="Index" asp-controller="SpecialInvoices" aria-expanded="true" class="dropdown-toggle">
+            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
                 <div class="">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     <span>Сметки</span>
                 </div>
             </a>
-            @*  <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
-                <li class="active">
-                    <a asp-action="Index" asp-controller="SpecialInvoices" aria-expanded="true" class="dropdown-toggle">
-                        <div class="">
-                            <span>Струја</span>
-                        </div>
-                    </a>
-                </li>
-                <li class="active">
-                    <a asp-action="Partially" asp-controller="Documents" aria-expanded="true" class="dropdown-toggle">
-                        <div class="">
-                            <span>Друго</span>
-                        </div>
-                    </a>
-                </li>
-            </ul> *@
+            <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
+                @foreach (var item in GetEnumDescriptions<InvoiceTyp>())
+                {
+                    <li class="active">
+                        <a asp-controller="Invoices" asp-action="Index" asp-route-id="@item.Key" class="dropdown-toggle">
+                            <div>
+                                <span>@item.Value</span> 
+                            </div>
+                        </a>
+                    </li>
+                }
+            </ul>
         </li>
         <li class="menu active">
             <a asp-action="Help" asp-controller="Home" aria-expanded="true" class="dropdown-toggle">
@@ -133,3 +131,22 @@
         </li>
     </ul>
 </nav>
+@functions {
+    List<KeyValuePair<int, string>> GetEnumDescriptions<T>() where T : Enum
+    {
+        return Enum.GetValues(typeof(T))
+            .Cast<T>()
+            .Select(e => new KeyValuePair<int, string>(
+                Convert.ToInt32(e),
+                GetEnumDescription(e)
+                ))
+            .ToList();
+    }
+
+    string GetEnumDescription<T>(T enumValue) where T : Enum
+    {
+        var fieldInfo = enumValue.GetType().GetField(enumValue.ToString());
+        var attributes = fieldInfo?.GetCustomAttributes(typeof(DescriptionAttribute), false) as DescriptionAttribute[];
+        return attributes?.FirstOrDefault()?.Description ?? enumValue.ToString();
+    }
+}
