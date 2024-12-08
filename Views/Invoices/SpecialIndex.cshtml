@@ -16,12 +16,7 @@
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                 <div class="form-group mb-0">
                     <label for="buildingId">Објект</label>
-                    <select id="buildingId" name="buildingId" class="form-control">
-                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
-                        {
-                            <option value="@building.Value">@building.Text</option>
-                        }
-                    </select>
+                    @Html.DropDownList("buildingId", (IEnumerable<SelectListItem>)ViewBag.Buildings, new { @class = "form-control" })
                 </div>
             </div>
         }
@@ -57,7 +52,6 @@
                 <thead>
                     <tr>
                         <th>Објект</th>
-                        <th>Станар</th>
                         <th>Тип на сметка</th>
                         <th>Вкупно</th>
                         <th>За месец</th>
@@ -73,9 +67,6 @@
                             <tr>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.BuildingName)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.CustomerName)
                                 </td>
                                 <td>
                                     @Html.Raw(EnumHelper.GetEnumDescriptionFromId<InvoiceTyp>(invoice.InvoiceId))

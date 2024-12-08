@@ -26,14 +26,12 @@ public partial class Customer
 
     [ForeignKey(nameof(Building))]
     public int? BuildingId { get; set; }
-
     public Building? Building { get; set; }
-
     [ForeignKey(nameof(Activity))]
     public int? ActivityId { get; set; }
     public Activity? Activity { get; set; }
     public bool? PhysicalPerson { get; set; }
-
+    public int? Subscription { get; set; }
     public List<BookFinancial>? BookFinancials {  get; set; }
     public List<Document>? Documents { get; set; }
 }

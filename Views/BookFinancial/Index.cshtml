@@ -1,17 +1,17 @@
 ﻿@using CleanHub.Entities
-@model List<CleanHub.ViewModels.DocumentViewModel>
+@model List<CleanHub.ViewModels.BookFinancialInfoViewModel>
 @{
-    ViewData["Title"] = "Сметки";
+    ViewData["Title"] = "Книжења";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var invoiceId = @ViewBag.InvoiceId;
 }
 
 <hr />
-<form asp-action="InvoiceFiltered" asp-controller="Documents" method="get">
-    <div class="row ">
+<form asp-action="Books" asp-controller="BookFinancial" method="get">
+    <div class="row">
         @if (ViewBag.Buildings != null)
         {
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="buildingId">Објект</label>
                     @Html.DropDownList("buildingId", (IEnumerable<SelectListItem>)ViewBag.Buildings, new { @class = "form-control" })
@@ -20,11 +20,28 @@
         }
         else
         {
-            <p>Нема пронајдено објекти!</p>
+            <div class="col-lg-2 col-md-3">
+                <p>Нема пронајдено објекти!</p>
+            </div>
+        }
+        @if (ViewBag.InvoiceTypList != null)
+        {
+            <div class="col-lg-2 col-md-3">
+                <div class="form-group mb-0">
+                    <label for="invoiceId">Статус</label>
+                    @Html.DropDownList("invoiceId", (IEnumerable<SelectListItem>)ViewBag.InvoiceTypList, new { @class = "form-control" })
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-lg-2 col-md-3">
+                <p>Нема пронајдено статус!</p>
+            </div>
         }
         @if (ViewBag.PaymentStatusList != null)
         {
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="paymentStatusId">Статус</label>
                     @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList, new { @class = "form-control" })
@@ -33,29 +50,32 @@
         }
         else
         {
-            <p>Нема пронајдено статус!</p>
+            <div class="col-lg-2 col-md-3">
+                <p>Нема пронајдено статус!</p>
+            </div>
         }
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
-                <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <label for="dateFrom">Од</label>
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateFrom" />
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <h6>До</h6>
+        <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <label for="dateTo">До</label>
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateTo" />
             </div>
         </div>
-        <li class="divider"></li> <!-- Optional: Trennlinie -->
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
-            </div>
+      
+    </div>
+    </br> <!-- Optional: Trennlinie -->
+    <div class="col-lg-2 col-md-3">
+        <div class="form-group mb-0">
+            <button type="submit" class="btn btn-primary w-100">Пребарувај</button>
         </div>
     </div>
-
 </form>
+
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     </br>
     <div class="statbox widget box box-shadow">
@@ -66,11 +86,10 @@
                         <th>Објект</th>
                         <th>Станар</th>
                         <th>Опис</th>
-                        <th>Вкупно</th>
-                        <th>Сметка</th>
+                        <th>Должи</th>
+                        <th>Побарува</th>
                         <th>Статус</th>
-                        <th>Дата на примање</th>
-                        <th>Дата на плаќање</th>
+                        <th>Дата на издавање</th>
                         <th>Задоцнуванје</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
@@ -86,34 +105,34 @@
                                     @Html.DisplayFor(modelItem => invoice.Description)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.Customer.CustomerInfo)
+                                    @Html.DisplayFor(modelItem => invoice.CustomerInfo)
                                 </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.Description)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.TotalOutput) МКД
-                                </td>
-
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.ToDocument)
+                                    @Html.DisplayFor(modelItem => invoice.Owes) МКД
                                 </td>
                                 <td>
-                                    @if (invoice.PaymentStatus == PaymentStatus.Платено)
+                                    @Html.DisplayFor(modelItem => invoice.Demands) МКД
+                                </td>
+                             
+                                <td>
+                                    @if (invoice.Status == PaymentStatus.Платено)
                                     {
-                                        <span class="badge badge-light-success inv-status">@invoice.PaymentStatus</span>
+                                        <span class="badge badge-light-success inv-status">@invoice.Status</span>
                                     }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Неплатено)
+                                    else if (invoice.Status == PaymentStatus.Неплатено)
                                     {
-                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
+                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
                                     }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Делумно)
+                                    else if (invoice.Status == PaymentStatus.Делумно)
                                     {
-                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
+                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
                                     }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Задоцнето)
+                                    else if (invoice.Status == PaymentStatus.Задоцнето)
                                     {
-                                        <span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span>
+                                        <span class="badge badge-light-danger inv-status">@invoice.Status</span>
                                     }
                                     else
                                     {
@@ -121,11 +140,9 @@
                                     }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.DateReceived)
+                                    @Html.DisplayFor(modelItem => invoice.FormattedDatumF)
                                 </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.DueDate)
-                                </td>
+                               
                                 <td>
                                     @((invoice.Delay ?? 0))
                                 </td>

@@ -1,6 +1,7 @@
 ﻿using CleanHub.Config;
 using CleanHub.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
+using AutoMapper.Configuration.Annotations;
 
 namespace CleanHub.ViewModels
 {
@@ -47,6 +48,10 @@ namespace CleanHub.ViewModels
                 }
             }
         }
+        [Ignore]
+        public int? Delay { get; set; }
+        [Ignore]
+        public int? NewTotal { get; set; }
 
         public float? TotalInput { get; set; }
         public float? TotalOutput { get; set; }

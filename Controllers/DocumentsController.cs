@@ -1,6 +1,7 @@
 ﻿using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
+using CleanHub.Extensions;
 using CleanHub.Helpers;
 using CleanHub.Services;
 using CleanHub.ViewModels;
@@ -8,29 +9,24 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace CleanHub.Controllers
 {
-    public class DocumentsController : Controller
+    public class DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig) : Controller
     {
-        private readonly ApplicationDbContext _context;
         private readonly CompanyConfig _config;
         private SMTPConfig _smtpConfig;
+        private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
+        private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
+        public List<Building> Buildings { get; set; } = context.Buildings.ToList();
 
-        public DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig)
-        {
-            _context = context;
-            _smtpConfig = config.Value;
-            _config = companyConfig.Value;
-        }
 
         [Route("Unpayed")]
         [Route("Неплатени")]
         public async Task<IActionResult> Unpayed()
         {
             List<DocumentViewModel> documents = new List<DocumentViewModel>();
-            var documentEntities = await _context.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
+            var documentEntities = await context.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
             {
                 Id = c.Id,
                 Number = c.Number,
@@ -87,10 +83,10 @@ namespace CleanHub.Controllers
                     // Calculate the additional fee and apply it to the document's amount due
                     float additionalFee = documentEntity.TotalOutput.Value * (additionalFeePercentage / 100);
                     documentEntity.TotalOutput += additionalFee;
-                    _context.Documents.Update(documentEntity);
+                    context.Documents.Update(documentEntity);
 
                 }
-                _context.SaveChanges();
+                context.SaveChanges();
             }
             documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntities);
             documents.ForEach(x => x.Company = _config);
@@ -103,7 +99,7 @@ namespace CleanHub.Controllers
         {
             List<DocumentViewModel> documents = new List<DocumentViewModel>();
 
-            var documentEntity = await _context.Documents.Include(x => x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
+            var documentEntity = await context.Documents.Include(x => x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
             {
                 Id = c.Id,
                 Number = c.Number,
@@ -126,33 +122,158 @@ namespace CleanHub.Controllers
         [Route("Сметки")]
         public async Task<IActionResult> Index()
         {
-            string documentsJson = HttpContext.Session.GetString("Documents");
-            var settings = new JsonSerializerSettings
+            ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
+                .Cast<PaymentStatus>()
+                .Select(e => new SelectListItem
+                {
+                    Text = e.GetEnumDescription(),
+                    Value = ((int)e).ToString()
+                })
+                .ToList();
+            if (!Buildings.Any())
             {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-            List<DocumentViewModel> documents;
-            if (!string.IsNullOrEmpty(documentsJson))
+                throw new Exception("No buildings found in the database.");
+            }
+            Buildings.Insert(0, new Building()
             {
-                documents = JsonConvert.DeserializeObject<List<DocumentViewModel>>(documentsJson, settings);
+                Name = "Сите",
+                Id = 0
+            });
+            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name");
+
+            return View("Index");
+        }
+
+        private List<BookFinancialViewModel> GetInvoices(int? invoiceId, DateOnly dateFrom, DateOnly dateTo, int? buildingId)
+        {
+            var invoices = context.BookFinancials.Include(x => x.Customer).ThenInclude(x => x.Documents).Include(x => x.Customer).ThenInclude(x => x.Building).Where(x => x.Customer.BuildingId == buildingId) // Filter by BuildingId if provided
+                .Where(doc => doc.DatumF >= dateFrom && doc.DatumF <= dateTo && doc.InvoiceId == invoiceId.Value)
+                .ToListAsync().Result;
+            return App.FullMapper.Map<List<BookFinancialViewModel>>(invoices);
+        }
+
+        public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        {
+            Buildings.Insert(0, new Building()
+            {
+                Name = "Сите",
+                Id = 0
+            });
+            if (!Buildings.Any())
+            {
+                throw new Exception("No buildings found in the database.");
+            }
+            ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
+                .Cast<PaymentStatus>()
+                .Select(e => new SelectListItem
+                {
+                    Text = e.GetEnumDescription(),
+                    Value = ((int)e).ToString(),
+                    Selected = (int)e == paymentStatusId // Markiere den ausgewählten Status
+                })
+                .ToList();
+            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
+            var documentEntity = new List<Document>();
+            if (buildingId == 0)
+            {
+                documentEntity = await context.Documents
+                    .Where(d => d.Customer != null && d.Customer.Building != null)
+                    .Select(d => new Entities.Document
+                    {
+                        Id = d.Id,
+                        Number = d.Number,
+                        ToDocument = d.ToDocument,
+                        Date = d.Date,
+                        DueDate = d.DueDate,
+                        Description = d.Description,
+                        DateReceived = d.DateReceived,
+                        PaymentStatus = d.PaymentStatus,
+                        TotalOutput = d.TotalOutput,
+                        Customer = new Entities.Customer
+                        {
+                            CustomerInfo = d.Customer.CustomerInfo
+                        }
+                    }).ToListAsync();
             }
             else
             {
-                var documentEntity = await _context.Documents.Include(x => x.Customer).AsNoTracking().Select(c => new Entities.Document
-                {
-                    Id = c.Id,
-                    Number = c.Number,
-                    ToDocument = c.ToDocument,
-                    DateReceived = c.DateReceived,
-                }).ToListAsync();
 
-                documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntity);
-
-                HttpContext.Session.SetString("Documents", JsonConvert.SerializeObject(documents, settings));
+                documentEntity = await context.Buildings
+                    .Where(b => b.Id == buildingId.Value)
+                    .SelectMany(b => b.Customers)
+                    .SelectMany(c => c.Documents)
+                    .Select(c => new Entities.Document
+                    {
+                        Id = c.Id,
+                        Number = c.Number,
+                        ToDocument = c.ToDocument,
+                        Date = c.Date,
+                        DueDate = c.DueDate,
+                        Description = c.Description,
+                        DateReceived = c.DateReceived,
+                        PaymentStatus = c.PaymentStatus,
+                        TotalOutput = c.TotalOutput,
+                        Customer = c.Customer != null
+                            ? new Entities.Customer
+                            {
+                                CustomerInfo = c.Customer.CustomerInfo,
+                            }
+                            : null // Setze Customer auf null, falls es nicht existiert
+                    }).ToListAsync();
             }
-            return View(documents);
-        }
+            if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
+            {
+                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
+                ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
+                documentEntity = documentEntity.Where(x =>
+                    x.Date >= DateFrom && x.Date <= DateTo && (int)x.PaymentStatus == paymentStatusId.Value).ToList();
+            }
+            else if (!string.IsNullOrEmpty(dateFrom))
+            {
+                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
+                documentEntity = documentEntity.Where(x => x.Date >= DateFrom && (int)x.PaymentStatus == paymentStatusId.Value)
+                    .ToList();
+            }
+            else
+            {
+                documentEntity = documentEntity.Where(x => (int)x.PaymentStatus == paymentStatusId.Value)
+                    .ToList();
+            }
 
+            var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntity);
+            foreach (var doc in documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
+            {
+                var today = DateOnly.FromDateTime(DateTime.Now);
+                var overdueDays = (today.DayNumber - doc.DueDate.Value.DayNumber); // Calculate overdue days
+                doc.Delay = (today.DayNumber - doc.DueDate.Value.DayNumber); // DayNumber gives day difference directly
+                if (doc.Delay > 30)
+                {
+                    doc.PaymentStatus = PaymentStatus.Задоцнето;
+                }
+                else
+                {
+                    doc.PaymentStatus = PaymentStatus.Неплатено;
+                }
+                // Determine the percentage based on overdue days
+                double percentage = overdueDays switch
+                {
+                    < 0 => 0, // Not overdue
+                    < 30 => 0.02, // 2%
+                    >= 30 and <= 60 => 0.04, // 4%
+                    >= 61 and <= 90 => 0.06, // 6%
+                    >= 91 and <= 180 => 0.08, // 8%
+                    >= 181 and <= 360 => 0.10, // 10%
+                    >= 361 and <= 730 => 0.13, // 13%
+                    _ => 0.16 // 16% for 730+ days
+                };
+
+                doc.NewTotal = (int)Math.Round(doc.TotalOutput.Value * (1 + percentage), MidpointRounding.AwayFromZero);
+            }
+            return View("Index", documents);
+        }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -161,7 +282,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var documentEntity = await _context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
+            var documentEntity = await context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
             if (documentViewModel == null)
@@ -186,7 +307,7 @@ namespace CleanHub.Controllers
             ViewBag.RouteId = id;
             documentViewModel.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentViewModel.Company = _config;
-            var buildings = _context.Buildings.Include(x => x.BuildingProducts)
+            var buildings = context.Buildings.Include(x => x.BuildingProducts)
                 .Select(b => new Building()
                 {
                     Id = b.Id,
@@ -216,8 +337,8 @@ namespace CleanHub.Controllers
             else
             {
                 var basicProducts = (id == 0)
-                    ? _context.Products.ToList()
-                    : _context.Products.ToList().Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
+                    ? context.Products.ToList()
+                    : context.Products.ToList().Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
 
                 documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
             }
@@ -231,7 +352,7 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             documentViewModel.Company = _config;
-            var buildings = _context.Buildings
+            var buildings = context.Buildings
                 .Include(b => b.BuildingProducts)
                 .Select(b => new Building()
                 {
@@ -258,7 +379,7 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
-                var building = _context.Buildings.Include(x => x.Customers)
+                var building = context.Buildings.Include(x => x.Customers)
                     .FirstOrDefault(x => x.Id == document.BuildingId);
                 if (building != null)
                 {
@@ -270,21 +391,21 @@ namespace CleanHub.Controllers
                         {
                             try
                             {
-                               CreateBook(buildingProduct, docEntity);
+                                CreateBook(buildingProduct, docEntity);
                             }
-                         
+
                             catch (Exception e)
                             {
                                 Console.WriteLine(e);
                                 throw;
                             }
                         }
-                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id);
+                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id, building.ReserveFund.Value);
                     }
                 }
 
                 CreateSpecialInvoice(document);
-                await _context.SaveChangesAsync();
+                await context.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
 
                 return RedirectToAction(nameof(Create));
@@ -314,7 +435,7 @@ namespace CleanHub.Controllers
                     sum += (int)(price);
                 }
             }
-           
+
             var specialInvoiceViewModel = new SpecialInvoiceViewModel
             {
                 ForDate = document.Date.Value,
@@ -325,17 +446,17 @@ namespace CleanHub.Controllers
             };
             var specialInvoice = App.FullMapper.Map<SpecialInvoice>(specialInvoiceViewModel);
             // Ensure the BuildingId is treated as a foreign key reference
-            _context.Entry(specialInvoice).Property(s => s.BuildingId).IsModified = true;
+            context.Entry(specialInvoice).Property(s => s.BuildingId).IsModified = true;
 
             // Alternatively, attach the entity and set the BuildingId explicitly
-            _context.Attach(specialInvoice);
+            context.Attach(specialInvoice);
             specialInvoice.BuildingId = document.BuildingId;
 
             // Add the SpecialInvoice to the context
-            _context.SpecialInvoices.Add(specialInvoice);
+            context.SpecialInvoices.Add(specialInvoice);
         }
 
-        private void CreateBookFinancialAndReserve(Document docEntity, DateOnly? date, int customerId)
+        private void CreateBookFinancialAndReserve(Document docEntity, DateOnly? date, int customerId, int reserve)
         {
             var bookFinancialViewModel = new BookFinancialViewModel
             {
@@ -353,7 +474,7 @@ namespace CleanHub.Controllers
             {
                 InvoiceId = Constants.Reserve,
                 DocumentId = docEntity.Id,
-                Demands = docEntity!.TotalOutput!.Value!,
+                Demands = reserve,
                 Owes = 0,
                 DatumF = date,
                 CustomerId = customerId,
@@ -362,8 +483,8 @@ namespace CleanHub.Controllers
             };
             var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
             var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
-            _context.BookFinancials.Add(bookFinancial);
-            _context.BookFinancials.Add(bookFinancialReserve);
+            context.BookFinancials.Add(bookFinancial);
+            context.BookFinancials.Add(bookFinancialReserve);
         }
 
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
@@ -392,15 +513,14 @@ namespace CleanHub.Controllers
                 UnitOfMeasurement = book.UnitOfMeasurement,
             };
             var entityBook = App.FullMapper.Map<Book>(bookEntity);
-            _context.Books.Add(entityBook);
-            _context.SaveChanges();
+            context.Books.Add(entityBook);
         }
 
         private async Task<Document> CreateCustomerDocument(int customerId, DocumentViewModel document, Building building)
         {
             var documentCustomer = new DocumentViewModel();
             documentCustomer.CustomerId = customerId;
-            documentCustomer.Number = _context!.Documents.OrderBy(x => x.Number).LastOrDefault()?.Number + 1;
+            documentCustomer.Number = context!.Documents.OrderBy(x => x.Number).LastOrDefault()?.Number + 1;
             documentCustomer.Date = document.Date;
             documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
                                           document.Date.Value.Year;
@@ -418,8 +538,8 @@ namespace CleanHub.Controllers
             documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
 
-            _context.Documents.Add(docEntity);
-            await _context.SaveChangesAsync();
+            context.Documents.Add(docEntity);
+            await context.SaveChangesAsync();
             return docEntity;
         }
 
@@ -431,7 +551,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var documentEntity = await _context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
+            var documentEntity = await context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
             var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
             if (document == null)
             {
@@ -439,7 +559,7 @@ namespace CleanHub.Controllers
             }
 
             document.Company = _config;
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Id", document.CustomerId);
+            ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Id", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
         }
 
@@ -460,8 +580,8 @@ namespace CleanHub.Controllers
                 try
                 {
                     var documentEntity = App.FullMapper.Map<DocumentViewModel>(document);
-                    _context.Update(documentEntity);
-                    await _context.SaveChangesAsync();
+                    context.Update(documentEntity);
+                    await context.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -474,7 +594,7 @@ namespace CleanHub.Controllers
                 }
                 return RedirectToAction(nameof(Index));
             }
-            ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "Name", document.CustomerId);
+            ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Name", document.CustomerId);
             return View(document);
         }
 
@@ -486,7 +606,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var invoice = await _context.Documents
+            var invoice = await context.Documents
                 .Include(i => i.Books)
                 .FirstOrDefaultAsync(m => m.Id == id);
             if (invoice == null)
@@ -502,21 +622,19 @@ namespace CleanHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var invoice = await _context.Documents.FindAsync(id);
+            var invoice = await context.Documents.FindAsync(id);
             if (invoice != null)
             {
-                _context.Documents.Remove(invoice);
+                context.Documents.Remove(invoice);
             }
 
-            await _context.SaveChangesAsync();
+            await context.SaveChangesAsync();
             return RedirectToAction(nameof(Index));
         }
 
         private bool InvoiceExists(int id)
         {
-            return _context.Documents.Any(e => e.Id == id);
+            return context.Documents.Any(e => e.Id == id);
         }
-
-
     }
 }

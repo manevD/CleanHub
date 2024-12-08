@@ -9,7 +9,7 @@ namespace CleanHub.ViewModels
         public string? CustomerInfo { get; set; }
 
         public string? Adress { get; set; }
-
+        public int? Subscription { get; set; }
         public string? PhoneNumber { get; set; }
 
         [Email]

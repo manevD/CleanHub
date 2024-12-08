@@ -1,5 +1,5 @@
 ﻿@using CleanHub.Entities
-@model List<CleanHub.ViewModels.BookFinancialInfoViewModel>
+@model List<CleanHub.ViewModels.DocumentViewModel>
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -9,17 +9,13 @@
 <hr />
 <form asp-action="InvoiceFiltered" asp-controller="Invoices" method="get">
     <div class="row ">
+
         @if (ViewBag.Buildings != null)
         {
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
                 <div class="form-group mb-0">
                     <label for="buildingId">Објект</label>
-                    <select id="buildingId" name="buildingId" class="form-control">
-                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
-                        {
-                            <option value="@building.Value">@building.Text</option>
-                        }
-                    </select>
+                    @Html.DropDownList("buildingId", (IEnumerable<SelectListItem>)ViewBag.Buildings, new { @class = "form-control" })
                 </div>
             </div>
         }
@@ -27,20 +23,21 @@
         {
             <p>Нема пронајдено објекти!</p>
         }
+       
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom"/>
             </div>
         </div>
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
             <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo"/>
             </div>
         </div>
         <li class="divider"></li> <!-- Optional: Trennlinie -->
-        <input type="hidden" id="invoiceId" name="invoiceId" value="@ViewBag.InvoiceId" />
+        <input type="hidden" id="invoiceId" name="invoiceId" value="@ViewBag.InvoiceId"/>
         <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
                 <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
@@ -59,11 +56,13 @@
                         <th>Објект</th>
                         <th>Станар</th>
                         <th>Опис</th>
-                        <th>Должи</th>
-                        <th>Побарува</th>
+                        <th>Вкупно</th>
                         <th>Сметка</th>
                         <th>Статус</th>
-                        <th>Датум</th>
+                        <th>Дата на примање</th>
+                        <th>Дата на плаќање</th>
+                        <th>Задоцнуванје</th>
+                        <th>Нова вредност</th>
                         <th>Функции</th>
                     </tr>
                 </thead>
@@ -74,39 +73,37 @@
                         {
                             <tr>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.BuildingName)
+                                    @Html.DisplayFor(modelItem => invoice.Description)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.CustomerInfo)
+                                    @Html.DisplayFor(modelItem => invoice.Customer.CustomerInfo)
                                 </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.Description)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.Owes)
+                                    @Html.DisplayFor(modelItem => invoice.TotalOutput) МКД
+                                </td>
+                               
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.ToDocument)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.Demands)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.InvoiceId)
-                                </td>
-                                <td>
-                                    @if (invoice.Status == PaymentStatus.Платено)
+                                    @if (invoice.PaymentStatus == PaymentStatus.Платено)
                                     {
-                                        <span class="badge badge-light-success inv-status">@invoice.Status</span>
+                                        <span class="badge badge-light-success inv-status">@invoice.PaymentStatus</span>
                                     }
-                                    else if (invoice.Status == PaymentStatus.Неплатено)
+                                    else if (invoice.PaymentStatus == PaymentStatus.Неплатено)
                                     {
-                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
                                     }
-                                    else if (invoice.Status == PaymentStatus.Делумно)
+                                    else if (invoice.PaymentStatus == PaymentStatus.Делумно)
                                     {
-                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
                                     }
-                                    else if (invoice.Status == PaymentStatus.Задоцнето)
+                                    else if (invoice.PaymentStatus == PaymentStatus.Задоцнето)
                                     {
-                                        <span class="badge badge-light-danger inv-status">@invoice.Status</span>
+                                        <span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span>
                                     }
                                     else
                                     {
@@ -114,7 +111,16 @@
                                     }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.FormattedDatumF)
+                                    @Html.DisplayFor(modelItem => invoice.DateReceived)
+                                </td>
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.DueDate)
+                                </td>
+                                <td>
+                                    @((invoice.Delay ?? 0))
+                                    </td>
+                                <td>
+                                    @((invoice.NewTotal ?? 0) + " МКД")
                                 </td>
                                 <td>
                                     <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Edit" asp-controller="Invoices" asp-route-id="@invoice.Id">

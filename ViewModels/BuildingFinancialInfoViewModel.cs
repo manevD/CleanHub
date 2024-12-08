@@ -14,6 +14,8 @@ namespace CleanHub.ViewModels
         public double Owes { get; set; }
         public double Demands { get; set; }
         public string FormattedDatumF => DatumF.ToString("MM/yyyy");
+        public int? Delay { get; set; }
+        public int? NewTotal { get; set; }
 
     }
 }
