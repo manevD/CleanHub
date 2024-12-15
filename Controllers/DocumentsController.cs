@@ -1,4 +1,5 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
+﻿using CleanHub.Attribute;
+using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Extensions;
@@ -12,10 +13,9 @@ using Microsoft.Extensions.Options;
 
 namespace CleanHub.Controllers
 {
-    public class DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> config, IOptions<CompanyConfig> companyConfig) : Controller
+    [RequireLogin]
+    public class DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> _smtpConfig, IOptions<CompanyConfig> _config) : Controller
     {
-        private readonly CompanyConfig _config;
-        private SMTPConfig _smtpConfig;
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
         public List<Building> Buildings { get; set; } = context.Buildings.ToList();
@@ -89,7 +89,7 @@ namespace CleanHub.Controllers
                 context.SaveChanges();
             }
             documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntities);
-            documents.ForEach(x => x.Company = _config);
+            documents.ForEach(x => x.Company = _config.Value);
 
             return View(nameof(Index), documents);
         }
@@ -113,7 +113,7 @@ namespace CleanHub.Controllers
             }).ToListAsync();
 
             documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntity);
-            documents.ForEach(x => x.Company = _config);
+            documents.ForEach(x => x.Company = _config.Value);
             return View(nameof(Index), documents);
         }
 
@@ -289,7 +289,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            documentViewModel.Company = _config;
+            documentViewModel.Company = _config.Value;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
@@ -306,7 +306,7 @@ namespace CleanHub.Controllers
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
             documentViewModel.Date = DateOnly.FromDateTime(DateTime.UtcNow);
-            documentViewModel.Company = _config;
+            documentViewModel.Company = _config.Value;
             var buildings = context.Buildings.Include(x => x.BuildingProducts)
                 .Select(b => new Building()
                 {
@@ -351,7 +351,7 @@ namespace CleanHub.Controllers
         public IActionResult CreatePartially()
         {
             var documentViewModel = new DocumentViewModel();
-            documentViewModel.Company = _config;
+            documentViewModel.Company = _config.Value;
             var buildings = context.Buildings
                 .Include(b => b.BuildingProducts)
                 .Select(b => new Building()
@@ -400,7 +400,7 @@ namespace CleanHub.Controllers
                                 throw;
                             }
                         }
-                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id, building.ReserveFund.Value);
+                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id, building.ReserveFund ?? 0);
                     }
                 }
 
@@ -425,17 +425,7 @@ namespace CleanHub.Controllers
             {
                 sum = (int)Math.Round((decimal)energyValues.Sum(x => x.PriceWithTax), MidpointRounding.AwayFromZero);
             }
-            float price = 0;
-            float priceWithTax = 0;
-            foreach (var energy in energyValues)
-            {
-                if (int.TryParse(energy.PriceWithTax.ToString(), out int priceInt))
-                {
-                    price = priceInt / 100f;
-                    sum += (int)(price);
-                }
-            }
-
+ 
             var specialInvoiceViewModel = new SpecialInvoiceViewModel
             {
                 ForDate = document.Date.Value,
@@ -466,6 +456,7 @@ namespace CleanHub.Controllers
                 Owes = 0,
                 CustomerId = customerId,
                 Time = DateTime.Now,
+                Status = PaymentStatus.Неплатено,
                 DatumF = date,
                 Description = string.Empty,
             };
@@ -478,6 +469,7 @@ namespace CleanHub.Controllers
                 Owes = 0,
                 DatumF = date,
                 CustomerId = customerId,
+                Status = PaymentStatus.Неплатено,
                 Time = DateTime.Now,
                 Description = string.Empty,
             };
@@ -558,7 +550,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            document.Company = _config;
+            document.Company = _config.Value;
             ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Id", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
         }

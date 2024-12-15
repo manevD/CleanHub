@@ -1,7 +1,7 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
+﻿using CleanHub.Attribute;
+using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
 using CleanHub.Extensions;
-using CleanHub.Migrations;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -10,6 +10,7 @@ using PaymentStatus = CleanHub.Entities.PaymentStatus;
 
 namespace CleanHub.Controllers
 {
+    [RequireLogin]
     public class BookFinancialController(ApplicationDbContext context) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
@@ -31,7 +32,7 @@ namespace CleanHub.Controllers
                 {
                     Text = e.GetEnumDescription(),
                     Value = ((int)e).ToString(),
-                }).Where(x=>x.Text != "Струја")
+                }).Where(x => x.Text != "Струја")
                 .ToList();
             if (!Buildings.Any())
             {
@@ -47,27 +48,27 @@ namespace CleanHub.Controllers
             return View("Index");
         }
 
-        public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId,string dateFrom, string dateTo)
+        public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-            var result = await(from b in context.Buildings
-                join c in context.Customers on b.Id equals c.BuildingId into customerJoin
-                from c in customerJoin.DefaultIfEmpty()
-                join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
-                from bf in financialJoin.DefaultIfEmpty()
-                where bf.InvoiceId == invoiceId.Value && b.Id == buildingId.Value
-                select new BookFinancialInfoViewModel
-                {
-                    Id = bf.Id,
-                    BuildingName = b.Name,
-                    CustomerInfo = c.CustomerInfo,
-                    Status = bf.Status,
-                    InvoiceId = bf.InvoiceId.Value,
-                    Description = bf.Description,
-                    DatumF = bf.DatumF.Value,
-                    Owes = bf.Owes,
-                    Demands = bf.Demands
-                }).ToListAsync();
-            
+            var result = await (from b in context.Buildings
+                                join c in context.Customers on b.Id equals c.BuildingId into customerJoin
+                                from c in customerJoin.DefaultIfEmpty()
+                                join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
+                                from bf in financialJoin.DefaultIfEmpty()
+                                where bf.InvoiceId == invoiceId.Value && b.Id == buildingId.Value
+                                select new BookFinancialInfoViewModel
+                                {
+                                    Id = bf.Id,
+                                    BuildingName = b.Name,
+                                    CustomerInfo = c.CustomerInfo,
+                                    Status = bf.Status,
+                                    InvoiceId = bf.InvoiceId.Value,
+                                    Description = bf.Description,
+                                    DatumF = bf.DatumF.Value,
+                                    Owes = bf.Owes,
+                                    Demands = bf.Demands
+                                }).ToListAsync();
+
             Buildings.Insert(0, new Building()
             {
                 Name = "Сите",
@@ -86,48 +87,57 @@ namespace CleanHub.Controllers
                     Selected = (int)e == paymentStatusId // Markiere den ausgewählten Status
                 })
                 .ToList();
+            ViewBag.InvoiceTypList = Enum.GetValues(typeof(InvoiceTyp))
+                .Cast<InvoiceTyp>()
+                .Select(e => new SelectListItem
+                {
+                    Text = e.GetEnumDescription(),
+                    Value = ((int)e).ToString(),
+                }).Where(x => x.Text != "Струја")
+                .ToList();
+
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
             if (buildingId == 0)
             {
                 result = await (from b in context.Buildings
-                    join c in context.Customers on b.Id equals c.BuildingId into customerJoin
-                    from c in customerJoin.DefaultIfEmpty()
-                    join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
-                    from bf in financialJoin.DefaultIfEmpty()
-                    where bf.InvoiceId == invoiceId.Value
-                    select new BookFinancialInfoViewModel
-                    {
-                        Id = bf.Id,
-                        BuildingName = b.Name,
-                        CustomerInfo = c.CustomerInfo,
-                        Status = bf.Status,
-                        InvoiceId = bf.InvoiceId.Value,
-                        Description = bf.Description,
-                        DatumF = bf.DatumF.Value,
-                        Owes = bf.Owes,
-                        Demands = bf.Demands
-                    }).ToListAsync();
+                                join c in context.Customers on b.Id equals c.BuildingId into customerJoin
+                                from c in customerJoin.DefaultIfEmpty()
+                                join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
+                                from bf in financialJoin.DefaultIfEmpty()
+                                where bf.InvoiceId == invoiceId.Value
+                                select new BookFinancialInfoViewModel
+                                {
+                                    Id = bf.Id,
+                                    BuildingName = b.Name,
+                                    CustomerInfo = c.CustomerInfo,
+                                    Status = bf.Status,
+                                    InvoiceId = bf.InvoiceId.Value,
+                                    Description = bf.Description,
+                                    DatumF = bf.DatumF.Value,
+                                    Owes = bf.Owes,
+                                    Demands = bf.Demands
+                                }).ToListAsync();
             }
             else
             {
                 result = await (from b in context.Buildings
-                    join c in context.Customers on b.Id equals c.BuildingId into customerJoin
-                    from c in customerJoin.DefaultIfEmpty()
-                    join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
-                    from bf in financialJoin.DefaultIfEmpty()
-                    where bf.InvoiceId == invoiceId.Value && b.Id == buildingId.Value
-                    select new BookFinancialInfoViewModel
-                    {
-                        Id = bf.Id,
-                        BuildingName = b.Name,
-                        CustomerInfo = c.CustomerInfo,
-                        Status = bf.Status,
-                        InvoiceId = bf.InvoiceId.Value,
-                        Description = bf.Description,
-                        DatumF = bf.DatumF.Value,
-                        Owes = bf.Owes,
-                        Demands = bf.Demands
-                    }).ToListAsync();
+                                join c in context.Customers on b.Id equals c.BuildingId into customerJoin
+                                from c in customerJoin.DefaultIfEmpty()
+                                join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
+                                from bf in financialJoin.DefaultIfEmpty()
+                                where bf.InvoiceId == invoiceId.Value && b.Id == buildingId.Value
+                                select new BookFinancialInfoViewModel
+                                {
+                                    Id = bf.Id,
+                                    BuildingName = b.Name,
+                                    CustomerInfo = c.CustomerInfo,
+                                    Status = bf.Status,
+                                    InvoiceId = bf.InvoiceId.Value,
+                                    Description = bf.Description,
+                                    DatumF = bf.DatumF.Value,
+                                    Owes = bf.Owes,
+                                    Demands = bf.Demands
+                                }).ToListAsync();
             }
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
             {
@@ -179,7 +189,7 @@ namespace CleanHub.Controllers
 
                 doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
             }
-            return View("Index", result) ;
+            return View("Index", result.ToList());
         }
     }
 }

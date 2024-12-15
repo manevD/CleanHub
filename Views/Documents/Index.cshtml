@@ -63,7 +63,6 @@
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Објект</th>
                         <th>Станар</th>
                         <th>Опис</th>
                         <th>Вкупно</th>
@@ -82,9 +81,6 @@
                         @foreach (var invoice in Model)
                         {
                             <tr>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.Description)
-                                </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.Customer.CustomerInfo)
                                 </td>

@@ -1,5 +1,5 @@
 ﻿@using CleanHub.Entities
-@model List<CleanHub.ViewModels.BookFinancialInfoViewModel>
+@model IEnumerable<CleanHub.ViewModels.BookFinancialInfoViewModel>
 @{
     ViewData["Title"] = "Книжења";
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -28,7 +28,7 @@
         {
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
-                    <label for="invoiceId">Статус</label>
+                    <label for="invoiceId">Тип на сметка</label>
                     @Html.DropDownList("invoiceId", (IEnumerable<SelectListItem>)ViewBag.InvoiceTypList, new { @class = "form-control" })
                 </div>
             </div>
@@ -36,7 +36,7 @@
         else
         {
             <div class="col-lg-2 col-md-3">
-                <p>Нема пронајдено статус!</p>
+                <p>Нема пронајдено тип на сметка!</p>
             </div>
         }
         @if (ViewBag.PaymentStatusList != null)
@@ -83,14 +83,13 @@
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
                     <tr>
-                        <th>Објект</th>
                         <th>Станар</th>
                         <th>Опис</th>
                         <th>Должи</th>
                         <th>Побарува</th>
                         <th>Статус</th>
                         <th>Дата на издавање</th>
-                        <th>Задоцнуванје</th>
+                        <th>Задоцнување</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
                     </tr>
@@ -101,9 +100,6 @@
                         @foreach (var invoice in Model)
                         {
                             <tr>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.Description)
-                                </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.CustomerInfo)
                                 </td>
@@ -116,7 +112,7 @@
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.Demands) МКД
                                 </td>
-                             
+
                                 <td>
                                     @if (invoice.Status == PaymentStatus.Платено)
                                     {
@@ -142,7 +138,7 @@
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.FormattedDatumF)
                                 </td>
-                               
+
                                 <td>
                                     @((invoice.Delay ?? 0))
                                 </td>
