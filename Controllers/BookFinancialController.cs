@@ -191,5 +191,40 @@ namespace CleanHub.Controllers
             }
             return View("Index", result.ToList());
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetStatusPayment(int? id)
+        {
+            if (!id.HasValue || id == 0)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var bookfinancialToUpdate = await context.BookFinancials.FirstOrDefaultAsync(x => x.DocumentId == id);
+
+                if (bookfinancialToUpdate == null)
+                {
+                    return NotFound();
+                }
+
+                bookfinancialToUpdate.Status = PaymentStatus.Платено;
+                context.Update(bookfinancialToUpdate);
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!context.SpecialInvoices.Any(x => x.Id == id))
+                {
+                    return NotFound();
+                }
+
+                // Log error or handle gracefully
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
     }
 }

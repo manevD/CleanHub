@@ -534,7 +534,43 @@ namespace CleanHub.Controllers
             await context.SaveChangesAsync();
             return docEntity;
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetStatusPayment(int? id)
+        {
+            if (!id.HasValue || id == 0)
+            {
+                return NotFound();
+            }
 
+            try
+            {
+                var documentToUpdate = await context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+                if (documentToUpdate == null)
+                {
+                    return NotFound();
+                }
+
+                documentToUpdate.PaymentStatus = PaymentStatus.Платено;
+                var bookfinancialToUpdate = await context.BookFinancials.Where(x=>x.DocumentId == id).ToListAsync();
+                bookfinancialToUpdate.ForEach(x => x.Status = PaymentStatus.Платено);
+                context.Update(documentToUpdate);
+                context.UpdateRange(bookfinancialToUpdate);
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!context.Documents.Any(x => x.Id == id))
+                {
+                    return NotFound();
+                }
+
+                // Log error or handle gracefully
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
         // GET: Invoices/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {

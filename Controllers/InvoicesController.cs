@@ -275,7 +275,7 @@ namespace CleanHub.Controllers
             });
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
 
-            specialInvoiceViewModel.ForEach(x => x.InvoiceId = (int) InvoiceTyp.Energy);
+            specialInvoiceViewModel.ForEach(x => x.InvoiceId = (int)InvoiceTyp.Energy);
             return View("SpecialIndex", model: specialInvoiceViewModel);
         }
 
@@ -317,7 +317,40 @@ namespace CleanHub.Controllers
             return specialInvoiceViewModel;
         }
 
-  
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SetStatusPayment(int? id)
+        {
+            if (!id.HasValue || id == 0)
+            {
+                return NotFound();
+            }
+                
+            try
+            {
+                var invoiceToUpdate = await context.SpecialInvoices.FirstOrDefaultAsync(x => x.Id == id);
+                if (invoiceToUpdate == null)
+                {
+                    return NotFound();
+                }
+
+                invoiceToUpdate.Status = PaymentStatus.Платено;
+                context.Update(invoiceToUpdate);
+                await context.SaveChangesAsync();
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!context.SpecialInvoices.Any(x => x.Id == id))
+                {
+                    return NotFound();
+                }
+
+                // Log error or handle gracefully
+                throw;
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
         // GET: InvoicesController/Delete/5
         public ActionResult Delete(int id)
         {
