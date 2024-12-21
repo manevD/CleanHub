@@ -2,6 +2,7 @@
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Http;
 using System.Text.RegularExpressions;
+using CleanHub.Entities.Enums;
 
 namespace CleanHub.Services
 {

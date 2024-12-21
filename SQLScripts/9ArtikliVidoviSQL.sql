@@ -7,7 +7,7 @@ BEGIN TRY
         (Id,Description,PurschaceCalculation,ShortDescription)
     SELECT 
        VidArtID,VidArtikal,PresmNab,Skr
-    FROM [2021MartiHigienaOriginal].dbo.Artikli_Vidovi
+    FROM [2021MartiHigiena122024].dbo.Artikli_Vidovi
     -- Turn off IDENTITY_INSERT after the insertion
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Articles OFF;
 

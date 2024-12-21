@@ -1,11 +1,11 @@
-BEGIN TRANSACTION;
+﻿BEGIN TRANSACTION;
 
 BEGIN TRY
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Customers ON;
 
-    INSERT INTO [2021MartiHigienaNew].dbo.Customers (Id,CustomerInfo, Adress, PhoneNumber, Email, Web, Inactive, InactiveDatum, ActivityId, PhysicalPerson, BuidlingId)
+    INSERT INTO [2021MartiHigienaNew].dbo.Customers (Id,CustomerInfo, Adress, PhoneNumber, Email, Web, Inactive, InactiveDatum, ActivityId, PhysicalPerson, BuildingId)
     SELECT PartnerID,Partner, parAdresa, parTel, parEmail, parWeb, parNeaktiven, parNeaktivenDatum, DejnostID, FizickoLice, OddelID
-    FROM [2021MartiHigienaOriginal].dbo.Partneri
+    FROM [2021MartiHigiena122024].dbo.Partneri
       update Customers set Inactive = 0 where Inactive is null
     COMMIT TRANSACTION;
 	SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Customers OFF;

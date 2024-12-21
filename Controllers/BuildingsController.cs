@@ -21,12 +21,11 @@ namespace CleanHub.Controllers
     public class BuildingsController : Controller
     {
         private readonly ApplicationDbContext _context;
-        private SMTPConfig _smtpConfig;
+        private readonly SMTPConfig _smtpConfig;
         private readonly CompanyConfig _config;
         private readonly ICompositeViewEngine _viewEngine;
         private readonly IWebHostEnvironment _env;
         private readonly IHttpContextAccessor _httpContextAccessor;
-
         private static int Month = DateTime.Now.Month;
         private static int Year = DateTime.Now.Year;
         public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig> config)
@@ -34,31 +33,31 @@ namespace CleanHub.Controllers
             _httpContextAccessor = httpContextAccessor;
             _env = env;
             _viewEngine = viewEngine;
-            _context = context;
+                _context = context;
             _smtpConfig = smtpConfig.Value;
             _config = config.Value;
         }
 
-        [Route("Згради")]
+        private List<Building> GetBuildings()
+        {
+            var allBuildings = new List<Building> { new Building { Name = "Сите", Id = 0 } };
+            allBuildings.AddRange(_context.Buildings.ToList());
+            return allBuildings;
+        }
+
         // GET: Buildings
+        [Route("Згради")]
         public async Task<IActionResult> Index()
         {
-            string buildingsJson = HttpContext.Session.GetString("Buildings");
-            var settings = new JsonSerializerSettings
-            {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-            List<BuildingViewModel> buildings;
-            if (!string.IsNullOrEmpty(buildingsJson))
-            {
-                buildings = JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
-            }
-            else
-            {
-                var buildingssEntity = await _context.Buildings.AsNoTracking().ToListAsync();
-                buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildingssEntity);
+            var buildingsJson = HttpContext.Session.GetString("Buildings");
+            var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
+
+            List<BuildingViewModel> buildings = string.IsNullOrEmpty(buildingsJson)
+                ? App.FullMapper.Map<List<BuildingViewModel>>(await _context.Buildings.AsNoTracking().ToListAsync())
+                : JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
+
+            if (string.IsNullOrEmpty(buildingsJson))
                 HttpContext.Session.SetString("Buildings", JsonConvert.SerializeObject(buildings, settings));
-            }
 
             return View(buildings);
         }
@@ -66,92 +65,46 @@ namespace CleanHub.Controllers
         // GET: Buildings/Details/5
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var building = await _context.Buildings.Include(x => x.Customers).FirstOrDefaultAsync(c => c.Id == id);
+            var buildingEntity = await _context.Buildings
+                .Include(x => x.Customers)
+                .FirstOrDefaultAsync(c => c.Id == id);
 
-            var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(building);
+            var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
+            if (buildingViewModel == null) return RedirectToAction(nameof(Index));
 
-            if (buildingViewModel != null)
-            {
-                if (buildingViewModel.Customers != null && buildingViewModel.Customers.Any())
-                {
-                    buildingViewModel.Customers = buildingViewModel.Customers
-                        .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
-                        .ToList();
-                }
+            if (buildingViewModel.Customers?.Any() == true)
+                buildingViewModel.Customers = buildingViewModel.Customers
+                    .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
+                    .ToList();
 
-                ViewBag.Month = Month;
-                ViewBag.Year = Year;
-                return View(buildingViewModel);
-            }
-
-            return RedirectToAction(nameof(Index));
+            ViewBag.Month = Month;
+            ViewBag.Year = Year;
+            return View(buildingViewModel);
         }
 
         // GET: Buildings/Create
         public IActionResult Create()
         {
-            BuildingViewModel buildingViewModel = new BuildingViewModel();
-
-            buildingViewModel.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_context.BuildingProducts.ToList());
-
-            var bProducts = new List<BuildingProductViewModel>
-                {
-                    new ()
-                    {
-
-                            Id = 0,
-                            Input = 0,
-                            Output = 0,
-                            Quantity = 1,
-                            PriceWithTax = 0,
-                            Tax = 18,
-                            Total = 0,
-                            Price = 0,
-                            ArticleNotes = string.Empty,
-                            UnitOfMeasurement = "br.",
-                    },
-                    new ()
-                    {
-
-                            Id = 0,
-                            Input = 0,
-                            Output = 0,
-                            Quantity = 1,
-                            PriceWithTax = 0,
-                            Tax = 18,
-                            Total = 0,
-                            Price = 0,
-                            ArticleNotes = string.Empty,
-                            UnitOfMeasurement = "br.",
-                    }
-                };
-            buildingViewModel.BuildingProducts.AddRange(bProducts);
+            var buildingViewModel = new BuildingViewModel
+            {
+                BuildingProducts = InitializeDefaultBuildingProducts()
+            };
             return View(buildingViewModel);
         }
 
-
         // POST: Buildings/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BuildingViewModel building)
         {
-            if (building.BuildingProducts != null && building.BuildingProducts.Any(x => string.IsNullOrEmpty(x.ArticleNotes)))
-            {
-                building.BuildingProducts.RemoveAll(x => string.IsNullOrEmpty(x.ArticleNotes));
-            }
-            building.BuildingProducts.ForEach(x => x.BuildingId = building.Id);
+            building.BuildingProducts?.RemoveAll(x => string.IsNullOrEmpty(x.ArticleNotes));
+            building.BuildingProducts?.ForEach(x => x.BuildingId = building.Id);
 
             if (ModelState.IsValid)
             {
-                var entity = App.FullMapper.Map<Building>(building);
-                _context.Add(entity);
+                _context.Add(App.FullMapper.Map<Building>(building));
                 await _context.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
 
@@ -163,105 +116,42 @@ namespace CleanHub.Controllers
         // GET: Buildings/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-            var buildingEntity = await _context.Buildings.Include(x => x.BuildingProducts).FirstOrDefaultAsync(c => c.Id == id);
+            if (id == null) return NotFound();
+
+            var buildingEntity = await _context.Buildings
+                .Include(x => x.BuildingProducts)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (buildingEntity == null) return NotFound();
+
             var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
 
-            if (!building.BuildingProducts.Any())
-            {
-                building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(_context.Products.ToList());
-                var bProducts = new List<BuildingProductViewModel>
-                    {
-                        new ()
-                        {
-                                Id = 0,
-                                Input = 0,
-                                Output = 0,
-                                Quantity = 1,
-                                PriceWithTax = 0,
-                                Tax = 18,
-                                Total = 0,
-                                Price = 0,
-                                ArticleNotes = string.Empty,
-                                UnitOfMeasurement = "br.",
-                        },
-                        new ()
-                        {
-                                Id = 0,
-                                Input = 0,
-                                Output = 0,
-                                Quantity = 1,
-                                PriceWithTax = 0,
-                                Tax = 18,
-                                Total = 0,
-                                Price = 0,
-                                ArticleNotes = string.Empty,
-                                UnitOfMeasurement = "br.",
-                        },
-                         new ()
-                        {
-                                Id = 0,
-                                Input = 0,
-                                Output = 0,
-                                Quantity = 1,
-                                PriceWithTax = 0,
-                                Tax = 18,
-                                Total = 0,
-                                Price = 0,
-                                ArticleNotes = string.Empty,
-                                UnitOfMeasurement = "br.",
-                        },
-                        new ()
-                        {
-                            Id = 0,
-                            Input = 0,
-                            Output = 0,
-                            Quantity = 1,
-                            PriceWithTax = 0,
-                            Tax = 18,
-                            Total = 0,
-                            Price = 0,
-                            ArticleNotes = string.Empty,
-                            UnitOfMeasurement = "br.",
-                        }
-                    };
-                building.BuildingProducts.AddRange(bProducts);
-            }
+            if (building.BuildingProducts == null || !building.BuildingProducts.Any())
+                building.BuildingProducts = InitializeDefaultBuildingProducts();
 
             return View(building);
         }
 
         // POST: Buildings/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, BuildingViewModel building)
         {
-            if (building.Id == 0)
-            {
-                return NotFound();
-            }
-            building.BuildingProducts.ForEach(x => x.BuildingId = id);
+            if (id != building.Id) return NotFound();
+
+            building.BuildingProducts?.ForEach(x => x.BuildingId = id);
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    var buildingToUpdate = App.FullMapper.Map<Building>(building);
-                    _context.Update(buildingToUpdate);
+                    _context.Update(App.FullMapper.Map<Building>(building));
                     await _context.SaveChangesAsync();
                     HttpContext.Session.Remove("Buildings");
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!BuildingExists(building.Id))
-                    {
-                        return NotFound();
-                    }
-
+                    if (!BuildingExists(building.Id)) return NotFound();
                     throw;
                 }
                 return RedirectToAction(nameof(Index));
@@ -272,43 +162,35 @@ namespace CleanHub.Controllers
         // GET: Buildings/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-            var building = _context.Buildings.FirstOrDefault(m => m.Id == id);
-            if (building == null)
-            {
-                return NotFound();
-            }
-            else
-            {
-                _context.Buildings.Remove(building);
-                await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Buildings");
-            }
+            if (id == null) return NotFound();
 
-            return RedirectToAction("Index");
-        }
+            var building = await _context.Buildings.FindAsync(id);
+            if (building == null) return NotFound();
 
-        // POST: Buildings/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
-        {
-            var building = _context.Buildings.FirstOrDefault(m => m.Id == id);
-            if (building != null)
-            {
-                _context.Buildings.Remove(building);
-            }
+            _context.Buildings.Remove(building);
             await _context.SaveChangesAsync();
+            HttpContext.Session.Remove("Buildings");
 
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BuildingExists(int id)
+        private bool BuildingExists(int id) => _context.Buildings.Any(e => e.Id == id);
+
+        private List<BuildingProductViewModel> InitializeDefaultBuildingProducts()
         {
-            return _context.Buildings.Any(e => e.Id == id);
+            return Enumerable.Repeat(new BuildingProductViewModel
+            {
+                Id = 0,
+                Input = 0,
+                Output = 0,
+                Quantity = 1,
+                PriceWithTax = 0,
+                Tax = 18,
+                Total = 0,
+                Price = 0,
+                ArticleNotes = string.Empty,
+                UnitOfMeasurement = "br."
+            }, 4).ToList();
         }
 
         [HttpPost, ActionName("SendInvoiceEmail")]

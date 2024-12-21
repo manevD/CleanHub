@@ -16,7 +16,7 @@ public class App : Profile
             cfg.CreateMap<Customer, CustomerViewModel>()
                 .ForMember(dest => dest.CustomerInfo, opts => opts.MapFrom(src => src.CustomerInfo))
                 .ForMember(dest => dest.Email, opts => opts.Ignore())
-                .ForMember(dest => dest.PhoneNumber, opts =>opts.Ignore())
+                .ForMember(dest => dest.PhoneNumber, opts => opts.Ignore())
                 .ForMember(dest => dest.Adress, opts => opts.Ignore())
                 .ForMember(dest => dest.Inactive, opts => opts.Ignore())
                 .ForMember(dest => dest.Building, opts => opts.Ignore())
@@ -27,6 +27,7 @@ public class App : Profile
         {
             cfg.CreateMap<Document, DocumentViewModel>()
                 .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
+                .ForMember(dest => dest.CreatedTime, opts => opts.Ignore()) // Liste von Buildings
 
                 // Ignoriere die anderen Felder, die nur im ViewModel sind
                 .ForMember(dest => dest.Buildings, opts => opts.Ignore()) // Liste von Buildings
@@ -76,6 +77,7 @@ public class App : Profile
 
             #region Building
             cfg.CreateMap<Building, BuildingViewModel>()
+                .ForMember(dest => dest.ReserveFund, opts => opts.MapFrom(src => src.ReserveFund))
                 .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
                 .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Customers, opts => opts.MapFrom(src => src.Customers))
@@ -110,12 +112,14 @@ public class App : Profile
 
             #region Document
 
-            cfg.CreateMap<DocumentViewModel, Document>();
+            cfg.CreateMap<DocumentViewModel, Document>()
+                .ForMember(dest => dest.DateReceived, opts => opts.Ignore()) ;
 
             cfg.CreateMap<Document, DocumentViewModel>()
+
                       .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
                       .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default
-                      .ForMember(dest => dest.Buildings, opt => opt.Ignore()) 
+                      .ForMember(dest => dest.Buildings, opt => opt.Ignore())
                       .ForMember(dest => dest.Building, opt => opt.Ignore())
                       .ForMember(dest => dest.Delay, opt => opt.Ignore())
                       .ForMember(dest => dest.NewTotal, opt => opt.Ignore())

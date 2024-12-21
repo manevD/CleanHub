@@ -1,5 +1,6 @@
 ﻿using System.Runtime.Serialization;
 using CleanHub.Entities;
+using CleanHub.Entities.Enums;
 
 namespace CleanHub.ViewModels
 {

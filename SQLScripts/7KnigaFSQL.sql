@@ -4,7 +4,7 @@ BEGIN TRY
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.BookFinancials ON;
 
     INSERT INTO [2021MartiHigienaNew].dbo.BookFinancials 
-        (Id, OrderN, SmetkaId, CustomerId, DocumentTypId, Description, DatumF, Owes, Demands, Time, DateTimeChanges)
+        (Id, OrderN, InvoiceId, CustomerId, DocumentTypId, Description, DatumF, Owes, Demands, Time, DateTimeChanges)
     SELECT 
         KnigaFID,
         Nalog,
@@ -17,7 +17,7 @@ BEGIN TRY
         Pobaruva, 
         Vreme, 
         VremePromena
-    FROM [2021MartiHigienaOriginal].dbo.KnigaF
+    FROM [2021MartiHigiena122024].dbo.KnigaF
     -- Turn off IDENTITY_INSERT after the insertion
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.BookFinancials OFF;
 
@@ -30,4 +30,3 @@ BEGIN CATCH
     -- Optionally, you can re-throw the error to see more details
     THROW;
 END CATCH;
-

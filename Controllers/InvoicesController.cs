@@ -1,5 +1,6 @@
 ﻿using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
+using CleanHub.Entities.Enums;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;

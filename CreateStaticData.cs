@@ -1,5 +1,6 @@
 ﻿using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
+using CleanHub.Entities.Enums;
 using CleanHub.Helpers;
 using CleanHub.Services;
 using Microsoft.AspNetCore.Identity;

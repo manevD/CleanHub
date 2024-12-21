@@ -11,7 +11,7 @@ BEGIN TRY
         DatumSub,
         PobaruvaSub,
         DolziSub
-    FROM [2021MartiHigienaOriginal].dbo.KnigaF_sub;
+    FROM [2021MartiHigiena122024].dbo.KnigaF_sub;
 
     -- Turn off IDENTITY_INSERT after the insertion
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.BookFinancialSub OFF;

@@ -1,4 +1,7 @@
 ﻿@using CleanHub.Entities
+@using CleanHub.Entities.Enums
+@using CleanHub.Extensions
+@using CleanHub.ViewModels
 @model List<CleanHub.ViewModels.DocumentViewModel>
 @{
     ViewData["Title"] = "Сметки";
@@ -68,8 +71,10 @@
                         <th>Вкупно</th>
                         <th>Сметка</th>
                         <th>Статус</th>
-                        <th>Дата на примање</th>
                         <th>Дата на плаќање</th>
+                        <th>Платено на</th>
+                        <th>Тип на плаќање</th>
+                        <th>Број на плаќање</th>
                         <th>Задоцнуванје</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
@@ -117,10 +122,16 @@
                                     }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.DateReceived)
+                                    @Html.DisplayFor(modelItem => invoice.DueDate)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.DueDate)
+                                    @((invoice.PaymentDate ?? null))
+                                </td>
+                                <td>
+                                    @(invoice.PaymentType.GetEnumDescription())
+                                </td>
+                                <td>
+                                    @((invoice.PaymentNumber ?? ""))
                                 </td>
                                 <td>
                                     @((invoice.Delay ?? 0))
@@ -131,10 +142,65 @@
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
                                     {
-                                        <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-success">Плати</button>
-                                        </form>
+
+                                        <button type="button" class="btn btn-dark mb-2 me-4" data-bs-toggle="modal" data-bs-target="#inputFormModal">
+                                            Плати
+                                        </button>
+                                        <div class="modal fade inputForm-modal" id="inputFormModal" tabindex="-1" role="dialog" aria-labelledby="inputFormModalLabel" aria-hidden="true">
+                                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                                <div class="modal-content">
+                                                    <div class="modal-header" id="inputFormModalLabel">
+                                                        <h5 class="modal-title">Внесете податоци</h5>
+                                                    </div>
+                                                    <div class="modal-body">
+                                                        <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post" class="mt-0">
+
+                                                            <!-- Hidden input to include the model -->
+                                                            @Html.HiddenFor(m => @invoice.Id)
+                                                            @Html.AntiForgeryToken()
+
+                                                            <!-- Тип на плакање -->
+                                                            <div class="form-group">
+                                                                <label for="paymentType">Тип на плакање</label>
+                                                                <select id="paymentType" name="PaymentTypee" class="form-control form-control-sm">
+                                                                    @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                                                    {
+                                                                        <option value="@paymentType">@paymentType.GetEnumDescription()</option>
+                                                                    }
+                                                                </select>
+                                                            </div>
+
+                                                            <!-- Дата на плаќање -->
+                                                            <div class="form-group">
+
+                                                                <label for="paymentDate">Дата на плаќање</label>
+                                                                <div class="input-group mb-3">
+                                                                    <span class="input-group-text">
+                                                                    </span>
+                                                                    <input type="datetime-local" asp-for="@invoice.PaymentDate" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                                                                </div>
+                                                            </div>
+                                                            <!-- Број на плаќање -->
+                                                            <div class="form-group">
+
+                                                                <label for="paymentNumber">Број на плаќање</label>
+                                                                <div class="input-group mb-3">
+                                                                    <span class="input-group-text">
+                                                                       
+                                                                    </span>
+                                                                    <input type="text" id="paymentNumber" name="PaymentNumber" asp-for="@invoice.PaymentNumber" class="form-control form-control-sm" />
+                                                                </div>
+                                                            </div>
+
+                                                            <div class="modal-footer">
+                                                                <button type="submit" class="btn btn-primary mt-2 mb-2 btn-no-effect" data-bs-dismiss="modal">Плати</button>
+                                                            </div>
+                                                        </form>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
                                     }
                                 </td>
                             </tr>

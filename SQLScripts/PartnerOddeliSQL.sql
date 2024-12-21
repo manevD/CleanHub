@@ -1,3 +1,5 @@
+
+
 BEGIN TRANSACTION;
 
 BEGIN TRY
@@ -5,7 +7,7 @@ BEGIN TRY
 
     INSERT INTO [2021MartiHigienaNew].dbo.Buildings(Id,Name,BankAccount)
     SELECT OddelID,Oddel,OddelBanka
-    FROM [2021MartiHigienaOriginal].dbo.Partneri_Oddeli
+    FROM [2021MartiHigiena122024].dbo.Partneri_Oddeli
     COMMIT TRANSACTION;
 	    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Buildings Off;
 

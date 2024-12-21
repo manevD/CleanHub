@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+﻿using CleanHub.Entities.Enums;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CleanHub.Entities;
 
@@ -55,18 +56,13 @@ public partial class Document
             }
         }
     }
-
+    public string? PaymentNumber { get; set; }
     public float? TotalInput { get; set; }
     public float? TotalOutput { get; set; }
     public DateTime? CreatedTime { get; set; }
     public DateTime? DateTimeChanged { get; set; }
     public List<Book> Books { get; set; }
     public PaymentStatus PaymentStatus { get; set; }
-}
-public enum PaymentStatus
-{
-    Платено,
-    Неплатено,
-    Делумно,
-    Задоцнето
+    public PaymentType PaymentType { get; set; }
+    public DateOnly? PaymentDate { get; set; }
 }

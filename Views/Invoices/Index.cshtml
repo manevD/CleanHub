@@ -1,4 +1,5 @@
 ﻿@using CleanHub.Entities
+@using CleanHub.Entities.Enums
 @model List<CleanHub.ViewModels.DocumentViewModel>
 @{
     ViewData["Title"] = "Сметки";
@@ -58,7 +59,6 @@
                         <th>Вкупно</th>
                         <th>Сметка</th>
                         <th>Статус</th>
-                        <th>Дата на примање</th>
                         <th>Дата на плаќање</th>
                         <th>Задоцнуванје</th>
                         <th>Нова вредност</th>
@@ -106,9 +106,6 @@
                                     {
                                         <span>Неопределен статус</span>
                                     }
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.DateReceived)
                                 </td>
                                 <td>
                                     @Html.DisplayFor(modelItem => invoice.DueDate)

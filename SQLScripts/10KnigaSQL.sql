@@ -1,3 +1,4 @@
+
 BEGIN TRANSACTION;
 BEGIN TRY
     -- Allow explicit values to be inserted into the identity column
@@ -7,7 +8,7 @@ BEGIN TRY
         (Id,DocId,ArticleId,Input,Output,PriceWithTax,Tax,Quantity,Total,ArticleNotes,UnitOfMeasurement)
     SELECT 
        KnigaID,Dokid,ArtikalID,Vlez,Izlez,Cenai,Danok,Kutii,Vkupno,ArtikalZabeleska,EdmK
-    FROM [2021MartiHigienaOriginal].dbo.Kniga
+    FROM [2021MartiHigiena122024].dbo.Kniga
     -- Turn off IDENTITY_INSERT after the insertion
     SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Books OFF;
 

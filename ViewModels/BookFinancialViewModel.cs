@@ -1,5 +1,6 @@
 ﻿using CleanHub.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
+using CleanHub.Entities.Enums;
 
 namespace CleanHub.ViewModels
 {

@@ -2,6 +2,7 @@
 using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
+using CleanHub.Entities.Enums;
 using CleanHub.Extensions;
 using CleanHub.Helpers;
 using CleanHub.Services;
@@ -26,102 +27,97 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> Unpayed()
         {
             List<DocumentViewModel> documents = new List<DocumentViewModel>();
-            var documentEntities = await context.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
-            {
-                Id = c.Id,
-                Number = c.Number,
-                PaymentStatus = c.PaymentStatus,
-                ToDocument = c.ToDocument,
-                TotalOutput = c.TotalOutput,
-                CreatedTime = c.CreatedTime,
-                Customer = c.Customer,
-                DueDate = c.DueDate.Value,
-                DateReceived = c.DateReceived,
-            }).ToListAsync();
-            var documentsWithStatusLate = documentEntities.Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).ToList();
-            if (documentsWithStatusLate != null && documentsWithStatusLate.Any())
-            {
-                foreach (var documentEntity in documentsWithStatusLate)
+
+            // Retrieve document entities with relevant statuses
+            var documentEntities = await context.Documents
+                .Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето)
+                .AsNoTracking()
+                .Select(c => new Entities.Document
                 {
-                    // Get today's date as DateOnly
-                    DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+                    Id = c.Id,
+                    Number = c.Number,
+                    PaymentStatus = c.PaymentStatus,
+                    ToDocument = c.ToDocument,
+                    TotalOutput = c.TotalOutput,
+                    CreatedTime = c.CreatedTime,
+                    Customer = c.Customer,
+                    DueDate = c.DueDate.Value,
+                    DateReceived = c.DateReceived,
+                }).ToListAsync();
 
-                    // Calculate days overdue
-                    int daysOverdue = (currentDate.ToDateTime(TimeOnly.MinValue) - documentEntity.DateReceived.Value.ToDateTime(TimeOnly.MinValue)).Days;
-                    float additionalFeePercentage = 0f;
+            // Process documents with overdue status
+            foreach (var documentEntity in documentEntities.Where(x => x.PaymentStatus == PaymentStatus.Задоцнето))
+            {
+                DateOnly currentDate = DateOnly.FromDateTime(DateTime.Now);
+                int overdueDays = (currentDate.ToDateTime(TimeOnly.MinValue) - documentEntity.DateReceived.Value.ToDateTime(TimeOnly.MinValue)).Days;
 
-                    // Determine the additional fee percentage based on the number of days overdue
-                    if (daysOverdue < 30)
-                    {
-                        additionalFeePercentage = 2f;
-                    }
-                    else if (daysOverdue >= 30 && daysOverdue < 60)
-                    {
-                        additionalFeePercentage = 4f;
-                    }
-                    else if (daysOverdue >= 60 && daysOverdue < 90)
-                    {
-                        additionalFeePercentage = 6f;
-                    }
-                    else if (daysOverdue >= 90 && daysOverdue < 180)
-                    {
-                        additionalFeePercentage = 8f;
-                    }
-                    else if (daysOverdue >= 180 && daysOverdue < 360)
-                    {
-                        additionalFeePercentage = 10f;
-                    }
-                    else if (daysOverdue >= 360 && daysOverdue < 730)
-                    {
-                        additionalFeePercentage = 13f;
-                    }
-                    else if (daysOverdue >= 730)
-                    {
-                        additionalFeePercentage = 16f;
-                    }
+                // Calculate the additional fee
+                float additionalFeePercentage = GetOverdueFeePercentage(overdueDays);
+                float additionalFee = documentEntity.TotalOutput.Value * (additionalFeePercentage / 100);
 
-                    // Calculate the additional fee and apply it to the document's amount due
-                    float additionalFee = documentEntity.TotalOutput.Value * (additionalFeePercentage / 100);
-                    documentEntity.TotalOutput += additionalFee;
-                    context.Documents.Update(documentEntity);
-
-                }
-                context.SaveChanges();
+                // Update document total
+                documentEntity.TotalOutput += additionalFee;
+                context.Documents.Update(documentEntity);
             }
+
+            // Save changes to the context
+            await context.SaveChangesAsync();
+
             documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntities);
             documents.ForEach(x => x.Company = _config.Value);
 
             return View(nameof(Index), documents);
         }
+        private float GetOverdueFeePercentage(int overdueDays)
+        {
+            if (overdueDays < 30)
+                return 2f;
+            else if (overdueDays < 60)
+                return 4f;
+            else if (overdueDays < 90)
+                return 6f;
+            else if (overdueDays < 180)
+                return 8f;
+            else if (overdueDays < 360)
+                return 10f;
+            else if (overdueDays < 730)
+                return 13f;
+            else
+                return 16f;
+        }
         [Route("Partially")]
         [Route("Делумни")]
         public async Task<IActionResult> Partially()
         {
-            List<DocumentViewModel> documents = new List<DocumentViewModel>();
+            var documentEntities = await context.Documents
+                .Where(x => x.PaymentStatus == PaymentStatus.Задоцнето)
+                .AsNoTracking()
+                .Select(c => new Entities.Document
+                {
+                    Id = c.Id,
+                    Number = c.Number,
+                    PaymentStatus = c.PaymentStatus,
+                    ToDocument = c.ToDocument,
+                    Customer = c.Customer,
+                    TotalOutput = c.TotalOutput,
+                    CreatedTime = c.CreatedTime,
+                    DueDate = c.DueDate.Value,
+                    DateReceived = c.DateReceived,
+                })
+                .ToListAsync();
 
-            var documentEntity = await context.Documents.Include(x => x.Customer).Where(x => x.PaymentStatus == PaymentStatus.Задоцнето).AsNoTracking().Select(c => new Entities.Document
-            {
-                Id = c.Id,
-                Number = c.Number,
-                PaymentStatus = c.PaymentStatus,
-                ToDocument = c.ToDocument,
-                Customer = c.Customer,
-                TotalOutput = c.TotalOutput,
-                CreatedTime = c.CreatedTime,
-                DueDate = c.DueDate.Value,
-                DateReceived = c.DateReceived,
-            }).ToListAsync();
-
-            documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntity);
+            var documents = App.ReaderMapper.Map<List<DocumentViewModel>>(documentEntities);
             documents.ForEach(x => x.Company = _config.Value);
             return View(nameof(Index), documents);
         }
+
 
         // GET: Documents
 
         [Route("Сметки")]
         public async Task<IActionResult> Index()
         {
+            // Populate dropdown for PaymentStatus and Buildings
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                 .Cast<PaymentStatus>()
                 .Select(e => new SelectListItem
@@ -130,19 +126,18 @@ namespace CleanHub.Controllers
                     Value = ((int)e).ToString()
                 })
                 .ToList();
+
             if (!Buildings.Any())
             {
                 throw new Exception("No buildings found in the database.");
             }
-            Buildings.Insert(0, new Building()
-            {
-                Name = "Сите",
-                Id = 0
-            });
+
+            Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name");
 
             return View("Index");
         }
+
 
         private List<BookFinancialViewModel> GetInvoices(int? invoiceId, DateOnly dateFrom, DateOnly dateTo, int? buildingId)
         {
@@ -154,125 +149,67 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-            Buildings.Insert(0, new Building()
-            {
-                Name = "Сите",
-                Id = 0
-            });
+            // Add default building and payment status list
+            Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
             if (!Buildings.Any())
             {
                 throw new Exception("No buildings found in the database.");
             }
+
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                 .Cast<PaymentStatus>()
                 .Select(e => new SelectListItem
                 {
                     Text = e.GetEnumDescription(),
                     Value = ((int)e).ToString(),
-                    Selected = (int)e == paymentStatusId // Markiere den ausgewählten Status
+                    Selected = (int)e == paymentStatusId
                 })
                 .ToList();
-            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
-            var documentEntity = new List<Document>();
-            if (buildingId == 0)
-            {
-                documentEntity = await context.Documents
-                    .Where(d => d.Customer != null && d.Customer.Building != null)
-                    .Select(d => new Entities.Document
-                    {
-                        Id = d.Id,
-                        Number = d.Number,
-                        ToDocument = d.ToDocument,
-                        Date = d.Date,
-                        DueDate = d.DueDate,
-                        Description = d.Description,
-                        DateReceived = d.DateReceived,
-                        PaymentStatus = d.PaymentStatus,
-                        TotalOutput = d.TotalOutput,
-                        Customer = new Entities.Customer
-                        {
-                            CustomerInfo = d.Customer.CustomerInfo
-                        }
-                    }).ToListAsync();
-            }
-            else
-            {
 
-                documentEntity = await context.Buildings
-                    .Where(b => b.Id == buildingId.Value)
-                    .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents)
-                    .Select(c => new Entities.Document
-                    {
-                        Id = c.Id,
-                        Number = c.Number,
-                        ToDocument = c.ToDocument,
-                        Date = c.Date,
-                        DueDate = c.DueDate,
-                        Description = c.Description,
-                        DateReceived = c.DateReceived,
-                        PaymentStatus = c.PaymentStatus,
-                        TotalOutput = c.TotalOutput,
-                        Customer = c.Customer != null
-                            ? new Entities.Customer
-                            {
-                                CustomerInfo = c.Customer.CustomerInfo,
-                            }
-                            : null // Setze Customer auf null, falls es nicht existiert
-                    }).ToListAsync();
+            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
+
+            var documentEntities = await GetDocuments(buildingId, paymentStatusId, dateFrom, dateTo);
+
+            var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
+            foreach (var doc in documents)
+            {
+                doc.Delay = CalculateOverdueDays(doc.DueDate);
+                doc.NewTotal = CalculateNewTotal(doc);
             }
+
+            return View("Index", documents);
+        }
+        private int CalculateOverdueDays(DateOnly? dueDate)
+        {
+            var today = DateOnly.FromDateTime(DateTime.Now);
+            return (today.DayNumber - dueDate.Value.DayNumber); // Direct day difference
+        }
+
+        private int CalculateNewTotal(DocumentViewModel doc)
+        {
+            double percentage = GetOverdueFeePercentage(doc.Delay.Value);
+            return (int)Math.Round(doc.TotalOutput.Value * (1 + percentage), MidpointRounding.AwayFromZero);
+        }
+
+        private async Task<List<Entities.Document>> GetDocuments(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        {
+            var query = context.Documents.Include(d => d.Customer).ThenInclude(c => c.Building)
+                .Where(d => !buildingId.HasValue || d.Customer.BuildingId == buildingId.Value)
+                .AsQueryable();
+
+            if (paymentStatusId.HasValue)
+            {
+                query = query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value);
+            }
+
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
             {
-                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
-                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
-                ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
-                documentEntity = documentEntity.Where(x =>
-                    x.Date >= DateFrom && x.Date <= DateTo && (int)x.PaymentStatus == paymentStatusId.Value).ToList();
-            }
-            else if (!string.IsNullOrEmpty(dateFrom))
-            {
-                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-                ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
-                documentEntity = documentEntity.Where(x => x.Date >= DateFrom && (int)x.PaymentStatus == paymentStatusId.Value)
-                    .ToList();
-            }
-            else
-            {
-                documentEntity = documentEntity.Where(x => (int)x.PaymentStatus == paymentStatusId.Value)
-                    .ToList();
+                var startDate = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                var endDate = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                query = query.Where(d => d.Date >= startDate && d.Date <= endDate);
             }
 
-            var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntity);
-            foreach (var doc in documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
-            {
-                var today = DateOnly.FromDateTime(DateTime.Now);
-                var overdueDays = (today.DayNumber - doc.DueDate.Value.DayNumber); // Calculate overdue days
-                doc.Delay = (today.DayNumber - doc.DueDate.Value.DayNumber); // DayNumber gives day difference directly
-                if (doc.Delay > 30)
-                {
-                    doc.PaymentStatus = PaymentStatus.Задоцнето;
-                }
-                else
-                {
-                    doc.PaymentStatus = PaymentStatus.Неплатено;
-                }
-                // Determine the percentage based on overdue days
-                double percentage = overdueDays switch
-                {
-                    < 0 => 0, // Not overdue
-                    < 30 => 0.02, // 2%
-                    >= 30 and <= 60 => 0.04, // 4%
-                    >= 61 and <= 90 => 0.06, // 6%
-                    >= 91 and <= 180 => 0.08, // 8%
-                    >= 181 and <= 360 => 0.10, // 10%
-                    >= 361 and <= 730 => 0.13, // 13%
-                    _ => 0.16 // 16% for 730+ days
-                };
-
-                doc.NewTotal = (int)Math.Round(doc.TotalOutput.Value * (1 + percentage), MidpointRounding.AwayFromZero);
-            }
-            return View("Index", documents);
+            return await query.ToListAsync();
         }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -312,6 +249,7 @@ namespace CleanHub.Controllers
                 {
                     Id = b.Id,
                     Name = b.Name,
+                    ReserveFund = b.ReserveFund,
                     Customers = b.Customers,
                     BuildingProducts = b.BuildingProducts
                 })
@@ -341,8 +279,13 @@ namespace CleanHub.Controllers
                     : context.Products.ToList().Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
 
                 documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
+                foreach (var product in documentViewModel.Building.BuildingProducts.Where(p => p.ArticleNotes.Contains("Резервен")))
+                {
+                    if (documentViewModel.Building.ReserveFund != null)
+                        product.Price = documentViewModel.Building.ReserveFund.Value;
+                }
             }
-
+           
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
@@ -400,7 +343,7 @@ namespace CleanHub.Controllers
                                 throw;
                             }
                         }
-                        CreateBookFinancialAndReserve(docEntity, document.Date, customer.Id, building.ReserveFund ?? 0);
+                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0);
                     }
                 }
 
@@ -446,7 +389,7 @@ namespace CleanHub.Controllers
             context.SpecialInvoices.Add(specialInvoice);
         }
 
-        private void CreateBookFinancialAndReserve(Document docEntity, DateOnly? date, int customerId, int reserve)
+        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve)
         {
             var bookFinancialViewModel = new BookFinancialViewModel
             {
@@ -457,7 +400,7 @@ namespace CleanHub.Controllers
                 CustomerId = customerId,
                 Time = DateTime.Now,
                 Status = PaymentStatus.Неплатено,
-                DatumF = date,
+                DatumF = docEntity.DueDate,
                 Description = string.Empty,
             };
 
@@ -467,7 +410,7 @@ namespace CleanHub.Controllers
                 DocumentId = docEntity.Id,
                 Demands = reserve,
                 Owes = 0,
-                DatumF = date,
+                DatumF = docEntity.DueDate,
                 CustomerId = customerId,
                 Status = PaymentStatus.Неплатено,
                 Time = DateTime.Now,
@@ -518,7 +461,7 @@ namespace CleanHub.Controllers
                                           document.Date.Value.Year;
             documentCustomer.Description = building.Name;
             documentCustomer.CreatedTime = DateTime.UtcNow;
-            documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow);
+            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(10));
             var calculator = new PriceCalculator(building.Customers.Count());
 
             // Calculate prices for each product
@@ -527,7 +470,26 @@ namespace CleanHub.Controllers
             // Calculate the total PriceWithTax sum
             float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(document.Building.BuildingProducts);
             documentCustomer.TotalOutput = totalPriceWithTax;
-            documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+            var customer = context.Customers.FirstOrDefault(x => x.Id == customerId);
+            if (customer != null && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
+            {
+                float price = 0;
+                float priceWithTax = 0;
+                if (int.TryParse(documentCustomer.TotalOutput.ToString(), out int priceInt))
+                {
+                    price = priceInt / 100f;
+                }
+                if (int.TryParse(documentCustomer.TotalOutput.Value.ToString(), out int priceWithTaxInt))
+                {
+                    priceWithTax = priceWithTaxInt / 100f;
+                }
+                //customer.Subscription = customer.Subscription - documentCustomer.TotalOutput.Value;
+                documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+            }
+            else
+            {
+                documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+            }
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
 
             context.Documents.Add(docEntity);
@@ -536,36 +498,43 @@ namespace CleanHub.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetStatusPayment(int? id)
+        public async Task<IActionResult> SetStatusPayment(DocumentViewModel model)
         {
-            if (!id.HasValue || id == 0)
+            if (model.Id == 0)
             {
                 return NotFound();
             }
-
             try
             {
-                var documentToUpdate = await context.Documents.FirstOrDefaultAsync(x => x.Id == id);
+                var documentToUpdate = await context.Documents.FirstOrDefaultAsync(x => x.Id == model.Id);
                 if (documentToUpdate == null)
                 {
                     return NotFound();
                 }
-
                 documentToUpdate.PaymentStatus = PaymentStatus.Платено;
-                var bookfinancialToUpdate = await context.BookFinancials.Where(x=>x.DocumentId == id).ToListAsync();
-                bookfinancialToUpdate.ForEach(x => x.Status = PaymentStatus.Платено);
+                documentToUpdate.PaymentDate = model.PaymentDate;
+                documentToUpdate.PaymentType = model.PaymentType;
+                documentToUpdate.PaymentNumber = model.PaymentNumber;
+
+                // Update related BookFinancials
+                var bookfinancialToUpdate = await context.BookFinancials.Where(x => x.DocumentId == model.Id).ToListAsync();
+                foreach (var item in bookfinancialToUpdate)
+                {
+                    item.Status = PaymentStatus.Платено;
+                }
+
                 context.Update(documentToUpdate);
                 context.UpdateRange(bookfinancialToUpdate);
                 await context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!context.Documents.Any(x => x.Id == id))
+                if (!context.Documents.Any(x => x.Id == model.Id))
                 {
                     return NotFound();
                 }
 
-                // Log error or handle gracefully
+                // Optionally log error here for better debugging
                 throw;
             }
 
@@ -579,15 +548,20 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var documentEntity = await context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
-            var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
-            if (document == null)
+            var documentEntity = await context.Documents
+                .Include(x => x.Books)
+                .Include(d => d.Customer)
+                .FirstOrDefaultAsync(xd => xd.Id == id);
+
+            if (documentEntity == null)
             {
                 return NotFound();
             }
 
+            var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
             document.Company = _config.Value;
-            ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Id", document.CustomerId);
+
+            ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Name", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
         }
 
@@ -607,7 +581,7 @@ namespace CleanHub.Controllers
             {
                 try
                 {
-                    var documentEntity = App.FullMapper.Map<DocumentViewModel>(document);
+                    var documentEntity = App.FullMapper.Map<Document>(document);  // Map to Document entity, not ViewModel
                     context.Update(documentEntity);
                     await context.SaveChangesAsync();
                 }
@@ -618,10 +592,13 @@ namespace CleanHub.Controllers
                         return NotFound();
                     }
 
+                    // Optionally log error here for better debugging
                     throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
+
             ViewData["CustomerId"] = new SelectList(context.Customers, "Id", "Name", document.CustomerId);
             return View(document);
         }
@@ -637,6 +614,7 @@ namespace CleanHub.Controllers
             var invoice = await context.Documents
                 .Include(i => i.Books)
                 .FirstOrDefaultAsync(m => m.Id == id);
+
             if (invoice == null)
             {
                 return NotFound();
