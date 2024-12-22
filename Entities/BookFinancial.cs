@@ -26,4 +26,8 @@ public partial class BookFinancial
     public DateTime? Time { get; set; }
     public DateTime? DateTimeChanges { get; set; }
     public PaymentStatus Status { get; set; }
+    public PaymentType PaymentType { get; set; }
+    public DateOnly? PaymentDate { get; set; }
+    public string? PaymentNumber { get; set; }
+
 }

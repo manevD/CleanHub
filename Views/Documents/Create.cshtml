@@ -178,16 +178,13 @@
                             <div class="form-group mb-0">
                                 <label>Објект</label>
                                 <div class="dropdown selectable-dropdown invoice-select">
-                                    <input type="hidden" name="id" value="@routeId"/>
-                                    <select class="form-control" asp-for="@Model.BuildingId" id="buildingDropdown">
-                                        @foreach (var building in Model?.Buildings)
-                                        {
-                                            var isSelected = Model.Building != null && building.Id == Model.Building.Id;
-                                            <option value="@building.Id" selected="@(isSelected ? "selected" : null)">
-                                                @building.Name
-                                            </option>
-                                        }
-                                    </select>
+                                            <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај">
+                                            <datalist id="buildingOptions">
+                                                @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                                {
+                                                    <option value="@building.Text" data-id="@building.Value"></option>
+                                                }
+                                            </datalist>
                                 </div>
                             </div>
 
@@ -353,18 +350,30 @@
             updatePriceWithTaxTotal();
         });
 
+       document.getElementById("buildingSearch").addEventListener("input", function () {
+    var buildingSearchValue = this.value; // Der Text, den der Benutzer eingibt
+    let selectedId = '';
 
+    // Hole alle Optionen aus dem datalist
+    const options = document.querySelectorAll('#buildingOptions option');
 
+    // Suche nach der passenden Option, die dem eingegebenen Text entspricht
+    options.forEach(option => {
+        if (option.value === buildingSearchValue) {
+            selectedId = option.getAttribute('data-id'); // Hole die data-id
+        }
+    });
 
-        document.getElementById("buildingDropdown").addEventListener("change", function () {
-            var buildingId = this.value;
-            var id = document.querySelector('input[name="id"]').value; // Verstecktes Feld für id
+    // Wenn ein ausgewähltes Gebäude gefunden wurde
+    if (selectedId) {
+        // Baue die URL mit den Parametern selectedId und buildingId
+        var url = '@Url.Action("Create")' + '?id=' + selectedId + '&buildingId=' + selectedId;
 
-            // URL mit id zuerst, dann buildingId
-            var url = '@Url.Action("Create")' + '?id=' + id + '&buildingId=' + buildingId;
+        // Führe die GET-Anfrage aus und navigiere zur neuen URL
+        window.location.href = url;
+    }
+    });
 
-            // GET-Anfrage ausführen
-            window.location.href = url;
-        });
     </script>
+    
 }

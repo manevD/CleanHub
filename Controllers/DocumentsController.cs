@@ -254,6 +254,8 @@ namespace CleanHub.Controllers
                     BuildingProducts = b.BuildingProducts
                 })
                 .ToList();
+            ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.Value);
+
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             if (buildingId.HasValue)
             {
@@ -343,7 +345,7 @@ namespace CleanHub.Controllers
                                 throw;
                             }
                         }
-                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0);
+                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate,document.PaymentType,document.PaymentNumber);
                     }
                 }
 
@@ -389,7 +391,7 @@ namespace CleanHub.Controllers
             context.SpecialInvoices.Add(specialInvoice);
         }
 
-        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve)
+        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve,DateOnly? paymentDate, PaymentType paymentType, string? paymentNumber)
         {
             var bookFinancialViewModel = new BookFinancialViewModel
             {
@@ -518,8 +520,12 @@ namespace CleanHub.Controllers
 
                 // Update related BookFinancials
                 var bookfinancialToUpdate = await context.BookFinancials.Where(x => x.DocumentId == model.Id).ToListAsync();
+                if (bookfinancialToUpdate == null) throw new ArgumentNullException(nameof(bookfinancialToUpdate));
                 foreach (var item in bookfinancialToUpdate)
                 {
+                    if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
+                    item.PaymentType = model.PaymentType;
+                    item.PaymentNumber = model.PaymentNumber;
                     item.Status = PaymentStatus.Платено;
                 }
 

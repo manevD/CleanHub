@@ -32,28 +32,20 @@ namespace CleanHub.Controllers
                     Value = ((int)(object)e).ToString(),
                 }).ToList();
 
-        private IQueryable<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int? buildingId)
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int? buildingId, int status)
         {
-            var query = from b in context.Buildings
-                        join c in context.Customers on b.Id equals c.BuildingId into customerJoin
-                        from c in customerJoin.DefaultIfEmpty()
-                        join bf in context.BookFinancials on c.Id equals bf.CustomerId into financialJoin
-                        from bf in financialJoin.DefaultIfEmpty()
-                        where (invoiceId == null || bf.InvoiceId == invoiceId) &&
-                              (buildingId == null || buildingId == 0 || b.Id == buildingId)
-                        select new BookFinancialInfoViewModel
-                        {
-                            Id = bf.Id,
-                            BuildingName = b.Name,
-                            CustomerInfo = c.CustomerInfo,
-                            Status = bf.Status,
-                            InvoiceId = bf.InvoiceId ?? 0,
-                            Description = bf.Description,
-                            DatumF = bf.DatumF ?? DateOnly.MinValue,
-                            Owes = bf.Owes,
-                            Demands = bf.Demands
-                        };
-            return query;
+            return (List<BookFinancialInfoViewModel>)context.BookFinancials
+                .Where(bf => bf.InvoiceId == invoiceId.Value && bf.CustomerId == buildingId && bf.Status == (PaymentStatus)status)
+                .Select(bf => new BookFinancialInfoViewModel()
+                {
+                    Id = bf.Id,
+                    Status = bf.Status,
+                    InvoiceId = bf.InvoiceId ?? 0,
+                    Description = bf.Description,
+                    DatumF = bf.DatumF ?? DateOnly.MinValue,
+                    Owes = bf.Owes,
+                    Demands = bf.Demands
+                }).ToList();
         }
 
         public IActionResult Index()
@@ -67,7 +59,19 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-            var results = await GetFilteredBookFinancials(invoiceId, buildingId).ToListAsync();
+            var building = await context.Buildings.FirstOrDefaultAsync(x=>x.Id == buildingId.Value);
+            List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+            if (building != null)
+            {
+                if (building.CustomerRefId.HasValue)
+                {
+                    results =  GetFilteredBookFinancials(invoiceId, building.CustomerRefId.Value,paymentStatusId.Value).ToList();
+                }
+                else
+                {
+                    results =  GetFilteredBookFinancials(invoiceId, buildingId, paymentStatusId.Value).ToList();
+                }
+            }
 
             if (!string.IsNullOrEmpty(dateFrom)) DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
             if (!string.IsNullOrEmpty(dateTo)) DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);

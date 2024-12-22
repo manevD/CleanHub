@@ -1,4 +1,7 @@
-﻿namespace CleanHub.ViewModels
+﻿using System.Runtime.Serialization;
+using AutoMapper.Configuration.Annotations;
+
+namespace CleanHub.ViewModels
 {
     public class BuildingViewModel
     {
@@ -6,6 +9,8 @@
         public string? Name { get; set; }
         public string? BankAccount { get; set; }
         public int? ReserveFund {  get; set; }
+        public int? CustomerRefId { get; set; }
+
         public int CustomersCount
         {
             get
@@ -14,6 +19,9 @@
                 return 0;
             }
         }
+        [Ignore]
+        [IgnoreDataMember]
+        public int? ReserveTotal { get; set; }
 
         public List<BuildingProductViewModel> BuildingProducts { get; set; }
         public ICollection<CustomerViewModel>? Customers { get; set; }  
