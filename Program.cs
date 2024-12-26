@@ -28,6 +28,7 @@ namespace CleanHub
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
             builder.Services.AddMemoryCache();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddSession(options =>
             {

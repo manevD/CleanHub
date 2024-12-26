@@ -15,11 +15,12 @@ using Microsoft.Extensions.Options;
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> _smtpConfig, IOptions<CompanyConfig> _config) : Controller
+    public class DocumentsController(ApplicationDbContext context, IOptions<SMTPConfig> _smtpConfig, IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
         public List<Building> Buildings { get; set; } = context.Buildings.ToList();
+        private readonly ApplicationDbContext _context;
 
 
         [Route("Unpayed")]
@@ -115,7 +116,7 @@ namespace CleanHub.Controllers
         // GET: Documents
 
         [Route("Сметки")]
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
             // Populate dropdown for PaymentStatus and Buildings
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
@@ -218,7 +219,6 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-
             var documentEntity = await context.Documents.Include(x => x.Books).Include(d => d.Customer).FirstOrDefaultAsync(xd => xd.Id == id);
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
@@ -226,6 +226,8 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+            _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId, invoiceId: 1201, status: null, documentViewModel);
+
             documentViewModel.Company = _config.Value;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);
@@ -244,7 +246,8 @@ namespace CleanHub.Controllers
             ViewBag.RouteId = id;
             documentViewModel.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentViewModel.Company = _config.Value;
-            var buildings = context.Buildings.Include(x => x.BuildingProducts)
+             
+            var buildings = _unitOfWork.Buildings.GetAll(query => query.Include(x=>x.BuildingProducts).Include(x=>x.Customers))
                 .Select(b => new Building()
                 {
                     Id = b.Id,
@@ -254,25 +257,20 @@ namespace CleanHub.Controllers
                     BuildingProducts = b.BuildingProducts
                 })
                 .ToList();
-            ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.Value);
-
+            _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: 1201, status: null, documentViewModel);
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-            if (buildingId.HasValue)
-            {
-                documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId);
-            }
-            else
-            {
-                documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
-            }
-
+            documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
+            ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.HasValue ? buildingId.Value : 1);
+            var selectedBuildingName = buildings?.FirstOrDefault(x => x.Id == (buildingId ?? 1))?.Name;
+            if (selectedBuildingName != null)
+                ViewBag.SelectedBuildingName = selectedBuildingName;
             var filteredProducts = (id == 0)
-                ? documentViewModel.Building.BuildingProducts
-                : documentViewModel.Building.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
+                ? documentViewModel.Building?.BuildingProducts
+                : documentViewModel.Building?.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
 
-            if (filteredProducts.Any())
+            if (filteredProducts != null && filteredProducts.Any())
             {
-                documentViewModel.Building.BuildingProducts = filteredProducts;
+                if (documentViewModel.Building != null) documentViewModel.Building.BuildingProducts = filteredProducts;
             }
             else
             {
@@ -280,11 +278,16 @@ namespace CleanHub.Controllers
                     ? context.Products.ToList()
                     : context.Products.ToList().Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
 
-                documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
-                foreach (var product in documentViewModel.Building.BuildingProducts.Where(p => p.ArticleNotes.Contains("Резервен")))
+                if (documentViewModel.Building != null)
                 {
-                    if (documentViewModel.Building.ReserveFund != null)
-                        product.Price = documentViewModel.Building.ReserveFund.Value;
+                    documentViewModel.Building.BuildingProducts =
+                        App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
+                    foreach (var product in documentViewModel.Building.BuildingProducts.Where(p =>
+                                 p.ArticleNotes != null && p.ArticleNotes.Contains("Резервен")))
+                    {
+                        if (documentViewModel.Building.ReserveFund != null)
+                            product.Price = documentViewModel.Building.ReserveFund.Value;
+                    }
                 }
             }
            

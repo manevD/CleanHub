@@ -1,4 +1,28 @@
 ﻿@model CleanHub.ViewModels.DocumentViewModel
+@{
+    int summ = 0;
+    int summDemands = 0;
+    string result = "0";
+    if (Model != null)
+    {
+        summ = Model.TotalBuildingOwes;
+        summDemands = Model.TotalBuildingDemands;
+        int difference = summ - summDemands;
+        var message = "Вашата состојба на резервен фонд: ";
+        if (summDemands == 0)
+        {
+            result = "0";
+        }
+        else if (summDemands > summ)
+        {
+            result = message + " Во претплата " + (-difference);
+        }
+        else
+        {
+            result = message + " Во минус " + difference;
+        }
+    }
+}
 <link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" media="all" />
 <link href="~/src/bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css" media="all" />
 <link href="~/layouts/horizontal-light-menu/css/light/plugins.css" rel="stylesheet" type="text/css" media="all" />
@@ -146,6 +170,7 @@
 
                                     <div class="inv--additional-notes">
                                         @Html.Raw(@Model.Company.InvoiceNotice)
+                                        @Html.Raw("<strong>" + @result + "</strong>")
                                     </div>
 
                                     <div class="inv--note">

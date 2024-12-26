@@ -11,14 +11,23 @@ using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class BookFinancialController(ApplicationDbContext context) : Controller
+    public class BookFinancialController : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
 
+        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
+
+        public BookFinancialController(ApplicationDbContext context, IUnitOfWork unitOfWork)
+        {
+            _context = context;
+            _unitOfWork = unitOfWork;
+        }
+
         private List<Building> GetBuildings()
         {
-            var buildings = context.Buildings.ToList();
+            var buildings = _context.Buildings.ToList();
             buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
             return buildings;
         }
@@ -32,11 +41,10 @@ namespace CleanHub.Controllers
                     Value = ((int)(object)e).ToString(),
                 }).ToList();
 
-        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int? buildingId, int status)
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? status)
         {
-            return (List<BookFinancialInfoViewModel>)context.BookFinancials
-                .Where(bf => bf.InvoiceId == invoiceId.Value && bf.CustomerId == buildingId && bf.Status == (PaymentStatus)status)
-                .Select(bf => new BookFinancialInfoViewModel()
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId.Value, status.Value);
+            return query.Select(bf => new BookFinancialInfoViewModel
                 {
                     Id = bf.Id,
                     Status = bf.Status,
@@ -45,7 +53,8 @@ namespace CleanHub.Controllers
                     DatumF = bf.DatumF ?? DateOnly.MinValue,
                     Owes = bf.Owes,
                     Demands = bf.Demands
-                }).ToList();
+                })
+                .ToList();
         }
 
         public IActionResult Index()
@@ -56,42 +65,61 @@ namespace CleanHub.Controllers
 
             return View("Index");
         }
-
-        public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        //select sum(Owes)  from BookFinancials where CustomerId = 781 and InvoiceId = 1201 Dolzi
+        //select sum(demands) from BookFinancials where CustomerId in (select id from Customers where BuildingId = 80) and InvoiceId = 1201 and DatumF >='01.12.2022' Pobaruva
+        public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
         {
-            var building = await context.Buildings.FirstOrDefaultAsync(x=>x.Id == buildingId.Value);
             List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
-            if (building != null)
+            var building = new Building();
+            if (!buildingId.HasValue)
             {
-                if (building.CustomerRefId.HasValue)
-                {
-                    results =  GetFilteredBookFinancials(invoiceId, building.CustomerRefId.Value,paymentStatusId.Value).ToList();
-                }
-                else
-                {
-                    results =  GetFilteredBookFinancials(invoiceId, buildingId, paymentStatusId.Value).ToList();
-                }
+                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
+                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
+                return RedirectToAction(nameof(Index));
             }
 
-            if (!string.IsNullOrEmpty(dateFrom)) DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-            if (!string.IsNullOrEmpty(dateTo)) DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+            building = await _context.Buildings.FirstOrDefaultAsync(x => x.Id == buildingId.Value);
+            results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId.Value, paymentStatusId.Value).ToList();
 
-            results = results
-                .Where(x => (x.DatumF >= DateFrom && x.DatumF <= DateTo) &&
-                            (!paymentStatusId.HasValue || (int)x.Status == paymentStatusId))
-                .ToList();
 
-            CalculateOverdueStatus(results);
+            FilterResultsByDate(ref results, dateFrom, dateTo, invoiceId.Value, paymentStatusId);
+            if (paymentStatusId == (int)PaymentStatus.Неплатено)
+            {
+                CalculateOverdueStatus(results);
+            }
 
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
             ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
             ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
-            ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
-            ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
-
-            return View("Index", results);
+            return View("Index",results );
         }
+        private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
+        {
+            if (string.IsNullOrEmpty(dateFrom))
+                return;
 
+            var DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+            ViewBag.DateFrom = DateFrom;
+
+            if (!string.IsNullOrEmpty(dateTo))
+            {
+                var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                ViewBag.DateTo = DateTo;
+
+                results = results.Where(x =>
+                        (x.DatumF >= DateFrom && x.DatumF <= DateTo) &&
+                        (invoiceId == (int)InvoiceTyp.Reserve || !paymentStatusId.HasValue || (int)x.Status == paymentStatusId))
+                    .ToList();
+            }
+            else
+            {
+                results = results.Where(x =>
+                        (x.DatumF >= DateFrom) &&
+                        (invoiceId == (int)InvoiceTyp.Reserve || !paymentStatusId.HasValue || (int)x.Status == paymentStatusId))
+                    .ToList();
+            }
+        }
         private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
@@ -126,18 +154,18 @@ namespace CleanHub.Controllers
         {
             if (id == null || id == 0) return NotFound();
 
-            var bookFinancialToUpdate = await context.BookFinancials.FirstOrDefaultAsync(x => x.DocumentId == id);
+            var bookFinancialToUpdate = await _context.BookFinancials.FirstOrDefaultAsync(x => x.DocumentId == id);
             if (bookFinancialToUpdate == null) return NotFound();
 
             try
             {
                 bookFinancialToUpdate.Status = PaymentStatus.Платено;
-                context.Update(bookFinancialToUpdate);
-                await context.SaveChangesAsync();
+                _context.Update(bookFinancialToUpdate);
+                await _context.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!context.BookFinancials.Any(x => x.DocumentId == id)) return NotFound();
+                if (!_context.BookFinancials.Any(x => x.DocumentId == id)) return NotFound();
                 throw;
             }
 

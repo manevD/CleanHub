@@ -18,9 +18,6 @@ namespace CleanHub.ViewModels
         public CompanyConfig? Company { get; set; }  
         public string? ToDocument { get; set; }
         public string? Description { get; set; }
-
-        private DateOnly? _dateReceived;
-        private DateOnly? _dueDate;
         public DateOnly? DueDate { get; set; }
         [Ignore]
         public int? Delay { get; set; }
@@ -37,6 +34,9 @@ namespace CleanHub.ViewModels
         public List<BuildingViewModel>? Buildings { get; set; }
         public int? BuildingId { get; set; }
         public BuildingViewModel? Building { get; set; } = new BuildingViewModel();
+        public int TotalBuildingDemands { get; set; }
+        public int TotalBuildingOwes { get; set; }
+
         public PaymentType PaymentType { get; set; }
         public DateOnly? PaymentDate { get; set; }
     }

@@ -26,9 +26,10 @@ public class App : Profile
         var readerMapConfiguration = new MapperConfiguration(cfg =>
         {
             cfg.CreateMap<Document, DocumentViewModel>()
+                .ForMember(dest => dest.TotalBuildingOwes, opts => opts.Ignore())
+                .ForMember(dest => dest.TotalBuildingDemands, opts => opts.Ignore())
                 .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
                 .ForMember(dest => dest.CreatedTime, opts => opts.Ignore()) // Liste von Buildings
-
                 // Ignoriere die anderen Felder, die nur im ViewModel sind
                 .ForMember(dest => dest.Buildings, opts => opts.Ignore()) // Liste von Buildings
                 .ForMember(dest => dest.Building, opts => opts.Ignore())  // Einzelnes Building-Objekt
@@ -114,10 +115,12 @@ public class App : Profile
             #region Document
 
             cfg.CreateMap<DocumentViewModel, Document>()
-                .ForMember(dest => dest.DateReceived, opts => opts.Ignore()) ;
+                .ForMember(dest => dest.DateReceived, opts => opts.Ignore());
 
             cfg.CreateMap<Document, DocumentViewModel>()
 
+                .ForMember(dest => dest.TotalBuildingOwes, opts => opts.Ignore())
+                .ForMember(dest => dest.TotalBuildingDemands, opts => opts.Ignore())
                       .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
                       .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default
                       .ForMember(dest => dest.Buildings, opt => opt.Ignore())

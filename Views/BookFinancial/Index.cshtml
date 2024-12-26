@@ -4,6 +4,24 @@
     ViewData["Title"] = "Книжења";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var invoiceId = @ViewBag.InvoiceId;
+    int summ = 0;
+    int summDemands = 0;
+    string result = "0";
+    if (Model != null && Model.Any())
+    {
+        summ = (int)Model.Where(x => x.Owes != 0).Sum(x => x.Owes);
+        summDemands = (int)Model.Where(x => x.Demands != 0).Sum(x => x.Demands);
+        int difference = summ - summDemands;
+
+        if (summDemands > summ)
+        {
+            result = "Во претплата " + (-difference); 
+        }
+        else
+        {
+            result = "Во минус " + difference; 
+        }
+    }
 }
 
 <hr />
@@ -37,9 +55,11 @@
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="invoiceId">Тип на сметка</label>
-                    @Html.DropDownList("invoiceId", (IEnumerable<SelectListItem>)ViewBag.InvoiceTypList, new { @class = "form-control" })
+                    @Html.DropDownList("invoiceId", (IEnumerable<SelectListItem>)ViewBag.InvoiceTypList,
+                             new { @class = "form-control", @id = "invoiceId" })
                 </div>
             </div>
+
         }
         else
         {
@@ -50,10 +70,11 @@
 
         @if (ViewBag.PaymentStatusList != null)
         {
-            <div class="col-lg-2 col-md-3">
+            <div class="col-lg-2 col-md-3" id="paymentStatusContainer" style="display: none;">
                 <div class="form-group mb-0">
                     <label for="paymentStatusId">Статус</label>
-                    @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList, new { @class = "form-control" })
+                    @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
+                             new { @class = "form-control", @id = "paymentStatusId" })
                 </div>
             </div>
         }
@@ -92,16 +113,17 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr>
+                    <tr role="row">
                         <th>Опис</th>
                         <th>Должи</th>
                         <th>Побарува</th>
-                        <th>Статус</th>
-                        <th>Дата на издавање</th>
+                        <th class="sorting_asc">Дата на издавање</th>
+                        @* ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract *@
                         @if (Model != null && Model.Any())
                         {
                             @if (@Model.FirstOrDefault().Status != PaymentStatus.Платено)
                             {
+                                <th>Статус</th>
                                 <th>Задоцнување</th>
                                 <th>Нова вредност</th>
                                 <th>Функции</th>
@@ -114,34 +136,42 @@
                     {
                         @foreach (var invoice in Model)
                         {
-                            <tr>
+                            <tr role="row">
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
-
-                                <td>
-                                    @if (invoice.Status == PaymentStatus.Платено)
-                                    {
-                                        <span class="badge badge-light-success inv-status">@invoice.Status</span>
-                                    }
-                                    else if (invoice.Status == PaymentStatus.Неплатено)
-                                    {
-                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
-                                    }
-                                    else if (invoice.Status == PaymentStatus.Делумно)
-                                    {
-                                        <span class="badge badge-light-warning inv-status">@invoice.Status</span>
-                                    }
-                                    else if (invoice.Status == PaymentStatus.Задоцнето)
-                                    {
-                                        <span class="badge badge-light-danger inv-status">@invoice.Status</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Неопределен статус</span>
-                                    }
-                                </td>
+                                
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
+                                @if (invoice.InvoiceId == 1200)
+                                {
+                                    <td>
+                                        @if (invoice.Status == PaymentStatus.Платено)
+                                        {
+                                            <span class="badge badge-light-success inv-status">@invoice.Status</span>
+                                        }
+                                        else if (invoice.Status == PaymentStatus.Неплатено)
+                                        {
+                                            <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                        }
+                                        else if (invoice.Status == PaymentStatus.Делумно)
+                                        {
+                                            <span class="badge badge-light-warning inv-status">@invoice.Status</span>
+                                        }
+                                        else if (invoice.Status == PaymentStatus.Задоцнето)
+                                        {
+                                            <span class="badge badge-light-danger inv-status">@invoice.Status</span>
+                                        }
+                                        else
+                                        {
+                                            <span>Неопределен статус</span>
+                                        }
+                                    </td>
+
+                                }
+                                else
+                                {
+                                    <td></td>
+                                }
                                 @if (invoice.Status != PaymentStatus.Платено)
                                 {
                                     <td>@((invoice.Delay ?? 0))</td>
@@ -168,15 +198,13 @@
                     <tr>
                         <th>Вкупно:</th>
                         <th>
-                            @if (Model != null && Model.Any())
-                            {
-                                var summ = Model.Where(x => x.Owes != null && x.Owes != 0).Sum(x => x.Owes);
-                                @summ
-                            }
-                            else
-                            {
-                                @:0
-                            }
+                            @summ
+                        </th>
+                        <th>
+                            @summDemands
+                        </th>
+                        <th>
+                            @result
                         </th>
                     </tr>
                 </tfoot>
@@ -200,4 +228,25 @@
         // Set the hidden input's value
         document.getElementById('buildingId').value = selectedId || '';
     });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const invoiceDropdown = document.getElementById("invoiceId");
+        const paymentStatusContainer = document.getElementById("paymentStatusContainer");
+
+        // Function to toggle visibility
+        function togglePaymentStatus() {
+            if (invoiceDropdown.value === "1200") {
+                paymentStatusContainer.style.display = "block";
+            } else {
+                paymentStatusContainer.style.display = "none";
+            }
+        }
+
+        // Initial check on page load
+        togglePaymentStatus();
+
+        // Event listener for dropdown change
+        invoiceDropdown.addEventListener("change", togglePaymentStatus);
+    });
 </script>
+

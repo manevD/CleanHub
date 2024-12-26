@@ -51,12 +51,10 @@ namespace CleanHub.Controllers
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
                         TotalOutput = c.TotalOutput,
-                        Customer = c.Customer != null
-                            ? new Entities.Customer
-                            {
-                                CustomerInfo = c.Customer.CustomerInfo,
-                            }
-                            : null // Setze Customer auf null, falls es nicht existiert
+                        Customer = new Customer
+                        {
+                            CustomerInfo = c.Customer.CustomerInfo,
+                        } 
                     }).Where(x => x.Date >= DateFrom && x.Date <= DateTo)
                     .ToListAsync();
             }
@@ -94,7 +92,7 @@ namespace CleanHub.Controllers
                     .Where(b => b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
                     .SelectMany(c => c.Documents)
-                    .Select(c => new Entities.Document
+                    .Select(c => new Document
                     {
                         Id = c.Id,
                         Number = c.Number,
@@ -106,11 +104,11 @@ namespace CleanHub.Controllers
                         PaymentStatus = c.PaymentStatus,
                         TotalOutput = c.TotalOutput,
                         Customer = c.Customer != null
-                            ? new Entities.Customer
+                            ? new Customer
                             {
                                 CustomerInfo = c.Customer.CustomerInfo,
                             }
-                            : null // Setze Customer auf null, falls es nicht existiert
+                            : null 
                     })
                     .ToListAsync();
             }
@@ -151,7 +149,7 @@ namespace CleanHub.Controllers
             return View("Index", documents);
         }
 
-        public async Task<IActionResult> Index()
+        public IActionResult Index()
         {
             if (!Buildings.Any())
             {

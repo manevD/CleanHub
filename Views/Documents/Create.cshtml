@@ -12,238 +12,265 @@
     DateTime previousMonthDate = currentDate.AddMonths(-1);
     // Format the previous month date
     string formattedPreviousMonth = previousMonthDate.ToString("MM/yyyy");
+
+    int summ = 0;
+    int summDemands = 0;
+    string result = "0";
+    if (Model != null )
+    {
+        summ = Model.TotalBuildingOwes;
+        summDemands = Model.TotalBuildingDemands;
+        int difference = summ - summDemands;
+        var message = "Вашата состојба на резервен фонд: ";
+        if (summDemands == 0)
+        {
+            result = "0" ;
+        }
+        else if (summDemands > summ)
+        {
+            result = message + " Во претплата " + (-difference);
+        }
+        else
+        {
+            result =message + " Во минус " + difference; 
+        }
+    }
 }
 
 <div class="middle-content container-xxl p-0">
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
-            <form method="post" class="row">
+                <form method="post" class="row">
                     <input type="hidden" asp-for="@Model.Building.Id" />
 
-                <div class="col-xl-9">
-                    <div class="invoice-content">
-                        <div class="invoice-detail-body">
-                            <div class="invoice-detail-header">
-                                <div class="row justify-content-between">
-                                    <div class="col-xl-5 invoice-address-company">
-                                        <h4>Фирма:-</h4>
-                                        <div class="invoice-address-company-fields">
-                                            <div class="form-group row">
-                                                <label for="company-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
-                                                <div class="col-sm-9">
-                                                    <input type="text" class="form-control form-control-sm" id="company-name" value="@Model.Company.Name">
+                    <div class="col-xl-9">
+                        <div class="invoice-content">
+                            <div class="invoice-detail-body">
+                                <div class="invoice-detail-header">
+                                    <div class="row justify-content-between">
+                                        <div class="col-xl-5 invoice-address-company">
+                                            <h4>Фирма:-</h4>
+                                            <div class="invoice-address-company-fields">
+                                                <div class="form-group row">
+                                                    <label for="company-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-name" value="@Model.Company.Name">
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="form-group row">
-                                                <label for="company-email" class="col-sm-3 col-form-label col-form-label-sm">Е-Маил</label>
-                                                <div class="col-sm-9">
-                                                    <input type="text" class="form-control form-control-sm" id="company-email" value="@Model.Company.Email">
+                                                <div class="form-group row">
+                                                    <label for="company-email" class="col-sm-3 col-form-label col-form-label-sm">Е-Маил</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-email" value="@Model.Company.Email">
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <div class="form-group row">
-                                                <label for="company-address" class="col-sm-3 col-form-label col-form-label-sm">Адреса</label>
-                                                <div class="col-sm-9">
-                                                    <input type="text" class="form-control form-control-sm" id="company-address" value="@Model.Company.Address">
+                                                <div class="form-group row">
+                                                    <label for="company-address" class="col-sm-3 col-form-label col-form-label-sm">Адреса</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-address" value="@Model.Company.Address">
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-group row">
+                                                    <label for="company-phone" class="col-sm-3 col-form-label col-form-label-sm">Телефон</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="company-phone" value="@Model.Company.PhoneNumber">
+                                                    </div>
                                                 </div>
                                             </div>
-
-                                            <div class="form-group row">
-                                                <label for="company-phone" class="col-sm-3 col-form-label col-form-label-sm">Телефон</label>
-                                                <div class="col-sm-9">
-                                                    <input type="text" class="form-control form-control-sm" id="company-phone" value="@Model.Company.PhoneNumber">
+                                        </div>
+                                        <div class="col-xl-5 invoice-address-client">
+                                            <h4>Сметка за:-</h4>
+                                            <div class="invoice-address-client-fields">
+                                                <div class="form-group row">
+                                                    <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
+                                                    <div class="col-sm-9">
+                                                        <input type="text" class="form-control form-control-sm" id="client-name" value="@Model.Building?.Name">
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div class="col-xl-5 invoice-address-client">
-                                        <h4>Сметка за:-</h4>
-                                        <div class="invoice-address-client-fields">
-                                            <div class="form-group row">
-                                                <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
-                                                <div class="col-sm-9">
-                                                    <input type="text" class="form-control form-control-sm" id="client-name" value="@Model.Building?.Name">
-                                                </div>
+                                </div>
+                                <div class="invoice-detail-terms" style="display: none;">
+
+                                    <div class="row justify-content-between">
+                                        <div class="col-md-3">
+
+                                            <div class="form-group mb-4">
+                                                <label for="date">Invoice Date</label>
+                                                <input type="text" class="form-control form-control-sm" id="date">
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
-                            <div class="invoice-detail-terms" style="display: none;">
-
-                                <div class="row justify-content-between">
-                                    <div class="col-md-3">
-
-                                        <div class="form-group mb-4">
-                                            <label for="date">Invoice Date</label>
-                                            <input type="text" class="form-control form-control-sm" id="date">
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            @if (@Model?.Building != null)
-                            {
-                                <div class="invoice-detail-items">
-                                    <div class="table-responsive">
-                                        <table class="table item-table">
-                                            <thead>
-                                            <tr>
-                                                <th>Опис</th>
-                                                <th class="">Ед.м</th>
-                                                <th class="">Кол.</th>
-                                                <th class="text-right">Цена без ДДВ</th>
-                                                <th class="text-right">ДДВ</th>
-                                                <th class="text-center">Цена</th>
-                                                <th class="text-center">Вк.распл.</th>
-                                                <th class="text-center">Вкупно</th>
-                                            </tr>
-                                            <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
-                                            </thead>
-                                            <tbody>
-                                            @if (@Model?.Building != null && @Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
-                                            {
-                                                @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
-                                                {
-                                                    <tr>
-                                                        <td class="description">
-                                                            <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total"/>
-                                                        </td>
-                                                        <td class="rate">
-                                                            <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly/>
-                                                        </td>
-                                                    </tr>
-                                                }
-                                            }
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                                @if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+                                @if (@Model?.Building != null)
                                 {
-                                    <div class="invoice-detail-total" style="text-align: right;">
-                                        <div class="invoice-summary-label" style="color:black;">Вкупно</div>
-                                        <div class="invoice-summary-value">
-                                            <div class="balance-due-amount">
-                                                <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                }
-                                    @*                                     @Html.Partial("_BuildingProductsPartial", @Model)
-                                *@
-                            }
-
-                            <div class="invoice-detail-note">
-
-                                <div class="row">
-
-                                    <div class="col-md-12 align-self-center">
-
-                                        <div class="form-group row invoice-note">
-                                            <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Забелешки:</label>
-                                            <div class="col-sm-12">
-                                                <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
-                                                        @plainTextNotice
-                                                    </textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="col-xl-3">
-                    <div class="invoice-actions">
-                        <div class="invoice-action-currency">
-                            <div class="form-group mb-0">
-                                <label>Објект</label>
-                                <div class="dropdown selectable-dropdown invoice-select">
-                                            <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај">
-                                            <datalist id="buildingOptions">
-                                                @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                    <div class="invoice-detail-items">
+                                        <div class="table-responsive">
+                                            <table class="table item-table">
+                                                <thead>
+                                                    <tr>
+                                                        <th>Опис</th>
+                                                        <th class="">Ед.м</th>
+                                                        <th class="">Кол.</th>
+                                                        <th class="text-right">Цена без ДДВ</th>
+                                                        <th class="text-right">ДДВ</th>
+                                                        <th class="text-center">Цена</th>
+                                                        <th class="text-center">Вк.распл.</th>
+                                                        <th class="text-center">Вкупно</th>
+                                                    </tr>
+                                                    <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
+                                                </thead>
+                                                <tbody>
+                                                @if (@Model?.Building != null && @Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
                                                 {
-                                                    <option value="@building.Text" data-id="@building.Value"></option>
-                                                }
-                                            </datalist>
-                                </div>
-                            </div>
-
-                            <div class="invoice-action-discount">
-                                <h5>За месец :</h5>
-                                <div class="invoice-action-discount-fields">
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <div class="form-group mb-0">
-                                                <input type="text" class="form-control form-control-sm" id="due" asp-for="@Model.Date" placeholder="None">
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="invoice-action-discount">
-                                <h5>Станари</h5>
-                                <div class="invoice-action-discount-fields">
-                                    <div class="row">
-                                        <div class="col-12">
-                                            <div class="form-group mb-0">
-                                                @if (@Model.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
-                                                {
-                                                    @foreach (var customer in @Model.Building.Customers)
+                                                    @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                                                     {
-                                                        <h6>@customer.CustomerInfo</h6>
+                                                        <tr>
+                                                            <td class="description">
+                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total" />
+                                                            </td>
+                                                            <td class="rate">
+                                                                <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                            </td>
+                                                        </tr>
                                                     }
                                                 }
+                                                </tbody>
+                                                <tfoot>
+                                            </table>
+                                        </div>
+                                    </div>
+                                    @if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+                                    {
+                                        <div class="invoice-detail-total" style="text-align: right;">
+                                            <div class="invoice-summary-label" style="color:black;">Вкупно</div>
+                                            <div class="invoice-summary-value">
+                                                <div class="balance-due-amount">
+                                                    <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div class="col-6">
-                                            <div class="form-group mb-0 discount-amount" style="display: none;">
-                                                <label for="ratet1">Amount</label>
-                                                <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
+                                    }
+                                    @*                                     @Html.Partial("_BuildingProductsPartial", @Model)
+                                *@
+                                }
+
+                                <div class="invoice-detail-note">
+
+                                    <div class="row">
+
+                                        <div class="col-md-12 align-self-center">
+
+                                            <div class="form-group row invoice-note">
+                                                <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Забелешки:</label>
+                                                <div class="col-sm-12">
+                                                    <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
+                                                        @plainTextNotice
+                                                     </textarea>
+                                                </div>
                                             </div>
-                                            <div class="form-group mb-0 discount-percent" style="display: none;">
-                                                <label for="ratet2">Percent</label>
-                                                <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
+                                        </div>
+                                    </div>
+                                    @Html.Raw("<strong>" + @result + "</strong>")
+                                </div>
+
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3">
+                        <div class="invoice-actions">
+                            <div class="invoice-action-currency">
+                                <div class="form-group mb-0">
+                                    <label>Објект</label>
+                                    <div class="dropdown selectable-dropdown invoice-select">
+                                        <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај"  value="@ViewBag.SelectedBuildingName">
+                                        <input type="hidden" name="id" value="@routeId" />
+                                        <datalist id="buildingOptions">
+                                            @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                            {
+                                                <option value="@building.Text" data-id="@building.Value"></option>
+                                            }
+                                        </datalist>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-action-discount">
+                                    <h5>За месец :</h5>
+                                    <div class="invoice-action-discount-fields">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group mb-0">
+                                                    <input type="text" class="form-control form-control-sm" id="due" asp-for="@Model.Date" placeholder="None">
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                            </div>
 
-                            <div class="invoice-actions-btn">
-                                <div class="invoice-action-btn">
-                                    <div class="row">
-                                        <div class="col-xl-12 col-md-4">
-                                            <input type="submit" value="Зачувај" asp-action="Create" asp-controller="Documents" class="btn btn-primary"/>
+                                <div class="invoice-action-discount">
+                                    <h5>Станари</h5>
+                                    <div class="invoice-action-discount-fields">
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <div class="form-group mb-0">
+                                                    @if (@Model.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
+                                                    {
+                                                        @foreach (var customer in @Model.Building.Customers)
+                                                        {
+                                                            <h6>@customer.CustomerInfo</h6>
+                                                        }
+                                                    }
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="form-group mb-0 discount-amount" style="display: none;">
+                                                    <label for="ratet1">Amount</label>
+                                                    <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
+                                                </div>
+                                                <div class="form-group mb-0 discount-percent" style="display: none;">
+                                                    <label for="ratet2">Percent</label>
+                                                    <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="invoice-actions-btn">
+                                    <div class="invoice-action-btn">
+                                        <div class="row">
+                                            <div class="col-xl-12 col-md-4">
+                                                <input type="submit" value="Зачувај" asp-action="Create" asp-controller="Documents" class="btn btn-primary" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
-                </div>
 
-            </form>
+                </form>
             </div>
         </div>
     </div>
@@ -350,30 +377,31 @@
             updatePriceWithTaxTotal();
         });
 
-       document.getElementById("buildingSearch").addEventListener("input", function () {
-    var buildingSearchValue = this.value; // Der Text, den der Benutzer eingibt
-    let selectedId = '';
+        document.getElementById("buildingSearch").addEventListener("input", function () {
+            var buildingSearchValue = this.value; // Der Text, den der Benutzer eingibt
+            let selectedId = '';
 
-    // Hole alle Optionen aus dem datalist
-    const options = document.querySelectorAll('#buildingOptions option');
+            // Hole alle Optionen aus dem datalist
+            const options = document.querySelectorAll('#buildingOptions option');
+            var id = document.querySelector('input[name="id"]').value; // Verstecktes Feld für id
 
-    // Suche nach der passenden Option, die dem eingegebenen Text entspricht
-    options.forEach(option => {
-        if (option.value === buildingSearchValue) {
-            selectedId = option.getAttribute('data-id'); // Hole die data-id
-        }
-    });
+            // Suche nach der passenden Option, die dem eingegebenen Text entspricht
+            options.forEach(option => {
+                if (option.value === buildingSearchValue) {
+                    selectedId = option.getAttribute('data-id'); // Hole die data-id
+                }
+            });
 
-    // Wenn ein ausgewähltes Gebäude gefunden wurde
-    if (selectedId) {
-        // Baue die URL mit den Parametern selectedId und buildingId
-        var url = '@Url.Action("Create")' + '?id=' + selectedId + '&buildingId=' + selectedId;
+            // Wenn ein ausgewähltes Gebäude gefunden wurde
+            if (selectedId) {
+                // Baue die URL mit den Parametern selectedId und buildingId
+                var url = '@Url.Action("Create")' + '?id=' + id + '&buildingId=' + selectedId;
 
-        // Führe die GET-Anfrage aus und navigiere zur neuen URL
-        window.location.href = url;
-    }
-    });
+                // Führe die GET-Anfrage aus und navigiere zur neuen URL
+                window.location.href = url;
+            }
+        });
 
     </script>
-    
+
 }

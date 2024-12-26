@@ -1,78 +1,57 @@
-﻿using CleanHub.Core.Interfaces;
+﻿using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
-using System.Linq.Expressions;
-using CleanHub.CleanHub.Infrastructure.Data;
 
-namespace CleanHub.Infrastructure.Repositories
+namespace CleanHub.Repositories
 {
-    public class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : class
+    public class GenericRepository<T> : IRepository<T> where T : class
     {
-        internal DbSet<TEntity> _dbSet;
-        internal ApplicationDbContext _context;
+        private readonly DbContext _context;
+        private readonly DbSet<T> _dbSet;
 
-        public GenericRepository(ApplicationDbContext context)
+        public GenericRepository(DbContext context)
         {
             _context = context;
-            _dbSet = _context.Set<TEntity>();
+            _dbSet = context.Set<T>();
         }
 
-        public virtual IEnumerable<TEntity> Get(
-            Expression<Func<TEntity, bool>> filter = null,
-            Func<IQueryable<TEntity>, IOrderedQueryable<TEntity>> orderBy = null,
-            string includeProperties = "")
+        public IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>> include = null)
         {
-            IQueryable<TEntity> query = _dbSet;
+            IQueryable<T> query = _dbSet;
 
-            if (filter != null)
+            if (include != null)
             {
-                query = query.Where(filter);
-            }
-
-            foreach (var includeProperty in includeProperties.Split
-                (new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
-            {
-                query = query.Include(includeProperty);
+                query = include(query); // Apply the include filter if provided
             }
 
-            if (orderBy != null)
-            {
-                return orderBy(query).ToList();
-            }
-            else
-            {
-                return query.ToList();
-            }
+            return query.ToList();
         }
-
-        public virtual TEntity GetById(int entityId)
+        public T GetById(int id)
         {
-            return _dbSet.Find(entityId);
+            return _dbSet.Find(id);
         }
 
-        public virtual void Insert(TEntity entity)
+        public void Add(T entity)
         {
             _dbSet.Add(entity);
+            _context.SaveChanges();
         }
 
-        public virtual void Delete(int entityId)
+        public void Update(T entity)
         {
-            var entity = _dbSet.Find(entityId);
+            _dbSet.Attach(entity);
+            _context.Entry(entity).State = EntityState.Modified;
+            _context.SaveChanges();
+        }
+
+        public void Delete(T entity)
+        {
             _dbSet.Remove(entity);
+            _context.SaveChanges();
         }
 
-        public virtual void Delete(TEntity entityToDelete)
+        public void Save()
         {
-            if (_context.Entry(entityToDelete).State == EntityState.Detached)
-            {
-                _dbSet.Attach(entityToDelete);
-            }
-            _dbSet.Remove(entityToDelete);
-        }
-
-        public virtual void Update(TEntity entityToUpdate)
-        {
-            _dbSet.Attach(entityToUpdate);
-            _context.Entry(entityToUpdate).State = EntityState.Modified;
+            _context.SaveChanges();
         }
     }
 }
