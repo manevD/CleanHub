@@ -6,6 +6,7 @@ namespace CleanHub.ViewModels
     {
         public int Id { get; set; }
         public int BuildingId { get; set; } // Foreign Key
+        public bool GetFromReserve { get; set; }= false;
 
         public float? Input { get; set; }
 

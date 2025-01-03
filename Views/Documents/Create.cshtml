@@ -16,7 +16,7 @@
     int summ = 0;
     int summDemands = 0;
     string result = "0";
-    if (Model != null )
+    if (Model != null)
     {
         summ = Model.TotalBuildingOwes;
         summDemands = Model.TotalBuildingDemands;
@@ -24,7 +24,7 @@
         var message = "Вашата состојба на резервен фонд: ";
         if (summDemands == 0)
         {
-            result = "0" ;
+            result = "0";
         }
         else if (summDemands > summ)
         {
@@ -32,12 +32,12 @@
         }
         else
         {
-            result =message + " Во минус " + difference; 
+            result = message + " Во минус " + difference;
         }
     }
 }
 
-<div class="middle-content container-xxl p-0">
+<div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
@@ -115,53 +115,68 @@
                                                         <th>Опис</th>
                                                         <th class="">Ед.м</th>
                                                         <th class="">Кол.</th>
-                                                        <th class="text-right">Цена без ДДВ</th>
+                                                        <th class="text-right">Цена ДДВ</th>
                                                         <th class="text-right">ДДВ</th>
                                                         <th class="text-center">Цена</th>
                                                         <th class="text-center">Вк.распл.</th>
-                                                        <th class="text-center">Вкупно</th>
+                                                        <th class="text-center">Вк.</th>
+                                                        <th class="text-center">Р.Фонд</th>
                                                     </tr>
                                                     <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
                                                 </thead>
                                                 <tbody>
-                                                @if (@Model?.Building != null && @Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
-                                                {
-                                                    @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
+                                                    @if (@Model?.Building != null && @Model.Building.BuildingProducts.Any())
                                                     {
-                                                        <tr>
-                                                            <td class="description">
-                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total" />
-                                                            </td>
-                                                            <td class="rate">
-                                                                <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
-                                                            </td>
-                                                        </tr>
+                                                        @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
+                                                        {
+                                                            <tr>
+                                                                <td class="description">
+                                                                    @if (!string.IsNullOrWhiteSpace(@Model.Building.BuildingProducts[i].ArticleNotes))
+                                                                    {
+                                                                        <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes @formattedPreviousMonth"/>
+                                                                    }
+                                                                    else
+                                                                    {
+                                                                        <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" value="@Model.Building.BuildingProducts[i].ArticleNotes" />
+                                                                    }
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total" />
+                                                                </td>
+                                                                <td class="rate">
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                </td>
+                                                                <td class="text-center tax">
+                                                                    <div class="n-chk">
+                                                                        <div class="form-check form-check-primary form-check-inline me-0 mb-0">
+                                                                            <input class="form-check-input" type="checkbox" value="true" asp-for="@Model.Building.BuildingProducts[i].GetFromReserve" />
+                                                                        </div>
+                                                                    </div>
+                                                                </td>
+                                                            </tr>
+                                                        }
                                                     }
-                                                }
                                                 </tbody>
                                                 <tfoot>
                                             </table>
                                         </div>
                                     </div>
-                                    @if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+                                    @if (@Model != null && @Model.Building.BuildingProducts.Any())
                                     {
                                         <div class="invoice-detail-total" style="text-align: right;">
                                             <div class="invoice-summary-label" style="color:black;">Вкупно</div>
@@ -204,7 +219,7 @@
                                 <div class="form-group mb-0">
                                     <label>Објект</label>
                                     <div class="dropdown selectable-dropdown invoice-select">
-                                        <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај"  value="@ViewBag.SelectedBuildingName">
+                                        <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
                                         <input type="hidden" name="id" value="@routeId" />
                                         <datalist id="buildingOptions">
                                             @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)

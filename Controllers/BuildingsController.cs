@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
+using System.Reflection.PortableExecutable;
 
 namespace CleanHub.Controllers
 {
@@ -28,7 +29,10 @@ namespace CleanHub.Controllers
         private readonly IHttpContextAccessor _httpContextAccessor;
         private static int Month = DateTime.Now.Month;
         private static int Year = DateTime.Now.Year;
-        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env, IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig, IOptions<CompanyConfig> config)
+
+        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env,
+            IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig,
+            IOptions<CompanyConfig> config)
         {
             _httpContextAccessor = httpContextAccessor;
             _env = env;
@@ -95,8 +99,10 @@ namespace CleanHub.Controllers
                         .Where(x => x.CustomerId == buildingViewModel.Id)
                         .ToListAsync();
                 }
+
                 buildingViewModel.ReserveTotal = (int)bookFinancial.Sum(x => x.Owes);
             }
+
             ViewBag.Month = Month;
             ViewBag.Year = Year;
             return View(buildingViewModel);
@@ -107,7 +113,8 @@ namespace CleanHub.Controllers
         {
             var buildingViewModel = new BuildingViewModel
             {
-                BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(await _context.Products.ToListAsync())
+                BuildingProducts =
+                    App.FullMapper.Map<List<BuildingProductViewModel>>(await _context.Products.ToListAsync())
             };
             return View(buildingViewModel);
         }
@@ -128,6 +135,7 @@ namespace CleanHub.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+
             return View(building);
         }
 
@@ -216,8 +224,10 @@ namespace CleanHub.Controllers
                     {
                         return NotFound();
                     }
+
                     throw;
                 }
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -241,27 +251,11 @@ namespace CleanHub.Controllers
 
         private bool BuildingExists(int id) => _context.Buildings.Any(e => e.Id == id);
 
-        //private List<BuildingProductViewModel> InitializeDefaultBuildingProducts()
-        //{
-        //    return Enumerable.Repeat(new BuildingProductViewModel
-        //    {
-        //        Id = 0,
-        //        Input = 0,
-        //        Output = 0,
-        //        Quantity = 1,
-        //        PriceWithTax = 0,
-        //        Tax = 18,
-        //        Total = 0,
-        //        Price = 0,
-        //        ArticleNotes = string.Empty,
-        //        UnitOfMeasurement = "br."
-        //    }, 4).ToList();
-        //}
-
         [HttpPost, ActionName("SendInvoiceEmail")]
         public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
         {
-            var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers).SelectMany(d => d.Customers!).ToList();
+            var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers)
+                .SelectMany(d => d.Customers!).ToList();
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
             {
                 foreach (var item in customers.Where(x => x.Email != null))
@@ -269,17 +263,18 @@ namespace CleanHub.Controllers
                     smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
                     smtpClient.EnableSsl = true;
 
-                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x => x.Customer).Include(x => x.Books).FirstOrDefault(x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
+                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x => x.Customer)
+                        .Include(x => x.Books).FirstOrDefault(x =>
+                            x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
                     document.Company = _config;
                     document.IsForPdf = true;
 
-                    string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
+                    string htmlContent =
+                        await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
                     var request = _httpContextAccessor?.HttpContext?.Request;
                     string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                     HtmlToPdf converter = new HtmlToPdf();
-                    // create a new pdf document converting an url
                     PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
-
                     // create memory stream to save PDF
                     MemoryStream pdfStream = new MemoryStream();
 
@@ -304,10 +299,12 @@ namespace CleanHub.Controllers
                     MailMessage message = new MailMessage();
                     message.From = new MailAddress(_smtpConfig.Email);
                     message.To.Add(_smtpConfig.Recipient);
-                    message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/", year);
+                    message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/",
+                        year);
                     message.Body = emailBody;
-                    message.Attachments.Add(new Attachment(pdfStream, string.Concat("МартиХигиена", month, "/", year, ".pdf")));
-
+                    message.Attachments.Add(new Attachment(pdfStream,
+                        string.Concat("МартиХигиена", month, "/", year, ".pdf")));
+                    smtpClient.UseDefaultCredentials = false;
                     // send email
                     smtpClient.Send(message);
 
@@ -317,7 +314,35 @@ namespace CleanHub.Controllers
             }
             return RedirectToAction("Details", new { id = id });
         }
+       
+        private MemoryStream CombinePdfs(List<Stream> pdfStreams)
+        { // Erstellt ein neues PDF-Dokument
+            PdfDocument finalPdf = new PdfDocument();
 
+            foreach (var stream in pdfStreams)
+            {
+                stream.Position = 0; // Sicherstellen, dass der Stream am Anfang ist
+
+                // Lade das PDF aus dem Stream
+                PdfDocument partPdf = new PdfDocument(PdfStandard.PdfA);
+
+                // Hänge das geladene PDF an das finale PDF an
+                finalPdf.Append(partPdf);
+
+                // Schließe das Teildokument, um Ressourcen freizugeben
+                partPdf.Close();
+            }
+
+            // Speicher das kombinierte PDF in einen MemoryStream
+            MemoryStream outputStream = new MemoryStream();
+            finalPdf.Save(outputStream);
+            finalPdf.Close();
+
+            // Setze den Stream zurück, damit er lesbar ist
+            outputStream.Position = 0;
+
+            return outputStream;
+        }
         private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
         {
             ViewData.Model = model;

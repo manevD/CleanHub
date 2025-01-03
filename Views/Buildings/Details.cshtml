@@ -47,7 +47,7 @@
   
     <h1></h1>
 
-    @if (Model.Customers.Any())
+    @if (Model.Customers != null && Model.Customers.Any())
     {
         <form asp-controller="Buildings" asp-action="SendInvoiceEmail" autocomplete="off" method="post">
             <input type="hidden" name="id" value="@Model.Id" />

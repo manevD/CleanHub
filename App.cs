@@ -27,6 +27,7 @@ public class App : Profile
         {
             cfg.CreateMap<Document, DocumentViewModel>()
                 .ForMember(dest => dest.TotalBuildingOwes, opts => opts.Ignore())
+
                 .ForMember(dest => dest.TotalBuildingDemands, opts => opts.Ignore())
                 .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
                 .ForMember(dest => dest.CreatedTime, opts => opts.Ignore()) // Liste von Buildings
@@ -70,7 +71,9 @@ public class App : Profile
 
             #region BuildingProduct
 
-            cfg.CreateMap<BuildingProduct, BuildingProductViewModel>().ReverseMap();
+            cfg.CreateMap<BuildingProduct, BuildingProductViewModel>()
+                .ForMember(dest => dest.GetFromReserve, opts => opts.Ignore())
+                .ReverseMap();
             cfg.CreateMap<BuildingProduct, Product>().ReverseMap();
             cfg.CreateMap<BuildingProductViewModel, Product>().ReverseMap();
 
