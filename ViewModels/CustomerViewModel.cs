@@ -1,4 +1,4 @@
-﻿using DataAnnotationsExtensions;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace CleanHub.ViewModels
 {
@@ -12,7 +12,7 @@ namespace CleanHub.ViewModels
         public int? Subscription { get; set; }
         public string? PhoneNumber { get; set; }
 
-        [Email]
+        [EmailAddress]
         public string? Email { get; set; }
 
         public string? Web { get; set; }

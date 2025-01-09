@@ -23,7 +23,7 @@ namespace CleanHub.ViewModels
         [IgnoreDataMember]
         public int? ReserveTotal { get; set; }
 
-        public List<BuildingProductViewModel> BuildingProducts { get; set; }
+        public List<BuildingProductViewModel> BuildingProducts { get; set; } = null!;
         public ICollection<CustomerViewModel>? Customers { get; set; }  
     }
 }

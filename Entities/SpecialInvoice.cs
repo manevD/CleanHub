@@ -11,20 +11,20 @@ namespace CleanHub.Entities
 
         [ForeignKey(nameof(Invoice))]
         public int InvoiceId { get; set; }
-        public Invoice Invoice { get; set; }
+        public Invoice Invoice { get; set; } = null!;
         public DateOnly ForDate { get; set; }
 
         [ForeignKey(nameof(Building))]
         public int? BuildingId { get; set; }
-        public Building Building { get; set; }
+        public Building Building { get; set; } = null!;
 
         [ForeignKey(nameof(Customer))]
         public int? CustomerId { get; set; }
-        public Customer Customer { get; set; }
+        public Customer Customer { get; set; } = null!;
 
         public decimal Total { get; set; }
         public PaymentStatus Status { get; set; }
         [NotMapped]
-        public string BuildingName { get; set; }
+        public string BuildingName { get; set; } = null!;
     }
 }

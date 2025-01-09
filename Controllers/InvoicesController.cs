@@ -16,9 +16,9 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> InvoiceFiltered(int? invoiceId, int? buildingId, string dateFrom,
             string dateTo)
         {
-            ViewBag.InvoiceId = invoiceId.Value;
+            ViewBag.InvoiceId = invoiceId ?? 1201;
 
-            Buildings.Insert(0, new Building()
+            Buildings.Insert(0, new Building
             {
                 Name = "Сите",
                 Id = 0
@@ -29,7 +29,7 @@ namespace CleanHub.Controllers
             }
 
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
-            var documentEntity = new List<Document>();
+            List<Document> documentEntity;
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
             {
                 DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
@@ -37,9 +37,9 @@ namespace CleanHub.Controllers
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
                 ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
                 documentEntity = await context.Buildings
-                    .Where(b => b.Id == buildingId.Value)
+                    .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents)
+                    .SelectMany(c => c.Documents ?? new List<Document>())
                     .Select(c => new Entities.Document
                     {
                         Id = c.Id,
@@ -63,9 +63,9 @@ namespace CleanHub.Controllers
                 DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
                 documentEntity = await context.Buildings
-                    .Where(b => b.Id == buildingId.Value)
+                    .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents)
+                    .SelectMany(c => c.Documents ?? new List<Document>())
                     .Select(c => new Entities.Document
                     {
                         Id = c.Id,
@@ -77,21 +77,19 @@ namespace CleanHub.Controllers
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
                         TotalOutput = c.TotalOutput,
-                        Customer = c.Customer != null
-                            ? new Entities.Customer
-                            {
-                                CustomerInfo = c.Customer.CustomerInfo,
-                            }
-                            : null // Setze Customer auf null, falls es nicht existiert
+                        Customer = new Entities.Customer
+                        {
+                            CustomerInfo = c.Customer.CustomerInfo,
+                        }
                     }).Where(x => x.Date >= DateFrom)
                     .ToListAsync();
             }
             else
             {
                 documentEntity = await context.Buildings
-                    .Where(b => b.Id == buildingId.Value)
+                    .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents)
+                    .SelectMany(c => c.Documents ?? new List<Document>())
                     .Select(c => new Document
                     {
                         Id = c.Id,
@@ -103,12 +101,10 @@ namespace CleanHub.Controllers
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
                         TotalOutput = c.TotalOutput,
-                        Customer = c.Customer != null
-                            ? new Customer
-                            {
-                                CustomerInfo = c.Customer.CustomerInfo,
-                            }
-                            : null 
+                        Customer = new Customer
+                        {
+                            CustomerInfo = c.Customer.CustomerInfo,
+                        } 
                     })
                     .ToListAsync();
             }
@@ -143,7 +139,7 @@ namespace CleanHub.Controllers
                     _ => 0.16 // 16% for 730+ days
                 };
 
-                doc.NewTotal = (int)Math.Round(doc.TotalOutput.Value * (1 + percentage), MidpointRounding.AwayFromZero);
+                doc.NewTotal = (int)Math.Round(doc.TotalOutput ?? 0 * (1 + percentage), MidpointRounding.AwayFromZero);
             }
 
             return View("Index", documents);
@@ -259,9 +255,7 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> DetailsFiltered(int? buildingId,
             string dateFrom, string dateTo)
         {
-
-            List<SpecialInvoiceViewModel> specialInvoiceViewModel = new List<SpecialInvoiceViewModel>();
-            specialInvoiceViewModel = await GetSpecialInvoice(dateFrom, dateTo, buildingId.Value);
+            List<SpecialInvoiceViewModel> specialInvoiceViewModel = await GetSpecialInvoice(dateFrom, dateTo, buildingId ?? 0);
 
             if (!Buildings.Any())
             {

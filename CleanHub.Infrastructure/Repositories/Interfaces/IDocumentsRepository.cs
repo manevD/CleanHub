@@ -1,9 +1,9 @@
 ﻿using CleanHub.Entities;
-using CleanHub.Entities.Enums;
+using System.Linq.Expressions;
 
 namespace CleanHub.CleanHub.Infrastructure.Repositories.Interfaces
 {
-    public interface IBuildingRepository : IRepository<Building>
+    public interface IDocumentsRepository : IRepository<Document>
     {
     }
 }

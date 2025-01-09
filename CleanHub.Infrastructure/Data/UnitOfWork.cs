@@ -5,10 +5,15 @@ namespace CleanHub.CleanHub.Infrastructure.Data
 {
     public interface IUnitOfWork : IDisposable
     {
+        ICustomerRepository Customers { get; }
+        IBuildingProductRepository BuildingProducts { get; }
+        IBookRepository Books { get; }
+        IDocumentsRepository Documents { get; }
+        IProductRepository Products { get; }
         IBuildingRepository Buildings { get; }
         IBookFinancialsRepository BookFinancials { get; }
-
-        void Save();
+        ISpecialInvoiceRepository SpecialInvoices { get; }
+        Task SaveChangesAsync();
     }
 
     public class UnitOfWork : IUnitOfWork
@@ -19,16 +24,26 @@ namespace CleanHub.CleanHub.Infrastructure.Data
         {
             _context = context;
             Buildings = new BuildingRepository(context);
+            Documents = new DocumentRepository(context);
+            Products = new ProductRepository(context);
             BookFinancials = new BookFinancialRepository(context);
+            SpecialInvoices = new SpecialInvoiceRepository(context);
+            Books = new BookRepository(context);
+            Customers = new CustomersRepository(context);
+            BuildingProducts = new BuildingProductRepository(context);
         }
-
+        public IBuildingProductRepository BuildingProducts { get; private set; }
+        public ICustomerRepository Customers { get; private set; }
         public IBookFinancialsRepository BookFinancials { get; private set; }
-
+        public IDocumentsRepository Documents { get; private set; }
+        public IBookRepository Books { get; private set; }
+        public IProductRepository Products { get; private set; }
+        public ISpecialInvoiceRepository SpecialInvoices { get; private set; }
         public IBuildingRepository Buildings { get; private set; }
 
-        public void Save()
+        public async Task SaveChangesAsync()
         {
-            _context.SaveChanges();
+           await _context.SaveChangesAsync();
         }
 
         public void Dispose()

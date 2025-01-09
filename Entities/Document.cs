@@ -13,7 +13,7 @@ public partial class Document
 
     [ForeignKey(nameof(Customer))]
     public int? CustomerId { get; set; }
-    public Customer Customer { get; set; }
+    public Customer Customer { get; set; } = null!;
 
     public string? ToDocument { get; set; }
 
@@ -61,7 +61,7 @@ public partial class Document
     public float? TotalOutput { get; set; }
     public DateTime? CreatedTime { get; set; }
     public DateTime? DateTimeChanged { get; set; }
-    public List<Book> Books { get; set; }
+    public List<Book> Books { get; set; } = null!;
     public PaymentStatus PaymentStatus { get; set; }
     public PaymentType PaymentType { get; set; }
     public DateOnly? PaymentDate { get; set; }

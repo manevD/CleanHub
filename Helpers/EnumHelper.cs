@@ -14,8 +14,8 @@ namespace CleanHub.Helpers
             TEnum enumValue = (TEnum)Enum.ToObject(typeof(TEnum), id);
 
             // Retrieve the field info and the DescriptionAttribute
-            FieldInfo field = enumValue.GetType().GetField(enumValue.ToString());
-            DescriptionAttribute attribute = field?.GetCustomAttribute<DescriptionAttribute>();
+            FieldInfo? field = enumValue.GetType().GetField(enumValue.ToString());
+            DescriptionAttribute? attribute = field?.GetCustomAttribute<DescriptionAttribute>();
 
             return attribute != null ? attribute.Description : enumValue.ToString();
         }

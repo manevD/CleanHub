@@ -23,12 +23,12 @@ namespace CleanHub.Controllers
         [Route("Продукти")]
         public async Task<IActionResult> Index()
         {
-            string documentsJson = HttpContext.Session.GetString("Products");
+            string? documentsJson = HttpContext.Session.GetString("Products");
             var settings = new JsonSerializerSettings
             {
                 ReferenceLoopHandling = ReferenceLoopHandling.Ignore
             };
-            List<ProductViewModel> products;
+            List<ProductViewModel>? products;
             if (!string.IsNullOrEmpty(documentsJson))
             {
                 products = JsonConvert.DeserializeObject<List<ProductViewModel>>(documentsJson, settings);

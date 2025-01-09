@@ -1,5 +1,6 @@
 ﻿using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace CleanHub.Repositories
 {
@@ -13,8 +14,25 @@ namespace CleanHub.Repositories
             _context = context;
             _dbSet = context.Set<T>();
         }
+        public async Task<List<T>> GetAllWithIncludeAsync(
+            Func<IQueryable<T>, IQueryable<T>>? include = null,
+            Expression<Func<T, bool>>? predicate = null)
+        {
+            IQueryable<T> query = _dbSet;
 
-        public IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>> include = null)
+            if (include != null)
+            {
+                query = include(query);
+            }
+
+            if (predicate != null)
+            {
+                query = query.Where(predicate);
+            }
+
+            return await query.ToListAsync();
+        }
+        public async Task<IEnumerable<T>> GetAllAsync(Func<IQueryable<T>, IQueryable<T>>? include = null)
         {
             IQueryable<T> query = _dbSet;
 
@@ -23,35 +41,86 @@ namespace CleanHub.Repositories
                 query = include(query); // Apply the include filter if provided
             }
 
-            return query.ToList();
+            return await query.ToListAsync();
         }
-        public T GetById(int id)
+
+        public IEnumerable<T> GetAllNoTrakcing(Func<IQueryable<T>, IQueryable<T>>? include = null)
         {
-            return _dbSet.Find(id);
+            IQueryable<T> query = _dbSet;
+
+            if (include != null)
+            {
+                query = include(query); // Apply the include filter if provided
+            }
+
+            return  query.AsNoTracking();
+        }
+
+        public IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>>? include = null)
+        {
+            IQueryable<T> query = _dbSet;
+
+            if (include != null)
+            {
+                query = include(query); // Apply the include filter if provided
+            }
+
+            return  query;
+        }
+
+        public async Task<T?> GetByIdAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IQueryable<T>>? include = null)
+        {
+            IQueryable<T> query = _dbSet;
+
+            if (include != null)
+            {
+                query = include(query);
+            }
+
+            return await query.FirstOrDefaultAsync(predicate);
         }
 
         public void Add(T entity)
         {
             _dbSet.Add(entity);
-            _context.SaveChanges();
         }
 
         public void Update(T entity)
         {
             _dbSet.Attach(entity);
             _context.Entry(entity).State = EntityState.Modified;
-            _context.SaveChanges();
+        }
+
+        public void UpdateRange(IEnumerable<T> entities)
+        {
+            foreach (var entity in entities)
+            {
+                _dbSet.Attach(entity);
+                _context.Entry(entity).State = EntityState.Modified;
+            }
         }
 
         public void Delete(T entity)
         {
             _dbSet.Remove(entity);
-            _context.SaveChanges();
         }
 
-        public void Save()
+        public void DeleteRange(IEnumerable<T> entities)
         {
-            _context.SaveChanges();
+            foreach (var item in entities)
+            {
+                _dbSet.Remove(item);
+            }
+        }
+
+        public async Task SaveChangesAsync()
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<int?> GetMaxAsync(Expression<Func<T, int?>> selector)
+        {
+            return await _context.Set<T>().MaxAsync(selector);
         }
     }
 }

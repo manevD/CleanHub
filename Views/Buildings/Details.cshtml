@@ -73,7 +73,7 @@
             </div>
         </form>
         <h1></h1>
-        @Html.Partial("_CustomersPartial", Model.Customers.ToList())
+        @await Html.PartialAsync("_CustomersPartial", Model.Customers.ToList())
     }
 </div>
                           

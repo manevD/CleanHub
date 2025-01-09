@@ -16,18 +16,16 @@ namespace CleanHub.Controllers
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
 
-        private readonly ApplicationDbContext _context;
         private readonly IUnitOfWork _unitOfWork;
 
-        public BookFinancialController(ApplicationDbContext context, IUnitOfWork unitOfWork)
+        public BookFinancialController( IUnitOfWork unitOfWork)
         {
-            _context = context;
             _unitOfWork = unitOfWork;
         }
 
         private List<Building> GetBuildings()
         {
-            var buildings = _context.Buildings.ToList();
+            var buildings =  _unitOfWork.Buildings.GetAll().ToList();
             buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
             return buildings;
         }
@@ -43,13 +41,13 @@ namespace CleanHub.Controllers
 
         private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? status)
         {
-            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId.Value, status.Value);
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201, status ?? 0);
             return query.Select(bf => new BookFinancialInfoViewModel
                 {
                     Id = bf.Id,
                     Status = bf.Status,
                     InvoiceId = bf.InvoiceId ?? 0,
-                    Description = bf.Description,
+                    Description = bf.Description ?? "",
                     DatumF = bf.DatumF ?? DateOnly.MinValue,
                     Owes = bf.Owes,
                     Demands = bf.Demands
@@ -79,11 +77,11 @@ namespace CleanHub.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            building = await _context.Buildings.FirstOrDefaultAsync(x => x.Id == buildingId.Value);
-            results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId.Value, paymentStatusId.Value).ToList();
+            building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+            results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0 , paymentStatusId ?? 0).ToList();
 
 
-            FilterResultsByDate(ref results, dateFrom, dateTo, invoiceId.Value, paymentStatusId);
+            FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
             if (paymentStatusId == (int)PaymentStatus.Неплатено)
             {
                 CalculateOverdueStatus(results);
@@ -154,18 +152,18 @@ namespace CleanHub.Controllers
         {
             if (id == null || id == 0) return NotFound();
 
-            var bookFinancialToUpdate = await _context.BookFinancials.FirstOrDefaultAsync(x => x.DocumentId == id);
+            var bookFinancialToUpdate = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.DocumentId == id);
             if (bookFinancialToUpdate == null) return NotFound();
 
             try
             {
                 bookFinancialToUpdate.Status = PaymentStatus.Платено;
-                _context.Update(bookFinancialToUpdate);
-                await _context.SaveChangesAsync();
+                _unitOfWork.BookFinancials.Update(bookFinancialToUpdate);
+                await _unitOfWork.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!_context.BookFinancials.Any(x => x.DocumentId == id)) return NotFound();
+                if (!_unitOfWork.BookFinancials.GetAll().Any(x => x.DocumentId == id)) return NotFound();
                 throw;
             }
 

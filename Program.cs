@@ -50,7 +50,24 @@ namespace CleanHub
                 cfg.AddProfile<App>();
                 cfg.AddMaps(typeof(Profile));
             });
-
+            builder.Services.AddResponseCompression(options =>
+            {
+                options.EnableForHttps = true;
+            });
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/Identity/Account/Login"; // Standard-Login-Pfad
+                options.AccessDeniedPath = "/Identity/Account/AccessDenied"; // Zugriff verweigert
+                options.ReturnUrlParameter = "returnUrl";
+                options.Events.OnRedirectToReturnUrl = context =>
+                {
+                    // Wenn kein ReturnUrl definiert ist, navigiere zu Buildings/Index
+                    context.Response.Redirect(string.IsNullOrEmpty(context.Request.Query["returnUrl"])
+                        ? "/Buildings/Index"
+                        : context.RedirectUri);
+                    return Task.CompletedTask;
+                };
+            });
             IMapper mapper = configuration.CreateMapper();
 
             builder.Services.AddSingleton(mapper);
@@ -69,17 +86,23 @@ namespace CleanHub
             }
        
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                OnPrepareResponse = ctx =>
+                {
+                    ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
+                }
+            });
             app.UseRouting();
 
             app.UseAuthorization();
             app.UseAuthentication();
-            app.UseSession(); // Aktiviert die Session
+            app.UseSession();
+            app.UseResponseCompression();
 
             app.MapControllerRoute(
                    name: "default",
-                   pattern: "{controller=Customers}/{action=Index}");
+                   pattern: "{controller=Buildings}/{action=Index}");
             app.MapControllerRoute(
                name: "area",
                pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");

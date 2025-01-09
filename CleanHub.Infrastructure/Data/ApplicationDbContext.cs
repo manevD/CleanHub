@@ -4,7 +4,6 @@ using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.DataEncryption;
 
 namespace CleanHub.CleanHub.Infrastructure.Data
 {
@@ -31,8 +30,8 @@ namespace CleanHub.CleanHub.Infrastructure.Data
 
         public virtual DbSet<Customer> Customers { get; set; }
 
-        private readonly IEncryptionProvider _provider;
-        private readonly string _key = "09e88d4fd3c6fa2f9b05a05f166809b7";
+       // private readonly IEncryptionProvider _provider;
+        //private readonly string _key = "09e88d4fd3c6fa2f9b05a05f166809b7";
         public ApplicationDbContext()
         {
             //byte[] keyBytes = new byte[16];

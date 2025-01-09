@@ -48,7 +48,6 @@
 
 </form>
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
-    </br>
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
@@ -73,6 +72,7 @@
                             <tr>
                              
                                 <td>
+                                    @* ReSharper disable once CSharpWarnings::CS8602 *@
                                     @Html.DisplayFor(modelItem => invoice.Customer.CustomerInfo)
                                 </td>
                                 <td>

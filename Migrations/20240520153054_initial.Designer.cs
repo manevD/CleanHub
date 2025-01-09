@@ -10,7 +10,7 @@ namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
     [Migration("20240520153054_initial")]
-    partial class initial
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

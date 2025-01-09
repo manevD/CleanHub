@@ -1,4 +1,4 @@
-﻿using DataAnnotationsExtensions;
+﻿using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace CleanHub.Entities;
@@ -13,7 +13,7 @@ public partial class Customer
 
     public string? PhoneNumber { get; set; }
 
-    [Email]
+    [EmailAddress]
     public string? Email { get; set; }
 
     public string? Web { get; set; }
@@ -32,6 +32,6 @@ public partial class Customer
     public Activity? Activity { get; set; }
     public bool? PhysicalPerson { get; set; }
     public int? Subscription { get; set; }
-    public List<BookFinancial>? BookFinancials {  get; set; }
+    public List<BookFinancial>? BookFinancials { get; set; } = null!;
     public List<Document>? Documents { get; set; }
 }

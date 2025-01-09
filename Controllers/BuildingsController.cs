@@ -14,50 +14,34 @@ using Newtonsoft.Json;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
-using System.Reflection.PortableExecutable;
 
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class BuildingsController : Controller
+    public class BuildingsController(ICompositeViewEngine _viewEngine,
+        IHttpContextAccessor _httpContextAccessor, IOptions<SMTPConfig> _smtpConfig,
+        IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private readonly SMTPConfig _smtpConfig;
-        private readonly CompanyConfig _config;
-        private readonly ICompositeViewEngine _viewEngine;
-        private readonly IWebHostEnvironment _env;
-        private readonly IHttpContextAccessor _httpContextAccessor;
-        private static int Month = DateTime.Now.Month;
-        private static int Year = DateTime.Now.Year;
-
-        public BuildingsController(ICompositeViewEngine viewEngine, IWebHostEnvironment env,
-            IHttpContextAccessor httpContextAccessor, ApplicationDbContext context, IOptions<SMTPConfig> smtpConfig,
-            IOptions<CompanyConfig> config)
-        {
-            _httpContextAccessor = httpContextAccessor;
-            _env = env;
-            _viewEngine = viewEngine;
-            _context = context;
-            _smtpConfig = smtpConfig.Value;
-            _config = config.Value;
-        }
-
-        private List<Building> GetBuildings()
-        {
-            var allBuildings = new List<Building> { new Building { Name = "Сите", Id = 0 } };
-            allBuildings.AddRange(_context.Buildings.ToList());
-            return allBuildings;
-        }
+        private static int _month = DateTime.Now.Month;
+        private static int _year = DateTime.Now.Year;
+      
+        //private async Task<List<Building>> GetBuildings()
+        //{
+        //    var allBuildings = new List<Building> { new Building { Name = "Сите", Id = 0 } };
+        //    allBuildings.AddRange(await _unitOfWork.Buildings.GetAllAsync());
+        //    return allBuildings;
+        //}
 
         // GET: Buildings
         [Route("Згради")]
-        public async Task<IActionResult> Index()
+        [Route("")]
+        public IActionResult Index()
         {
             var buildingsJson = HttpContext.Session.GetString("Buildings");
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
 
-            List<BuildingViewModel> buildings = string.IsNullOrEmpty(buildingsJson)
-                ? App.FullMapper.Map<List<BuildingViewModel>>(await _context.Buildings.AsNoTracking().ToListAsync())
+            List<BuildingViewModel>? buildings = string.IsNullOrEmpty(buildingsJson)
+                ? App.FullMapper.Map<List<BuildingViewModel>>( _unitOfWork.Buildings.GetAll())
                 : JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
 
             if (string.IsNullOrEmpty(buildingsJson))
@@ -71,16 +55,19 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var buildingEntity = await _context.Buildings
-                .Include(x => x.Customers)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id,x=>x
+                .Include(x => x.Customers));
 
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
             if (buildingViewModel == null) return RedirectToAction(nameof(Index));
 
             if (buildingViewModel.Customers?.Any() == true)
                 buildingViewModel.Customers = buildingViewModel.Customers
-                    .OrderBy(c => c.CustomerInfo.ExtractNumberAfterSt())
+                    .OrderBy(c =>
+                    {
+                        if (c.CustomerInfo != null) return c.CustomerInfo.ExtractNumberAfterSt();
+                        return 0;
+                    })
                     .ToList();
 
             if (buildingViewModel != null)
@@ -89,22 +76,20 @@ namespace CleanHub.Controllers
 
                 if (buildingViewModel.CustomerRefId.HasValue)
                 {
-                    bookFinancial = await _context.BookFinancials
-                        .Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value)
-                        .ToListAsync();
+                    bookFinancial = (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh=> wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
                 }
                 else
                 {
-                    bookFinancial = await _context.BookFinancials
-                        .Where(x => x.CustomerId == buildingViewModel.Id)
-                        .ToListAsync();
+                    bookFinancial =
+                        (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh =>
+                            wh.Where(x => x.CustomerId == buildingViewModel.Id));
                 }
 
                 buildingViewModel.ReserveTotal = (int)bookFinancial.Sum(x => x.Owes);
             }
 
-            ViewBag.Month = Month;
-            ViewBag.Year = Year;
+            ViewBag.Month = _month;
+            ViewBag.Year = _year;
             return View(buildingViewModel);
         }
 
@@ -114,8 +99,10 @@ namespace CleanHub.Controllers
             var buildingViewModel = new BuildingViewModel
             {
                 BuildingProducts =
-                    App.FullMapper.Map<List<BuildingProductViewModel>>(await _context.Products.ToListAsync())
+                    App.FullMapper.Map<List<BuildingProductViewModel>>(await _unitOfWork.Products.GetAllAsync())
             };
+            buildingViewModel.BuildingProducts.AddRange(InitializeDefaultBuildingProducts());
+
             return View(buildingViewModel);
         }
 
@@ -129,8 +116,8 @@ namespace CleanHub.Controllers
 
             if (ModelState.IsValid)
             {
-                _context.Add(App.FullMapper.Map<Building>(building));
-                await _context.SaveChangesAsync();
+                _unitOfWork.Buildings.Add(App.FullMapper.Map<Building>(building));
+                await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
 
                 return RedirectToAction(nameof(Index));
@@ -138,23 +125,39 @@ namespace CleanHub.Controllers
 
             return View(building);
         }
-
+        private List<BuildingProductViewModel> InitializeDefaultBuildingProducts()
+        {
+            return Enumerable.Repeat(new BuildingProductViewModel
+            {
+                Id = 0,
+                Input = 0,
+                Output = 0,
+                Quantity = 1,
+                PriceWithTax = 0,
+                Tax = 18,
+                Total = 0,
+                Price = 0,
+                ArticleNotes = string.Empty,
+                UnitOfMeasurement = "br."
+            }, 4).ToList();
+        }
         // GET: Buildings/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            var buildingEntity = await _context.Buildings
-                .Include(x => x.BuildingProducts)
-                .FirstOrDefaultAsync(c => c.Id == id);
+            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id,inc => inc
+                .Include(x => x.BuildingProducts));
 
             if (buildingEntity == null) return NotFound();
             var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
             if (!building.BuildingProducts.Any())
             {
                 building.BuildingProducts =
-                    App.FullMapper.Map<List<BuildingProductViewModel>>(await _context.Products.ToListAsync());
+                    App.FullMapper.Map<List<BuildingProductViewModel>>(await _unitOfWork.Products.GetAllAsync());
             }
+
+            building.BuildingProducts.AddRange(InitializeDefaultBuildingProducts());
 
             return View(building);
         }
@@ -176,46 +179,48 @@ namespace CleanHub.Controllers
                 try
                 {
                     // Existierende BuildingProducts aus der Datenbank laden
-                    var existingBuildingProducts = await _context.BuildingProducts
-                        .Where(x => x.BuildingId == id)
-                        .ToListAsync();
+                    var existingBuildingProducts = await _unitOfWork.BuildingProducts.GetAllAsync(wh => wh
+                        .Where(x => x.BuildingId == id));
 
                     // Neue oder aktualisierte Produkte synchronisieren
-                    foreach (var product in building.BuildingProducts)
+                    if (building.BuildingProducts != null)
                     {
-                        var existingProduct = existingBuildingProducts.FirstOrDefault(bp => bp.Id == product.Id);
-                        if (existingProduct != null)
+                        var buildingProducts = existingBuildingProducts.ToList();
+                        foreach (var product in building.BuildingProducts)
                         {
-                            // Produkt existiert -> Werte aktualisieren
-                            _context.Entry(existingProduct).CurrentValues.SetValues(product);
+                            var existingProduct = buildingProducts.FirstOrDefault(bp => bp.Id == product.Id);
+                            if (existingProduct != null)
+                            {
+                                existingProduct = App.FullMapper.Map<BuildingProduct>(product);
+                                _unitOfWork.BuildingProducts.Update(existingProduct);
+                            }
+                            else
+                            {
+                                product.BuildingId = id; // Das BuildingId für das neue Produkt setzen
+                                var productEntity = App.FullMapper.Map<BuildingProduct>(product); // Optional: Mapping
+                                _unitOfWork.BuildingProducts.Add(productEntity);
+                            }
                         }
-                        else
+
+                        // Nicht mehr zugehörige Produkte entfernen
+                        var updatedIds = building.BuildingProducts.Select(bp => bp.Id).ToList();
+                        var productsToRemove = buildingProducts
+                            .Where(bp => !updatedIds.Contains(bp.Id))
+                            .ToList();
+
+                        if (productsToRemove.Any())
                         {
-                            // Neues Produkt hinzufügen
-                            product.BuildingId = id;
-                            var productEntity = App.FullMapper.Map<BuildingProduct>(product);
-                            await _context.BuildingProducts.AddAsync(productEntity);
+                            _unitOfWork.BuildingProducts.DeleteRange(productsToRemove);
                         }
-                    }
-
-                    // Nicht mehr zugehörige Produkte entfernen
-                    var updatedIds = building.BuildingProducts.Select(bp => bp.Id).ToList();
-                    var productsToRemove = existingBuildingProducts
-                        .Where(bp => !updatedIds.Contains(bp.Id))
-                        .ToList();
-
-                    if (productsToRemove.Any())
-                    {
-                        _context.BuildingProducts.RemoveRange(productsToRemove);
                     }
 
                     // Gebäude-Daten aktualisieren
                     var buildingToUpdate = App.FullMapper.Map<Building>(building);
                     buildingToUpdate.BuildingProducts.Clear(); // Produkte wurden schon separat behandelt
-                    _context.Buildings.Update(buildingToUpdate);
+                    _unitOfWork.Buildings.Update(buildingToUpdate);
 
                     // Änderungen speichern
-                    await _context.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                     HttpContext.Session.Remove("Buildings");
                 }
                 catch (DbUpdateConcurrencyException)
@@ -239,34 +244,34 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var building = await _context.Buildings.FindAsync(id);
+            var building = await _unitOfWork.Buildings.GetByIdAsync(x=>x.Id == id);
             if (building == null) return NotFound();
 
-            _context.Buildings.Remove(building);
-            await _context.SaveChangesAsync();
+            _unitOfWork.Buildings.Delete(building);
+            await _unitOfWork.SaveChangesAsync();
             HttpContext.Session.Remove("Buildings");
 
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BuildingExists(int id) => _context.Buildings.Any(e => e.Id == id);
+        private bool BuildingExists(int id) => _unitOfWork.Buildings.GetAll().Any(e => e.Id == id);
 
         [HttpPost, ActionName("SendInvoiceEmail")]
         public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
         {
-            var customers = _context.Buildings.Where(x => x.Id == id).Include(x => x.Customers)
-                .SelectMany(d => d.Customers!).ToList();
-            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Server))
+            var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(id);
+            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
             {
                 foreach (var item in customers.Where(x => x.Email != null))
                 {
-                    smtpClient.Credentials = new NetworkCredential(_smtpConfig.Email, _smtpConfig.Passwort);
+                    smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
                     smtpClient.EnableSsl = true;
 
-                    var document = App.FullMapper.Map<DocumentViewModel>(_context.Documents.Include(x => x.Customer)
-                        .Include(x => x.Books).FirstOrDefault(x =>
-                            x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month));
-                    document.Company = _config;
+                    var document = App.FullMapper.Map<DocumentViewModel>(await _unitOfWork.Documents.GetByIdAsync(
+                        x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month,
+                        inc => inc.Include(x => x.Customer)
+                            .Include(x => x.Books)));
+                    document.Company = _config.Value;
                     document.IsForPdf = true;
 
                     string htmlContent =
@@ -291,14 +296,14 @@ namespace CleanHub.Controllers
                             Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
                             Со почит,
 
-                            {_config.Name}
-                            {_config.PhoneNumber}
-                            {_config.Email}
-                            {_config.Address}";
+                            {_config.Value.Name}
+                            {_config.Value.PhoneNumber}
+                            {_config.Value.Email}
+                            {_config.Value.Address}";
                     // create email message
                     MailMessage message = new MailMessage();
-                    message.From = new MailAddress(_smtpConfig.Email);
-                    message.To.Add(_smtpConfig.Recipient);
+                    message.From = new MailAddress(_smtpConfig.Value.Email);
+                    message.To.Add(_smtpConfig.Value.Recipient);
                     message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/",
                         year);
                     message.Body = emailBody;
@@ -314,35 +319,7 @@ namespace CleanHub.Controllers
             }
             return RedirectToAction("Details", new { id = id });
         }
-       
-        private MemoryStream CombinePdfs(List<Stream> pdfStreams)
-        { // Erstellt ein neues PDF-Dokument
-            PdfDocument finalPdf = new PdfDocument();
-
-            foreach (var stream in pdfStreams)
-            {
-                stream.Position = 0; // Sicherstellen, dass der Stream am Anfang ist
-
-                // Lade das PDF aus dem Stream
-                PdfDocument partPdf = new PdfDocument(PdfStandard.PdfA);
-
-                // Hänge das geladene PDF an das finale PDF an
-                finalPdf.Append(partPdf);
-
-                // Schließe das Teildokument, um Ressourcen freizugeben
-                partPdf.Close();
-            }
-
-            // Speicher das kombinierte PDF in einen MemoryStream
-            MemoryStream outputStream = new MemoryStream();
-            finalPdf.Save(outputStream);
-            finalPdf.Close();
-
-            // Setze den Stream zurück, damit er lesbar ist
-            outputStream.Position = 0;
-
-            return outputStream;
-        }
+        
         private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
         {
             ViewData.Model = model;

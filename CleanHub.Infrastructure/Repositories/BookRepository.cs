@@ -5,13 +5,13 @@ using CleanHub.Repositories;
 
 namespace CleanHub.CleanHub.Infrastructure.Repositories
 {
-    public class BuildingRepository : GenericRepository<Building>, IBuildingRepository
+    public class BookRepository : GenericRepository<Book>, IBookRepository
     {
         private readonly ApplicationDbContext _context;
 
-        public BuildingRepository(ApplicationDbContext context) : base(context)
+        public BookRepository(ApplicationDbContext context) : base(context)
         {
-            _context = context; 
+            _context = context;
         }
     }
 }

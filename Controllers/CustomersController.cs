@@ -8,6 +8,7 @@ using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -32,34 +33,23 @@ namespace CleanHub.Controllers
 
         // GET: Customers
         [Route("Станари")]
-        [Route("")]
-        public async Task<IActionResult> Index()
+        public async Task<IActionResult> Index([FromServices] IMemoryCache cache)
         {
-            string customersJson = HttpContext.Session.GetString("Customers");
-            var settings = new JsonSerializerSettings
+            var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
-                ReferenceLoopHandling = ReferenceLoopHandling.Ignore
-            };
-            List<CustomerViewModel> customers;
-            if (!string.IsNullOrEmpty(customersJson))
-            {
-                customers = JsonConvert.DeserializeObject<List<CustomerViewModel>>(customersJson, settings);
-            }
-            else
-            {
-                var customersEntity = await _context.Customers.AsNoTracking().Select(c => new Customer
-                {
-                    Id = c.Id,
-                    CustomerInfo = c.CustomerInfo ?? string.Empty, 
-                    Email = c.Email,
-                    PhoneNumber = c.PhoneNumber,
-                    Inactive = c.Inactive,
-                    Adress =c.Adress
-                }).ToListAsync();
-                customers = App.ReaderMapper.Map<List<CustomerViewModel>>(customersEntity);
-
-                HttpContext.Session.SetString("Customers", JsonConvert.SerializeObject(customers, settings));
-            }
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
+               return App.ReaderMapper.Map <List<CustomerViewModel>>(await _context.Customers.AsNoTracking().Select(c => new Customer
+               {
+                   Id = c.Id,
+                   CustomerInfo = c.CustomerInfo ?? string.Empty,
+                   Email = c.Email,
+                   Subscription = c.Subscription ?? 0,
+                   PhoneNumber = c.PhoneNumber,
+                   Inactive = c.Inactive,
+                   Adress = c.Adress
+               }).ToListAsync());
+            });
+           
             return View(customers);
         }
 
@@ -69,8 +59,9 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+
             var customer = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
-          
+
             var customerViewModel = App.FullMapper.Map<CustomerViewModel>(customer);
 
             return View(customerViewModel);
@@ -115,13 +106,13 @@ namespace CleanHub.Controllers
         // GET: Customers/Create
         public IActionResult CreateWithBuilding(int buildingId)
         {
-           
-            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name",buildingId);
+
+            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", buildingId);
             var customer = new CustomerViewModel
             {
                 BuildingId = buildingId
             };
-            return View(nameof(Create),customer);
+            return View(nameof(Create), customer);
         }
 
         public IActionResult CreateWithModel(CustomerViewModel customer)
@@ -173,18 +164,24 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
             var customerEntity = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
-            foreach( var doc in customerEntity.Documents)
+            if (customerEntity?.Documents != null && customerEntity.Documents.Any())
             {
-                var year  = DocumentService.ExtractYear(doc.ToDocument);
-                var month = DocumentService.ExtractMonth(doc.ToDocument);
-                var searchCriteria = string.Concat( month , "/" , year);
+                foreach (var doc in customerEntity.Documents)
+                {
+                    if (doc.ToDocument != null)
+                    {
+                        var year = DocumentService.ExtractYear(doc.ToDocument);
+                        var month = DocumentService.ExtractMonth(doc.ToDocument);
+                        var searchCriteria = string.Concat(month, "/", year);
 
-                var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x=>x.Description.Contains(searchCriteria) && x.InvoiceId == Constants.Recieve);
-                doc.PaymentStatus = DocumentService.GetStatus(bookFinancial,doc);
+                        var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x => x.Description != null && x.Description.Contains(searchCriteria) && x.InvoiceId == Constants.Recieve);
+                        doc.PaymentStatus = DocumentService.GetStatus(bookFinancial, doc);
+                    }
+                }
             }
             var customer = App.FullMapper.Map<CustomerViewModel>(customerEntity);
 
-            PopulateViewData(customer.BuildingId,customer.ActivityId);
+            PopulateViewData(customer.BuildingId, customer.ActivityId);
 
             return View(customer);
         }

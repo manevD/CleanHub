@@ -16,8 +16,7 @@
     int summ = 0;
     int summDemands = 0;
     string result = "0";
-    if (Model != null)
-    {
+  
         summ = Model.TotalBuildingOwes;
         summDemands = Model.TotalBuildingDemands;
         int difference = summ - summDemands;
@@ -34,7 +33,6 @@
         {
             result = message + " Во минус " + difference;
         }
-    }
 }
 
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
@@ -55,27 +53,27 @@
                                                 <div class="form-group row">
                                                     <label for="company-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-name" value="@Model.Company.Name">
+                                                        <input type="text" class="form-control form-control-sm" id="company-name" value="@Model?.Company?.Name">
                                                     </div>
                                                 </div>
                                                 <div class="form-group row">
                                                     <label for="company-email" class="col-sm-3 col-form-label col-form-label-sm">Е-Маил</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-email" value="@Model.Company.Email">
+                                                        <input type="text" class="form-control form-control-sm" id="company-email" value="@Model?.Company?.Email">
                                                     </div>
                                                 </div>
 
                                                 <div class="form-group row">
                                                     <label for="company-address" class="col-sm-3 col-form-label col-form-label-sm">Адреса</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-address" value="@Model.Company.Address">
+                                                        <input type="text" class="form-control form-control-sm" id="company-address" value="@Model?.Company?.Address">
                                                     </div>
                                                 </div>
 
                                                 <div class="form-group row">
                                                     <label for="company-phone" class="col-sm-3 col-form-label col-form-label-sm">Телефон</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="company-phone" value="@Model.Company.PhoneNumber">
+                                                        <input type="text" class="form-control form-control-sm" id="company-phone" value="@Model?.Company?.PhoneNumber">
                                                     </div>
                                                 </div>
                                             </div>
@@ -86,7 +84,7 @@
                                                 <div class="form-group row">
                                                     <label for="client-name" class="col-sm-3 col-form-label col-form-label-sm">Име</label>
                                                     <div class="col-sm-9">
-                                                        <input type="text" class="form-control form-control-sm" id="client-name" value="@Model.Building?.Name">
+                                                        <input type="text" class="form-control form-control-sm" id="client-name" value="@Model?.Building?.Name">
                                                     </div>
                                                 </div>
                                             </div>
@@ -249,7 +247,7 @@
                                         <div class="row">
                                             <div class="col-12">
                                                 <div class="form-group mb-0">
-                                                    @if (@Model.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
+                                                    @if (@Model?.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
                                                     {
                                                         @foreach (var customer in @Model.Building.Customers)
                                                         {
@@ -300,7 +298,7 @@
             var rows = document.querySelectorAll('tbody tr');
 
             // Get the number of customers
-            var customerCount = @Model.Building.Customers.Count;
+            var customerCount = @Model?.Building?.Customers?.Count;
 
             // Function to calculate and update values
             function calculatePrice(row) {
@@ -384,11 +382,11 @@
                     calculatePrice(row);
                 });
 
-                // Perform initial calculation on page load
+                // Perform Initial calculation on page load
                 calculatePrice(row);
             });
 
-            // Perform initial sum calculation on page load
+            // Perform Initial sum calculation on page load
             updatePriceWithTaxTotal();
         });
 

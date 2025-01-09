@@ -99,26 +99,26 @@
                                                 <div class="col-sm-6 col-12 mr-auto">
                                                     <div class="d-flex">
                                                         <img class="company-logo" src="~/src/logo3.png">
-                                                        <h3 class="in-heading align-self-center">@Model.Company.Name</h3>
+                                                        <h3 class="in-heading align-self-center">@Model?.Company?.Name</h3>
                                                     </div>
-                                                    <p class="inv-street-addr mt-3">@Model.Company.Address</p>
-                                                    <p class="inv-email-address">@Model.Company.Email</p>
-                                                    <p class="inv-email-address">@Model.Company.PhoneNumber</p>
-                                                    <p class="inv-email-address">ЕДБ: @Model.Company.VATID</p>
-                                                    <p class="inv-email-address">@Model.Company.IBAN</p>
+                                                    <p class="inv-street-addr mt-3">@Model?.Company?.Address</p>
+                                                    <p class="inv-email-address">@Model?.Company?.Email</p>
+                                                    <p class="inv-email-address">@Model?.Company?.PhoneNumber</p>
+                                                    <p class="inv-email-address">ЕДБ: @Model?.Company?.VATID</p>
+                                                    <p class="inv-email-address">@Model?.Company?.IBAN</p>
                                                 </div>
                                                 <div class="col-sm-6 text-sm-end">
                                                     <p class="inv-list-number mt-sm-3 pb-sm-2 mt-4">
                                                         <span class="inv-title">ИСПРАТНИЦА-ФАКТУРА БР: </span>
-                                                        <span class="inv-number">@Model.Number</span>
+                                                        <span class="inv-number">@Model?.Number</span>
                                                     </p>
                                                     <p class="inv-created-date mt-sm-5 mt-3">
                                                         <span class="inv-title">Издадена на : </span>
-                                                        <span class="inv-date">@Model.Date</span>
+                                                        <span class="inv-date">@Model?.Date</span>
                                                     </p>
                                                     <p class="inv-due-date">
                                                         <span class="inv-title">Месец на плаќање : </span>
-                                                        <span class="inv-date">@Model.DueDate!.Value.Month / @Model.Date!.Value.Year</span>
+                                                        <span class="inv-date">@Model?.DueDate!.Value.Month / @Model?.Date!.Value.Year</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -129,10 +129,10 @@
                                                     <p class="inv-to"></p>
                                                 </div>
                                                 <div class="col-xl-4 col-lg-5 col-md-6 col-sm-8 col-12 order-sm-0 order-1 text-sm-end compact-customer-info">
-                                                    <p class="inv-customer-name">@Model.Customer.CustomerInfo</p>
-                                                    <p class="inv-email-address">@Model.Customer.Adress</p>
-                                                    <p class="inv-email-address">@Model.Customer.Email</p>
-                                                    <p class="inv-email-address">@Model.Customer.PhoneNumber</p>
+                                                    <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
+                                                    <p class="inv-email-address">@Model?.Customer?.Adress</p>
+                                                    <p class="inv-email-address">@Model?.Customer?.Email</p>
+                                                    <p class="inv-email-address">@Model?.Customer?.PhoneNumber</p>
                                                 </div>
                                             </div>
                                         </div>
@@ -148,7 +148,9 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        @foreach (var article in Model.Books)
+                                                    @if (Model?.Books != null)
+                                                    {
+                                                        foreach (var article in Model.Books)
                                                         {
                                                             <tr>
                                                                 <td>@article.ArticleNotes</td>
@@ -157,11 +159,12 @@
                                                                 <td class="text-end">@article.PriceWithTax!.Value.ToString("F2")</td>
                                                             </tr>
                                                         }
-                                                        <tr>
+                                                    }
+                                                    <tr>
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>
-                                                            <td class="text-end">ЗА НАПЛАТА: @Model.TotalOutput</td>
+                                                            <td class="text-end">ЗА НАПЛАТА: @Model?.TotalOutput</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -169,7 +172,7 @@
                                     </div>
 
                                     <div class="inv--additional-notes">
-                                        @Html.Raw(@Model.Company.InvoiceNotice)
+                                        @Html.Raw(@Model?.Company?.InvoiceNotice)
                                         @Html.Raw("<strong>" + @result + "</strong>")
                                     </div>
 
@@ -189,21 +192,21 @@
                                         <div class="row">
                                             <div class="col-sm-4 col-12">
                                                 <div class="boxed">
-                                                    <p class="inv-customer-name">@Model.Customer.CustomerInfo</p>
-                                                    <p class="inv-email-address">@Model.Customer.Adress</p>
+                                                    <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
+                                                    <p class="inv-email-address">@Model?.Customer?.Adress</p>
                                                 </div>
                                             </div>
                                             <div class="col-sm-4 col-12 text-center">
-                                                <h3 class="in-heading align-self-center">@Model.Company.Name</h3>
-                                                <p class="inv-street-addr mt-3">@Model.Company.Address</p>
+                                                <h3 class="in-heading align-self-center">@Model?.Company?.Name</h3>
+                                                <p class="inv-street-addr mt-3">@Model?.Company?.Address</p>
                                             </div>
                                             <div class="col-sm-4 col-12 text-sm-end">
                                                 <p class="inv-list-number mt-sm-3 pb-sm-2 mt-4">
                                                     <span class="inv-title">ИСПРАТНИЦА-ФАКТУРА БР: </span>
-                                                    <span class="inv-number">@Model.Number</span>
+                                                    <span class="inv-number">@Model?.Number</span>
                                                 </p>
-                                                <p class="text-end">ВКУПНО ЗА НАПЛАТА: @Model.TotalOutput ден</p>
-                                                <b>@Model.ToDocument</b>
+                                                <p class="text-end">ВКУПНО ЗА НАПЛАТА: @Model?.TotalOutput ден</p>
+                                                <b>@Model?.ToDocument</b>
                                             </div>
                                         </div>
                                     </div>
@@ -216,7 +219,7 @@
         </div>
 
 
-        @if (!@Model.IsForPdf)
+        @if (@Model != null && !@Model.IsForPdf)
         {
             <div class="col-xl-3">
                 <div class="invoice-actions-btn">

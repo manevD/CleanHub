@@ -58,7 +58,7 @@
         </table>
     </div>
 </div>
-@if (@Model.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
+@if (@Model?.Building.BuildingProducts != null && @Model.Building.BuildingProducts.Any())
 {
     <div class="invoice-detail-total" style="text-align: right;">
         <div class="invoice-summary-label" style="color:black;">Вкупно</div>
@@ -77,7 +77,7 @@
             var rows = document.querySelectorAll('tbody tr');
 
             // Get the number of customers
-            var customerCount = @Model.Building.Customers.Count;
+            var customerCount = @Model?.Building?.Customers?.Count;
 
             // Function to calculate and update values
             function calculatePrice(row) {
@@ -131,7 +131,7 @@
                     calculatePrice(row);
                 });
 
-                // Perform initial calculation on page load
+                // Perform Initial calculation on page load
                 calculatePrice(row);
             });
         });

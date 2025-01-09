@@ -1,0 +1,65 @@
+﻿@model List<CleanHub.ViewModels.BookFinancialViewModel>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<form asp-action="Buildings" asp-controller="Cards" method="get" id="filterForm">
+    <div class="row">
+        @if (ViewBag.Buildings != null)
+        {
+            <div class="col-lg-2 col-md-3">
+                <div class="form-group mb-0">
+                    <label for="buildingSearch">Објект</label>
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај">
+                    <input type="hidden" id="buildingId" name="buildingId">
+                    <datalist id="buildingOptions">
+                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                        {
+                            <option value="@building.Text" data-id="@building.Value"></option>
+                        }
+                    </datalist>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Нема пронајдено објекти!</p>
+        }
+        @if (ViewBag.PaymentStatusList != null)
+        {
+            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+                <div class="form-group mb-0">
+                    <label for="paymentStatusId">Статус</label>
+                    @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList, new { @class = "form-control" })
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Нема пронајдено статус!</p>
+        }
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0">
+                <h6>Од</h6>
+                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+            </div>
+        </div>
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <h6>До</h6>
+            <div class="form-group mb-0">
+                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+            </div>
+        </div>
+        <li class="divider"></li> <!-- Optional: Trennlinie -->
+        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0">
+                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
+            </div>
+        </div>
+        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0">
+                <button type="button" class="form-control btn btn-secondary" id="navigateButton">Извади сметки</button>
+            </div>
+        </div>
+    </div>
+</form>
