@@ -4,6 +4,7 @@ using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CleanHub.Controllers
 {
@@ -13,30 +14,164 @@ namespace CleanHub.Controllers
         public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().ToList();
 
         [Route("КартицаЗгради")]
-        public async Task<IActionResult> Buildings(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        public async Task<IActionResult> Buildings(int? buildingId, string dateFrom, string dateTo)
         {
+            var cardsViewModel = new CardsViewModel();
+            var newBuilding = new Building { Name = "Сите", Id = 0 };
+            var bookFinancials = new List<BookFinancialViewModel>();
+            BuildingsList.Add(newBuilding);
             ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name");
-            var building = await _unitOfWork.Buildings.GetByIdAsync(
-                x => buildingId != null && x.Id == buildingId.Value,
-                inc => inc.Include(d => d.Customers)
-                    .ThenInclude(c => c.BookFinancials)
-            );
+            if (buildingId != null || !string.IsNullOrEmpty(dateFrom))
+            {
+                var DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom;
 
-            // Jetzt extrahierst du nur die BookFinancial-Elemente
-            var bookFinancials =App.FullMapper.Map<List<BookFinancialInfoViewModel>>(building?.Customers
-                .SelectMany(c => c.BookFinancials)
-                .ToList()); 
+                if (buildingId != 0)
+                {
+                    ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", buildingId);
+                    // Hole das Building anhand der ID
+                    var building = await _unitOfWork.Buildings.GetByIdAsync(
+                        x => buildingId != null && x.Id == buildingId.Value);
 
-            return View(bookFinancials);
+                    if (building == null)
+                    {
+                        throw new Exception("Building not found.");
+                    }
+                    ViewBag.Selected = building.Name;
+                    var customers = _unitOfWork.Customers.GetAllNoTrakcing(inc =>
+                        inc.Include(c => c.BookFinancials)
+                            .Where(x => building.CustomerRefId == x.Id || x.BuildingId == buildingId.Value));
+                    if (!string.IsNullOrEmpty(dateTo))
+                    {
+                        var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                        ViewBag.DateTo = DateTo;
+                        // Filtere die BookFinancials basierend auf Datum und BuildingId
+                        bookFinancials = App.FullMapper.Map<List<BookFinancialViewModel>>(customers
+                            .SelectMany(c => c.BookFinancials)
+                            .Where(bf =>
+                                (bf.DatumF >= DateFrom && bf.DatumF <= DateTo)).ToList());
+                    }
+                    // Setze den ViewBag-Wert
+
+                    else
+                    {
+                        bookFinancials = App.FullMapper.Map<List<BookFinancialViewModel>>(customers
+                           .SelectMany(c => c.BookFinancials).Where(x =>
+                               (x.DatumF >= DateFrom))
+                           .ToList());
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(dateTo))
+                    {
+                        var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                        ViewBag.DateTo = DateTo;
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                       .Select(bf => new BookFinancialViewModel()
+                       {
+                           Description = bf.Description,
+                           InvoiceId = bf.InvoiceId.Value,
+                           Owes = bf.Owes,
+                           Demands = bf.Demands,
+                           DatumF = bf.DatumF
+                       }).Where(x =>
+                           x.DatumF >= DateFrom && x.DatumF <= DateTo).ToList();
+                    }
+                    else
+                    {
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                            .Select(bf => new BookFinancialViewModel()
+                            {
+                                Description = bf.Description,
+                                InvoiceId = bf.InvoiceId.Value,
+                                Owes = bf.Owes,
+                                Demands = bf.Demands,
+                                DatumF = bf.DatumF
+                            }).Where(x =>
+                           (x.DatumF >= DateFrom)).ToList();
+                    }
+                }
+            }
+            cardsViewModel.BuildingFinancial = bookFinancials;
+
+            return View(cardsViewModel);
         }
 
         [Route("КартицаСтанари")]
-        public async Task<IActionResult> Customers(int? customerId, int? paymentStatusId, string dateFrom, string dateTo)
+        public async Task<IActionResult> Customers(int? customerId, string dateFrom, string dateTo)
         {
+            var cardsViewModel = new CardsViewModel();
+            var newCustomer = new Customer { CustomerInfo = "Сите", Id = 0 };
+            CustomersList.Add(newCustomer);
+            var bookFinancials = new List<BookFinancialViewModel>();
             ViewBag.Customers = new SelectList(CustomersList, "Id", "CustomerInfo");
-            var customer = await _unitOfWork.Customers.GetByIdAsync(x => customerId != null && x.Id == customerId.Value);
+            if (customerId.HasValue)
+            {
+                var DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom;
+                if (customerId == 0)
+                {
+                    var customers = new List<Customer>();
+                    if (!string.IsNullOrEmpty(dateTo))
+                    {
+                        var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                        ViewBag.DateTo = DateTo;
 
-            return View();
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing().Where(x=>x.DatumF >= DateFrom && x.DatumF <= DateTo).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.Description,
+                            InvoiceId = bf.InvoiceId.Value,
+                            Owes = bf.Owes,
+                            Demands = bf.Demands,
+                            DatumF = bf.DatumF
+                        }).ToList();
+                    }
+                    else
+                    {
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing().Where(x => x.DatumF >= DateFrom).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.Description,
+                            InvoiceId = bf.InvoiceId.Value,
+                            Owes = bf.Owes,
+                            Demands = bf.Demands,
+                            DatumF = bf.DatumF
+                        }).ToList();
+                    }
+                }
+                else
+                {
+                    if (!string.IsNullOrEmpty(dateTo))
+                    {
+                        var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                        ViewBag.DateTo = DateTo;
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing().Where(x => x.DatumF >= DateFrom && x.DatumF <= DateTo && x.CustomerId == customerId.Value).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.Description,
+                            InvoiceId = bf.InvoiceId.Value,
+                            Owes = bf.Owes,
+                            Demands = bf.Demands,
+                            DatumF = bf.DatumF
+                        }).ToList(); ;
+                    }
+                    else
+                    {
+                        bookFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing().Where(x => x.DatumF >= DateFrom && x.CustomerId == customerId.Value).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.Description,
+                            InvoiceId = bf.InvoiceId.Value,
+                            Owes = bf.Owes,
+                            Demands = bf.Demands,
+                            DatumF = bf.DatumF
+                        }).ToList();
+                    }
+                }
+            }
+
+            cardsViewModel.CustomerFinanfical = bookFinancials;
+
+            return View(cardsViewModel);
         }
+
     }
 }

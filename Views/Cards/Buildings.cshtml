@@ -1,8 +1,9 @@
-﻿@model List<CleanHub.ViewModels.BookFinancialViewModel>
+﻿@model CleanHub.ViewModels.CardsViewModel
 
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
+<hr />
 <form asp-action="Buildings" asp-controller="Cards" method="get" id="filterForm">
     <div class="row">
         @if (ViewBag.Buildings != null)
@@ -15,7 +16,7 @@
                     <datalist id="buildingOptions">
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
-                            <option value="@building.Text" data-id="@building.Value"></option>
+                            <option value="@building.Text" selected="@ViewBag.Selected" data-id="@building.Value"></option>
                         }
                     </datalist>
                 </div>
@@ -25,41 +26,83 @@
         {
             <p>Нема пронајдено објекти!</p>
         }
-        @if (ViewBag.PaymentStatusList != null)
-        {
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="form-group mb-0">
-                    <label for="paymentStatusId">Статус</label>
-                    @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList, new { @class = "form-control" })
-                </div>
-            </div>
-        }
-        else
-        {
-            <p>Нема пронајдено статус!</p>
-        }
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        
+        <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
                 <h6>Од</h6>
                 <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
             </div>
         </div>
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+        <div class="col-lg-2 col-md-3">
             <h6>До</h6>
             <div class="form-group mb-0">
                 <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
             </div>
         </div>
-        <li class="divider"></li> <!-- Optional: Trennlinie -->
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
-            </div>
-        </div>
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="button" class="form-control btn btn-secondary" id="navigateButton">Извади сметки</button>
-            </div>
+    </div>
+    <br/>
+    <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+        <div class="form-group mb-0">
+            <button type="submit" class="btn btn-primary">Пребарувај</button>
         </div>
     </div>
 </form>
+
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
+    </br>
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                <tr role="row">
+                    <th>Опис</th>
+                    <th>Сметка</th>
+                    <th>Должи</th>
+                    <th>Побарува</th>
+                    <th class="sorting_asc">Дата на издавање</th>
+                </tr>
+                </thead>
+                <tbody>
+                @if (Model.BuildingFinancial != null && Model.BuildingFinancial.Any())
+                {
+                        @foreach (var invoice in Model.BuildingFinancial)
+                    {
+                        <tr role="row">
+                            <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
+                            <td>@Html.DisplayFor(modelItem => invoice.InvoiceId.Value)</td>
+                            <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
+                            <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
+                            <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                    </tr>
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.getElementById('buildingSearch').addEventListener('input', function () {
+        const selectedValue = this.value;
+        const options = document.querySelectorAll('#buildingOptions option');
+        let selectedId = '';
+
+        // Find the matching option and get its data-id
+        options.forEach(option => {
+            if (option.value === selectedValue) {
+                selectedId = option.getAttribute('data-id');
+            }
+        });
+
+        // Set the hidden input's value
+        document.getElementById('buildingId').value = selectedId || '';
+    });
+</script>

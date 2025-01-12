@@ -56,6 +56,7 @@ namespace CleanHub.Repositories
             return  query.AsNoTracking();
         }
 
+
         public IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>>? include = null)
         {
             IQueryable<T> query = _dbSet;

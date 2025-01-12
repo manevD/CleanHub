@@ -19,7 +19,7 @@ var DTcustomsetting = {
           "previous": "<i class='flaticon-left-arrow-1'></i>",
           "next": "<i class='flaticon-right-arrow-1'></i>"
         },
-        "info": "Showing page _PAGE_ of _PAGES_"
+        "info": "?????? _PAGE_ of _PAGES_"
     },
 
     languagePaginate: {
@@ -28,7 +28,7 @@ var DTcustomsetting = {
     },
 
     languageInfo: {
-    	info: "Showing page _PAGE_ of _PAGES_"
+        info: "?????? _PAGE_ of _PAGES_"
     }
     
 };

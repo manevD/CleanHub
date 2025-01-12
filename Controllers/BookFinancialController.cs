@@ -78,13 +78,14 @@ namespace CleanHub.Controllers
             }
 
             building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
-            results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0 , paymentStatusId ?? 0).ToList();
-
-
-            FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
-            if (paymentStatusId == (int)PaymentStatus.Неплатено)
+            if (building != null)
             {
-                CalculateOverdueStatus(results);
+                results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
+                FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
+                if (paymentStatusId == (int)PaymentStatus.Неплатено)
+                {
+                    CalculateOverdueStatus(results);
+                }
             }
 
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();

@@ -1,5 +1,6 @@
 ﻿using CleanHub.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
+using AutoMapper.Configuration.Annotations;
 using CleanHub.Entities.Enums;
 
 namespace CleanHub.ViewModels
@@ -26,6 +27,8 @@ namespace CleanHub.ViewModels
         public DateOnly? DatumF { get; set; }
 
         public double Owes { get; set; }
+        [Ignore]
+        public string FormattedDatumF => DatumF?.ToString("yyyy/MM/dd");
 
         public double Demands { get; set; }
         public DateTime? Time { get; set; }
