@@ -126,6 +126,13 @@ namespace CleanHub.Controllers
                             Demands = bf.Demands,
                             DatumF = bf.DatumF
                         }).ToList();
+                        bookFinancials.AddRange(_unitOfWork.Documents.GetAllNoTrakcing().Where(x => x.Date >= DateFrom && x.Date <= DateTo).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.ToDocument,
+                            Owes = bf.TotalOutput.Value,
+                            InvoiceId = 1200,
+                            DatumF = bf.Date
+                        }).ToList());
                     }
                     else
                     {
@@ -137,6 +144,13 @@ namespace CleanHub.Controllers
                             Demands = bf.Demands,
                             DatumF = bf.DatumF
                         }).ToList();
+                        bookFinancials.AddRange(_unitOfWork.Documents.GetAllNoTrakcing().Where(x => x.Date >= DateFrom).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.ToDocument,
+                            Owes = bf.TotalOutput.Value,
+                            InvoiceId = 1200,
+                            DatumF = bf.Date
+                        }).ToList());
                     }
                 }
                 else
@@ -153,6 +167,13 @@ namespace CleanHub.Controllers
                             Demands = bf.Demands,
                             DatumF = bf.DatumF
                         }).ToList(); ;
+                        bookFinancials.AddRange(_unitOfWork.Documents.GetAllNoTrakcing().Where(x => x.Date >= DateFrom && x.Date <= DateTo && x.CustomerId == customerId.Value).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.ToDocument,
+                            Owes = bf.TotalOutput.Value,
+                            InvoiceId = 1200,
+                            DatumF = bf.Date
+                        }).ToList());
                     }
                     else
                     {
@@ -164,6 +185,13 @@ namespace CleanHub.Controllers
                             Demands = bf.Demands,
                             DatumF = bf.DatumF
                         }).ToList();
+                        bookFinancials.AddRange(_unitOfWork.Documents.GetAllNoTrakcing().Where(x => x.Date >= DateFrom && x.CustomerId == customerId.Value).ToList().Select(bf => new BookFinancialViewModel()
+                        {
+                            Description = bf.ToDocument,
+                            Owes = bf.TotalOutput.Value,
+                            InvoiceId = 1200,
+                            DatumF = bf.Date
+                        }).ToList());
                     }
                 }
             }

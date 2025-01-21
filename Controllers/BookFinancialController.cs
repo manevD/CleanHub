@@ -39,9 +39,9 @@ namespace CleanHub.Controllers
                     Value = ((int)(object)e).ToString(),
                 }).ToList();
 
-        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? status)
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? paymentStatusId)
         {
-            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201, status ?? 0);
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201, paymentStatusId ?? 0);
             return query.Select(bf => new BookFinancialInfoViewModel
                 {
                     Id = bf.Id,
