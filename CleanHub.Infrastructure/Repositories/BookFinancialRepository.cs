@@ -21,7 +21,7 @@ namespace CleanHub.CleanHub.Infrastructure.Repositories
         {
             var query = new List<BookFinancial>();
             var building = _context.Buildings.FirstOrDefault(x => x.Id == buildingId);
-            if (invoiceId.HasValue && invoiceId.Value == 1201)
+            if (invoiceId.HasValue)
             {
                 query = _context.BookFinancials.Where(bf =>
                     bf.CustomerId != null && ((bf.CustomerId == building.CustomerRefId.Value && bf.InvoiceId == invoiceId.Value) ||
@@ -30,6 +30,7 @@ namespace CleanHub.CleanHub.Infrastructure.Repositories
             }
             return query;
         }
+
         public (int owes, int demands) GetBuildingReserve(int buildingId, int? invoiceId, int? status)
         {
             var owes = 0;

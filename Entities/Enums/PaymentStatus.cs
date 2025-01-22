@@ -7,6 +7,7 @@ namespace CleanHub.Entities.Enums
         Платено,
         Неплатено,
         Делумно,
-        Задоцнето
+        Задоцнето,
+        Сите
     }
 }

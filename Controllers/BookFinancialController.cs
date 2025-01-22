@@ -18,14 +18,14 @@ namespace CleanHub.Controllers
 
         private readonly IUnitOfWork _unitOfWork;
 
-        public BookFinancialController( IUnitOfWork unitOfWork)
+        public BookFinancialController(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork;
         }
 
         private List<Building> GetBuildings()
         {
-            var buildings =  _unitOfWork.Buildings.GetAll().ToList();
+            var buildings = _unitOfWork.Buildings.GetAll().ToList();
             buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
             return buildings;
         }
@@ -43,15 +43,15 @@ namespace CleanHub.Controllers
         {
             var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201, paymentStatusId ?? 0);
             return query.Select(bf => new BookFinancialInfoViewModel
-                {
-                    Id = bf.Id,
-                    Status = bf.Status,
-                    InvoiceId = bf.InvoiceId ?? 0,
-                    Description = bf.Description ?? "",
-                    DatumF = bf.DatumF ?? DateOnly.MinValue,
-                    Owes = bf.Owes,
-                    Demands = bf.Demands
-                })
+            {
+                Id = bf.Id,
+                Status = bf.Status,
+                InvoiceId = bf.InvoiceId ?? 0,
+                Description = bf.Description ?? "",
+                DatumF = bf.DatumF ?? DateOnly.MinValue,
+                Owes = bf.Owes,
+                Demands = bf.Demands
+            })
                 .ToList();
         }
 
@@ -82,16 +82,15 @@ namespace CleanHub.Controllers
             {
                 results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
                 FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
-                if (paymentStatusId == (int)PaymentStatus.Неплатено)
+                if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int) PaymentStatus.Сите)
                 {
                     CalculateOverdueStatus(results);
                 }
             }
-
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
             ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
             ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
-            return View("Index",results );
+            return View("Index", results);
         }
         private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
         {
@@ -105,29 +104,44 @@ namespace CleanHub.Controllers
             {
                 var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                 ViewBag.DateTo = DateTo;
-
-                results = results.Where(x =>
-                        (x.DatumF >= DateFrom && x.DatumF <= DateTo) &&
-                        (invoiceId == (int)InvoiceTyp.Reserve || !paymentStatusId.HasValue || (int)x.Status == paymentStatusId))
-                    .ToList();
+                if (paymentStatusId == (int)PaymentStatus.Сите)
+                {
+                    results = results.Where(x =>
+                            (x.DatumF >= DateFrom && x.DatumF <= DateTo))
+                        .ToList();
+                }
+                else
+                {
+                    results = results.Where(x =>
+                            (x.DatumF >= DateFrom && x.DatumF <= DateTo) &&
+                            (int)x.Status == paymentStatusId)
+                        .ToList();
+                }
             }
             else
             {
-                results = results.Where(x =>
-                        (x.DatumF >= DateFrom) &&
-                        (invoiceId == (int)InvoiceTyp.Reserve || !paymentStatusId.HasValue || (int)x.Status == paymentStatusId))
-                    .ToList();
+                if (paymentStatusId == (int)PaymentStatus.Сите)
+                {
+                    results = results.Where(x =>
+                            (x.DatumF >= DateFrom))
+                        .ToList();
+                }
+                else
+                {
+                    results = results.Where(x =>
+                            (x.DatumF >= DateFrom) && (int)x.Status == paymentStatusId)
+                        .ToList();
+                }
             }
         }
+
         private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
-
-            foreach (var doc in results)
+            var resultFiltered =
+                results.Where(x => x.Status == PaymentStatus.Неплатено || x.Status == PaymentStatus.Задоцнето);
+            foreach (var doc in resultFiltered)
             {
-                if (doc.Status is not (PaymentStatus.Неплатено or PaymentStatus.Задоцнето))
-                    continue;
-
                 doc.Delay = today.DayNumber - doc.DatumF.DayNumber;
                 doc.Status = doc.Delay > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
 
@@ -142,7 +156,6 @@ namespace CleanHub.Controllers
                     <= 730 => 0.13,
                     _ => 0.16
                 };
-
                 doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
             }
         }
