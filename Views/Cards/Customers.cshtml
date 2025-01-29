@@ -1,4 +1,4 @@
-﻿@model CleanHub.ViewModels.CardsViewModel
+﻿@model CleanHub.ViewModels.CustomerCard1200ViewModel
 
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -30,13 +30,13 @@
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
             </div>
         </div>
         <div class="col-lg-2 col-md-3">
             <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
             </div>
         </div>
     </div>
@@ -48,76 +48,78 @@
     </div>
 </form>
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-    </br>
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                <th>Опис</th>
-                <th>Сметка</th>
-                <th>Побарува</th>
-                <th>Должи</th>
-                <th class="sorting_asc">Дата на издавање</th>
+                    <tr>
+                        <th>Налог</th>
+                        <th>Датум</th>
+                        <th>Број</th>
+                        <th>Опис</th>
+                        <th>Вид док.</th>
+                        <th>Побарува</th>
+                        <th>Должи</th>
+                        <th>Салдо</th>
+                    </tr>
                 </thead>
                 <tbody>
-                    @if (Model.CustomerFinanfical != null && Model.CustomerFinanfical.Any())
+                    @if (Model != null && Model.CustomerData != null && Model.CustomerData.Any())
                     {
-                        @foreach (var invoice in Model.CustomerFinanfical)
+                        @foreach (var invoice in Model.CustomerData)
                         {
                             <tr role="row">
+                                <td>@Html.DisplayFor(modelItem => invoice.NumberNalog)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Date)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Number)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.InvoiceId.Value)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.DocumentTyp)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Demands)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Owes)</td>
+                                <td></td>
                             </tr>
                         }
                         <tr role="row">
-                            <td>Вкупно</td>
                             <td></td>
-                            <td>Побарува :@Model.CustomerFinanfical.Sum(x => x.Demands) </td>
-                            <td>Должи : @Model.CustomerFinanfical.Sum(x => x.Owes)</td>
-                            @if (@Model.CustomerFinanfical.Sum(x => x.Demands) > @Model.CustomerFinanfical.Sum(x => x.Owes))
-                            {
-                                <td>
-                                    Во претплата : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                                </td>
-                            }
-                            else
-                            {
-                                <td>
-                                    Во минус : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                                </td>
-                            }
+                            <td></td>
+                            <td></td>
+                            <td></td>
+                            <td><strong>Вкупно</strong></td>
+                            <td><strong>Побарува : @Model.CustomerDemandsTotal</strong></td>
+                            <td><strong>Должи : @Model.CustomerOwesTotal</strong></td>
+                            <td>
+                                <strong>
+                                    Салдо :
+                                    @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
+                                    @Model.Total
+                                </strong>
+                            </td>
                         </tr>
                     }
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="8" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th>@Model.CustomerFinanfical.Sum(x => x.Demands)</th>
-
-                    <th>@Model.CustomerFinanfical.Sum(x => x.Owes)</th>
-                       @if (@Model.CustomerFinanfical.Sum(x => x.Demands) > @Model.CustomerFinanfical.Sum(x => x.Owes))
-                            {
-                            <th>
-                                Во претплата : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                            </th>
-                            }
-                       else
-                       {
-                           <th>
-                               Во минус : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                           </th>
-                       }
-                </tr>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th><strong>Вкупно</strong></th>
+                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
+                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+                        <th>
+                            <strong>
+                                Салдо :
+                                @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
+                                @Model.Total
+                            </strong>
+                        </th>
+                    </tr>
                 </tfoot>
             </table>
         </div>

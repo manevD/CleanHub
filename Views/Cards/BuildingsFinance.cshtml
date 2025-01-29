@@ -30,13 +30,13 @@
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
             </div>
         </div>
         <div class="col-lg-2 col-md-3">
             <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
             </div>
         </div>
     </div>
@@ -49,44 +49,67 @@
 </form>
 
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-    </br>
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                <tr role="row">
-                    <th>Опис</th>
-                    <th>Сметка</th>
-                    <th>Должи</th>
-                    <th>Побарува</th>
-                    <th class="sorting_asc">Дата на издавање</th>
-                </tr>
+                    <tr role="row">
+                        <th>Станар</th>
+                        <th>Адреса</th>
+                        <th>Побарува</th>
+                        <th>Должи</th>
+                        <th>Салдо</th>
+                    </tr>
                 </thead>
                 <tbody>
-                @if (Model.BuildingFinancial != null && Model.BuildingFinancial.Any())
-                {
-                        @foreach (var invoice in Model.BuildingFinancial)
+                    @if (Model.BuildingFinanceCardViewModels != null && Model.BuildingFinanceCardViewModels.Any())
                     {
+                        @foreach (var invoice in Model.BuildingFinanceCardViewModels)
+                        {
+                            <tr role="row">
+                                <td>@Html.DisplayFor(modelItem => invoice.CustomerInfo)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Adress)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
+                            </tr>
+                        }
                         <tr role="row">
-                            <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
-                            <td>@Html.DisplayFor(modelItem => invoice.InvoiceId.Value)</td>
-                            <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
-                            <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
-                            <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
+                            <td><strong>Вкупно</strong></td>
+                            <td></td>
+                            <td><strong>@Model.CustomerDemandsTotal МКД</strong></td>
+                            <td><strong>@Model.CustomerOwesTotal МКД</strong></td>
+                            <td>
+                                <strong>
+                                    Салдо :
+                                    @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "- " : "")
+                                    @Model.Total МКД
+                                </strong>
+                            </td>
                         </tr>
                     }
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="6" class="text-center">Нема пронајдени податоци</td>
-                    </tr>
-                }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center">Нема пронајдени податоци</td>
+                        </tr>
+                    }
                 </tbody>
+                <tfoot>
+                    <tr>
+                        <th>Вкупно</th>
+                        <th></th>
+                        <th>Побарува: @Model.CustomerDemandsTotal МКД</th>
+                        <th>Должи: @Model.CustomerOwesTotal МКД</th>
+                        <th>
+                            Салдо: @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "- " : "") @Model.Total МКД
+                        </th>
+                    </tr>
+                </tfoot>
             </table>
         </div>
     </div>
 </div>
+
 
 
 <script>

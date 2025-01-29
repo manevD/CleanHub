@@ -30,13 +30,13 @@
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
             </div>
         </div>
         <div class="col-lg-2 col-md-3">
             <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
             </div>
         </div>
     </div>
@@ -75,19 +75,15 @@
                         <tr role="row">
                             <td>Вкупно</td>
                             <td></td>
-                            <td>Побарува :@Model.CustomerFinanfical.Sum(x => x.Demands) </td>
-                            <td>Должи : @Model.CustomerFinanfical.Sum(x => x.Owes)</td>
-                            @if (@Model.CustomerFinanfical.Sum(x => x.Demands) > @Model.CustomerFinanfical.Sum(x => x.Owes))
+                            <td>Побарува :@Model.CustomerDemandsTotal </td>
+                            <td>Должи : @Model.CustomerOwesTotal</td>
+                            @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
                             {
-                                <td>
-                                    Во претплата : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                                </td>
+                                <td>Салдо :- @Model.Total</td>
                             }
                             else
                             {
-                                <td>
-                                    Во минус : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                                </td>
+                                <td>Салдо :@Model.Total</td>
                             }
                         </tr>
                     }
@@ -102,21 +98,16 @@
                 <tr>
                     <th></th>
                     <th></th>
-                    <th>@Model.CustomerFinanfical.Sum(x => x.Demands)</th>
-
-                    <th>@Model.CustomerFinanfical.Sum(x => x.Owes)</th>
-                       @if (@Model.CustomerFinanfical.Sum(x => x.Demands) > @Model.CustomerFinanfical.Sum(x => x.Owes))
-                            {
-                            <th>
-                                Во претплата : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                            </th>
-                            }
-                       else
-                       {
-                           <th>
-                               Во минус : @Model.CustomerFinanfical.Sum(x => x.Demands - x.Owes)
-                           </th>
-                       }
+                    <th>Побарува : @Model.CustomerDemandsTotal</th>
+                    <th>Должи : @Model.CustomerOwesTotal</th>
+                    @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
+                    {
+                        <th>Салдо :- @Model.Total</th>
+                    }
+                    else
+                    {
+                        <th>Салдо :@Model.Total</th>
+                    }
                 </tr>
                 </tfoot>
             </table>
