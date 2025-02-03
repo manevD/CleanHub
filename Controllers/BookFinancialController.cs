@@ -41,7 +41,10 @@ namespace CleanHub.Controllers
 
         private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? paymentStatusId)
         {
-            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201, paymentStatusId ?? 0);
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201);
+
+            ViewBag.Owes = query.Sum(x=>x.Owes);
+            ViewBag.Demands = query.Sum(x => x.Demands);
             return query.Select(bf => new BookFinancialInfoViewModel
             {
                 Id = bf.Id,

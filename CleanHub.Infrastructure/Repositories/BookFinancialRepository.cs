@@ -17,7 +17,7 @@ namespace CleanHub.CleanHub.Infrastructure.Repositories
             _context = context;
         }
 
-        public List<BookFinancial> GetBuldingReserve(int buildingId, int? invoiceId, int? status)
+        public List<BookFinancial> GetBuldingReserve(int buildingId, int? invoiceId)
         {
             var query = new List<BookFinancial>();
             var building = _context.Buildings.FirstOrDefault(x => x.Id == buildingId);

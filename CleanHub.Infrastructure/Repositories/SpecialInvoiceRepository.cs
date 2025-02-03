@@ -17,13 +17,7 @@ namespace CleanHub.CleanHub.Infrastructure.Repositories
 
         public void UpdateSpecialInvoices(DocumentViewModel document, SpecialInvoice specialInvoice)
         {
-           _context.Entry(specialInvoice).Property(s => s.BuildingId).IsModified = true;
-
-            // Alternatively, attach the entity and set the BuildingId explicitly
-            _context.Attach(specialInvoice);
             specialInvoice.BuildingId = document.BuildingId;
-
-            // Add the SpecialInvoice to the context
             _context.SpecialInvoices.Add(specialInvoice);
         }
     }

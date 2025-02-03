@@ -269,7 +269,7 @@ namespace CleanHub.Controllers
                     Id = b.Id,
                     Name = b.Name,
                     ReserveFund = b.ReserveFund,
-                    Customers = b.Customers,
+                    Customers = b.Customers.Where(x=> x.Inactive == false).ToList(),
                     BuildingProducts = b.BuildingProducts
                 }));
             _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: 1201, status: null, documentViewModel);
@@ -371,20 +371,32 @@ namespace CleanHub.Controllers
                     document.Building?.BuildingProducts.Where(x => x.GetFromReserve).ToList();
                 if (buildingProductsFromReserve != null && buildingProductsFromReserve.Any())
                 {
-                    var priceTotal = buildingProductsFromReserve.Sum(x => x.Total);
-                    /// Get the reserve and minus the priceTotal
+                    foreach (var invoice in buildingProductsFromReserve)
+                    {
+                        var bookFinancial = new BookFinancialViewModel
+                        {
+                            DatumF = document.Date,
+                            InvoiceId = (int)InvoiceTyp.Reserve,
+                            Demands = 0,
+                            Owes = (double)invoice.Total,
+                            DocumentTypId = 5,
+                            Description = invoice.ArticleNotes,
+                            Status = PaymentStatus.Неплатено
+                        };
+                        _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
+                    }
                 }
 
-                var building =await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.BuildingId,
+                var building =await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.Building.Id,
                     inc => inc.Include(x => x.Customers));
                 if (building != null)
                 {
-                    foreach (var customer in building.Customers.ToList())
+                    foreach (var customer in building.Customers.Where(x=>x.Inactive == false ).ToList())
                     {
                         var docEntity = await CreateCustomerDocument(customer.Id, document, building);
 
                         if (document?.Building?.BuildingProducts != null)
-                            foreach (var buildingProduct in document.Building.BuildingProducts)
+                            foreach (var buildingProduct in document.Building.BuildingProducts.Where(x=>x.PriceWithTax != 0))
                             {
                                 try
                                 {
@@ -401,7 +413,7 @@ namespace CleanHub.Controllers
                         CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
                     }
                 }
-
+                /// da se napravie site drugo so ne spagaat u normalni BuildingProducts, da se knizat na trosok na 1201 i sumata na Owes
                 CreateSpecialInvoice(document);
                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
@@ -422,6 +434,10 @@ namespace CleanHub.Controllers
             if (energyValues != null && energyValues.Any())
             {
                 sum = (int)Math.Round((decimal)energyValues.Sum(x => x.PriceWithTax), MidpointRounding.AwayFromZero);
+            }
+            if (sum == 0)
+            {
+                return;
             }
 
             var specialInvoiceViewModel = new SpecialInvoiceViewModel
@@ -471,26 +487,26 @@ namespace CleanHub.Controllers
 
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
         {
-            float price = 0;
-            float priceWithTax = 0;
-            if (int.TryParse(book.Price.ToString(), out int priceInt))
-            {
-                price = priceInt / 100f;
-            }
-            if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
-            {
-                priceWithTax = priceWithTaxInt / 100f;
-            }
+            //float price = 0;
+            //float priceWithTax = 0;
+            //if (int.TryParse(book.Price.ToString(), out int priceInt))
+            //{
+            //    price = priceInt / 100f;
+            //}
+            //if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
+            //{
+            //    priceWithTax = priceWithTaxInt / 100f;
+            //}
 
             var bookEntity = new BookViewModel
             {
                 DocId = docEntity.Id,
                 Output = 1,
                 Quantity = book.Quantity,
-                PriceWithTax = priceWithTax,
+                PriceWithTax = book.PriceWithTax,
                 Tax = book.Tax,
                 ArticleId = book.Id,
-                Total = priceWithTax,
+                Total = book.PriceWithTax,
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
             };

@@ -271,6 +271,10 @@ namespace CleanHub.Controllers
                         x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month,
                         inc => inc.Include(x => x.Customer)
                             .Include(x => x.Books)));
+                    if (document == null)
+                    {
+                        RedirectToAction(nameof(Index));
+                    }
                     document.Company = _config.Value;
                     document.IsForPdf = true;
 
