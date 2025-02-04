@@ -1,4 +1,4 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
+﻿using CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.ViewModels;

@@ -118,7 +118,7 @@
                                                     </p>
                                                     <p class="inv-due-date">
                                                         <span class="inv-title">Месец на плаќање : </span>
-                                                        <span class="inv-date">@Model?.DueDate!.Value.Month / @Model?.Date!.Value.Year</span>
+                                                        <span class="inv-date">@(Model?.DueDate?.Month ?? 1) / @(Model?.Date?.Year ?? 2000)</span>
                                                     </p>
                                                 </div>
                                             </div>
@@ -148,23 +148,23 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                    @if (Model?.Books != null)
-                                                    {
-                                                        foreach (var article in Model.Books)
+                                                        @if (Model?.Books != null && Model.Books.Any())
                                                         {
-                                                            <tr>
-                                                                <td>@article.ArticleNotes</td>
-                                                                <td class="text-end">@article.UnitOfMeasurement</td>
-                                                                <td class="text-end">@article.Quantity</td>
-                                                                <td class="text-end">@article.PriceWithTax!.Value.ToString("F2")</td>
-                                                            </tr>
+                                                            foreach (var article in Model.Books)
+                                                            {
+                                                                <tr>
+                                                                    <td>@article.ArticleNotes</td>
+                                                                    <td class="text-end">@article.UnitOfMeasurement</td>
+                                                                    <td class="text-end">@article.Quantity</td>
+                                                                    <td class="text-end">@article.PriceWithTax!.Value.ToString("F2")</td>
+                                                                </tr>
+                                                            }
                                                         }
-                                                    }
-                                                    <tr>
+                                                        <tr>
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>
-                                                            <td class="text-end">ЗА НАПЛАТА: @Model?.TotalOutput</td>
+                                                            <td class="text-end">ЗА НАПЛАТА: @(Model?.TotalOutput ?? 0)</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
@@ -235,8 +235,6 @@
             </div>
         }
     </div>
-
-
 </div>
 <script src="~/layouts/horizontal-light-menu/loader.js"></script>
 <script src="~/src/bootstrap/js/bootstrap.bundle.min.js"></script>

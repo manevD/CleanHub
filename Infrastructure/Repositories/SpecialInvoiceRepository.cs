@@ -1,10 +1,10 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
-using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
-using CleanHub.Repositories;
+﻿using CleanHub.Infrastructure.Data;
+using CleanHub.Infrastructure.Repositories;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.ViewModels;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories
+namespace CleanHub.Infrastructure.Repositories
 {
     public class SpecialInvoiceRepository : GenericRepository<SpecialInvoice>, ISpecialInvoiceRepository
     {

@@ -1,9 +1,8 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
-using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
+﻿using CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
-using CleanHub.Repositories;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories
+namespace CleanHub.Infrastructure.Repositories
 {
     public class BuildingRepository : GenericRepository<Building>, IBuildingRepository
     {

@@ -145,19 +145,29 @@
                                                                     <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" value="@Model.Building.BuildingProducts[i].Quantity" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" asp-for="@Model.Building.BuildingProducts[i].Price" value="@Model.Building.BuildingProducts[i].Price" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i" 
+                                                                           asp-for="@Model.Building.BuildingProducts[i].Price"
+                                                                           value="@(Model.Building.BuildingProducts[i].Price.ToString("0.00", new System.Globalization.CultureInfo("mk-MK")) ?? "0.00 МКД")" />
+
                                                                 </td>
                                                                 <td class="rate">
                                                                     <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" asp-for="@Model.Building.BuildingProducts[i].PriceWithTax" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i" 
+                                                                           asp-for="@Model.Building.BuildingProducts[i].PriceWithTax"
+                                                                           value="@(Model.Building.BuildingProducts[i].PriceWithTax?.ToString("0.00", new System.Globalization.CultureInfo("mk-MK")) ?? "0.00")"
+                                                                           readonly />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" value="@Model.Building.BuildingProducts[i].Total" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Total_@i" 
+                                                                           asp-for="@Model.Building.BuildingProducts[i].Total"
+                                                                           value="@(Model.Building.BuildingProducts[i].Total?.ToString("0.00", new System.Globalization.CultureInfo("mk-MK")) ?? "0.00")" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i" value="@Model.Building.BuildingProducts[i].PriceWithTax" readonly />
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
+                                                                           value="@(Model.Building.BuildingProducts[i].PriceWithTaxTotal?.ToString("0.00", new System.Globalization.CultureInfo("mk-MK")) ?? "0.00")"
+                                                                           readonly />
                                                                 </td>
                                                                 <td class="text-center tax">
                                                                     <div class="n-chk">

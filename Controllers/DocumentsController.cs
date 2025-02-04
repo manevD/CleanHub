@@ -1,10 +1,10 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Entities.Enums;
 using CleanHub.Extensions;
 using CleanHub.Helpers;
+using CleanHub.Infrastructure.Data;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -158,8 +158,12 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-            // Add default building and payment status list
+           
             Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
+            if (!buildingId.HasValue)
+            {
+                return RedirectToAction(nameof(Index));
+            }
             if (!Buildings.Any())
             {
                 throw new Exception("No buildings found in the database.");
@@ -183,7 +187,10 @@ namespace CleanHub.Controllers
             foreach (var doc in documents)
             {
                 doc.Delay = CalculateOverdueDays(doc.DueDate);
-                doc.NewTotal = CalculateNewTotal(doc);
+                if (doc.Delay != 0)
+                {
+                    doc.NewTotal = CalculateNewTotal(doc);
+                }
             }
 
             return View("Index", documents);
@@ -205,14 +212,13 @@ namespace CleanHub.Controllers
 
         private async Task<List<Document>> GetDocuments(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-
             var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
                 query => query.Include(d => d.Customer).ThenInclude(c => c.Building),
                 d => !buildingId.HasValue || d.Customer.BuildingId == buildingId.Value
             );
             if (paymentStatusId.HasValue)
             {
-                query = (List<Document>)query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value);
+                query = query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value).ToList();
             }
 
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
@@ -366,7 +372,7 @@ namespace CleanHub.Controllers
                         document.Building?.BuildingProducts.Remove(buildingProduct);
                     }
                 }
-
+                /// da se napravie site drugo so ne spagaat u normalni BuildingProducts, da se knizat na trosok na 1201 i sumata na Owes
                 var buildingProductsFromReserve =
                     document.Building?.BuildingProducts.Where(x => x.GetFromReserve).ToList();
                 if (buildingProductsFromReserve != null && buildingProductsFromReserve.Any())
@@ -378,7 +384,9 @@ namespace CleanHub.Controllers
                             DatumF = document.Date,
                             InvoiceId = (int)InvoiceTyp.Reserve,
                             Demands = 0,
+                            DocumentId = document.Id,
                             Owes = (double)invoice.Total,
+                            CustomerId = document.Building?.Id,
                             DocumentTypId = 5,
                             Description = invoice.ArticleNotes,
                             Status = PaymentStatus.Неплатено
@@ -410,11 +418,11 @@ namespace CleanHub.Controllers
                                 }
                             }
 
-                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                       //CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
                     }
                 }
-                /// da se napravie site drugo so ne spagaat u normalni BuildingProducts, da se knizat na trosok na 1201 i sumata na Owes
-                CreateSpecialInvoice(document);
+
+                //CreateSpecialInvoice(document);
                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
 
@@ -428,8 +436,8 @@ namespace CleanHub.Controllers
         {
             int sum = 0;
             var energyValues = document.Building?.BuildingProducts
-                .Where(x => x.ArticleNotes != null && (x.ArticleNotes.ToLower().Contains("енер.")
-                                                       || x.ArticleNotes.ToLower().Contains("осветлување")))
+                .Where(x => x.ArticleNotes != null &&  x.Total != 0 &&  (x.ArticleNotes.ToLower().Contains("енер.")
+                                                                        || x.ArticleNotes.ToLower().Contains("осветлување") ))
                 .ToList();
             if (energyValues != null && energyValues.Any())
             {
@@ -487,16 +495,6 @@ namespace CleanHub.Controllers
 
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
         {
-            //float price = 0;
-            //float priceWithTax = 0;
-            //if (int.TryParse(book.Price.ToString(), out int priceInt))
-            //{
-            //    price = priceInt / 100f;
-            //}
-            //if (int.TryParse(book.PriceWithTax.Value.ToString(), out int priceWithTaxInt))
-            //{
-            //    priceWithTax = priceWithTaxInt / 100f;
-            //}
 
             var bookEntity = new BookViewModel
             {
@@ -526,7 +524,7 @@ namespace CleanHub.Controllers
             documentCustomer.Description = building.Name;
             documentCustomer.CreatedTime = DateTime.UtcNow;
             documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(10));
-            var calculator = new PriceCalculator(building.Customers.Count());
+            var calculator = new PriceCalculator(building.Customers.Where(x=>x.Inactive == false).Count());
 
             // Calculate prices for each product
             if (document?.Building?.BuildingProducts != null)
@@ -553,8 +551,9 @@ namespace CleanHub.Controllers
                 {
                     priceWithTax = priceWithTaxInt / 100f;
                 }
-                //customer.Subscription = customer.Subscription - documentCustomer.TotalOutput.Value;
-                documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+                customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
+                documentCustomer.PaymentStatus = PaymentStatus.Платено;
+                _unitOfWork.Customers.Update(customer);
             }
             else
             {

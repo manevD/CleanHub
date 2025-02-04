@@ -1,8 +1,8 @@
-﻿using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
+﻿using CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System.Linq.Expressions;
 
-namespace CleanHub.Repositories
+namespace CleanHub.Infrastructure.Repositories
 {
     public class GenericRepository<T> : IRepository<T> where T : class
     {

@@ -1,13 +1,10 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
+﻿using CleanHub.DTO;
 using CleanHub.Entities;
+using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using System.Linq;
-using CleanHub.DTO;
-using CleanHub.Entities.Enums;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CleanHub.Controllers
 {

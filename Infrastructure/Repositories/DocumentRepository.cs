@@ -1,11 +1,8 @@
-﻿using System.Linq.Expressions;
-using CleanHub.CleanHub.Infrastructure.Data;
-using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
+﻿using CleanHub.Infrastructure.Data;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.Entities;
-using CleanHub.Repositories;
-using Microsoft.EntityFrameworkCore;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories
+namespace CleanHub.Infrastructure.Repositories
 {
     public class DocumentRepository : GenericRepository<Document>, IDocumentsRepository
     {

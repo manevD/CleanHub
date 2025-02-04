@@ -2,7 +2,7 @@
 using CleanHub.Entities.Enums;
 using CleanHub.ViewModels;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories.Interfaces
+namespace CleanHub.Infrastructure.Repositories.Interfaces
 {
     public interface IBookFinancialsRepository : IRepository<BookFinancial>
     {

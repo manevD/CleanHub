@@ -1,7 +1,7 @@
 ﻿using CleanHub.Entities;
 using CleanHub.Entities.Enums;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories.Interfaces
+namespace CleanHub.Infrastructure.Repositories.Interfaces
 {
     public interface IBuildingRepository : IRepository<Building>
     {

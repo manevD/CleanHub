@@ -1,12 +1,9 @@
-﻿using CleanHub.CleanHub.Infrastructure.Data;
-using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
-using CleanHub.Entities;
-using CleanHub.Entities.Enums;
-using CleanHub.Repositories;
+﻿using CleanHub.Entities;
+using CleanHub.Infrastructure.Data;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.ViewModels;
-using Microsoft.EntityFrameworkCore.Query.Internal;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories
+namespace CleanHub.Infrastructure.Repositories
 {
     public class BookFinancialRepository : GenericRepository<BookFinancial>,IBookFinancialsRepository
     {

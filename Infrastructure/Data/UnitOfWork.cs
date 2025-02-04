@@ -1,9 +1,9 @@
-﻿using CleanHub.CleanHub.Infrastructure.Repositories;
-using CleanHub.CleanHub.Infrastructure.Repositories.Interfaces;
+﻿using CleanHub.Infrastructure.Repositories;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 
-namespace CleanHub.CleanHub.Infrastructure.Data
+namespace CleanHub.Infrastructure.Data
 {
-    public interface IUnitOfWork : IDisposable
+    public interface IUnitOfWork 
     {
         ICustomerRepository Customers { get; }
         IBuildingProductRepository BuildingProducts { get; }
@@ -44,11 +44,6 @@ namespace CleanHub.CleanHub.Infrastructure.Data
         public async Task SaveChangesAsync()
         {
            await _context.SaveChangesAsync();
-        }
-
-        public void Dispose()
-        {
-            _context.Dispose();
         }
     }
 }

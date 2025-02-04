@@ -1,8 +1,12 @@
+using System.Globalization;
 using AutoMapper;
-using CleanHub.CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Extensions;
+using CleanHub.Infrastructure.Data;
+using CleanHub.Infrastructure.Repositories;
+using CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
 
 namespace CleanHub
@@ -29,7 +33,21 @@ namespace CleanHub
 
             builder.Services.AddMemoryCache();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+            builder.Services.AddScoped<ICustomerRepository, CustomersRepository>();
+            builder.Services.AddScoped<IDocumentsRepository, DocumentRepository>();
+            builder.Services.AddScoped<IBuildingProductRepository, BuildingProductRepository>();
+            builder.Services.AddScoped<IBuildingRepository, BuildingRepository>();
+            builder.Services.AddScoped<IProductRepository, ProductRepository>();
+            builder.Services.AddScoped<IBookFinancialsRepository, BookFinancialRepository>();
+            builder.Services.AddScoped<IBookRepository, BookRepository>();
+            builder.Services.AddScoped<ISpecialInvoiceRepository, SpecialInvoiceRepository>();
+            var cultures = new[]
+            {
+                new CultureInfo("en-US"),
+                new CultureInfo("de"),
+            };
 
+            
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30); // Session Timeout nach 30 Minuten
@@ -72,7 +90,12 @@ namespace CleanHub
 
             builder.Services.AddSingleton(mapper);
             var app = builder.Build();
-
+            app.UseRequestLocalization(new RequestLocalizationOptions
+            {
+                DefaultRequestCulture = new RequestCulture("de-DE"),
+                SupportedCultures = cultures,
+                SupportedUICultures = cultures
+            });
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

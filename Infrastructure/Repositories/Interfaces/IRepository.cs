@@ -1,6 +1,6 @@
 ﻿using System.Linq.Expressions;
 
-namespace CleanHub.CleanHub.Infrastructure.Repositories.Interfaces
+namespace CleanHub.Infrastructure.Repositories.Interfaces
 {
     public interface IRepository<T> where T : class
     {
@@ -20,7 +20,7 @@ namespace CleanHub.CleanHub.Infrastructure.Repositories.Interfaces
         void DeleteRange(IEnumerable<T> entities);
 
         Task SaveChangesAsync();
-         Task<int?> GetMaxAsync(Expression<Func<T, int?>> selector);
+        Task<int?> GetMaxAsync(Expression<Func<T, int?>> selector);
 
     }
 }

@@ -1,5 +1,5 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.CleanHub.Infrastructure.Data;
+using CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
 using CleanHub.Extensions;
 using CleanHub.ViewModels;
