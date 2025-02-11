@@ -17,7 +17,13 @@ namespace CleanHub.Infrastructure.Repositories
 
         public void UpdateSpecialInvoices(DocumentViewModel document, SpecialInvoice specialInvoice)
         {
-            specialInvoice.BuildingId = document.BuildingId;
+            var building = _context.Buildings.FirstOrDefault(x => x.Id == specialInvoice.BuildingId);
+            if (building != null)
+            {
+                _context.Attach(building); // Stelle sicher, dass Building nur verfolgt wird
+                specialInvoice.Building = building; // Setze die referenzierte Instanz
+            }
+
             _context.SpecialInvoices.Add(specialInvoice);
         }
     }

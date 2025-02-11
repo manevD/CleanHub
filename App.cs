@@ -145,11 +145,9 @@ public class App : Profile
             cfg.CreateMap<SpecialInvoice, SpecialInvoiceViewModel>()
                 .ForMember(dest => dest.Invoices, opt => opt.Ignore())
                 .ForMember(dest => dest.BuildingName, opt => opt.MapFrom(src => src.Building.Name))
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerInfo))
                 .ReverseMap();
 
             cfg.CreateMap<BookFinancial, SpecialInvoiceViewModel>()
-                .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(src => src.Customer.CustomerInfo))
                 .ForMember(dest => dest.BuildingName, opt => opt.MapFrom(src => src.Customer.Building.Name))
                 .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
                 .ForMember(dest => dest.Building, opt => opt.MapFrom(src => src.Customer.Building))

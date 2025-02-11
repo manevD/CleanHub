@@ -14,16 +14,96 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
+using System.Net.Mail;
+using System.Net;
 
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IHttpContextAccessor _httpContextAccessor) : Controller
+    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor) : Controller
     {
 
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
-        public List<Building> Buildings { get; set; } =  _unitOfWork.Buildings.GetAll().ToList();
+        public List<Building> Buildings { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
+        private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
+        {
+            ViewData.Model = model;
+            using (var writer = new StringWriter())
+            {
+                var viewResult = _viewEngine.GetView("", viewPath, false);
+
+                if (viewResult.View == null)
+                {
+                    throw new ArgumentNullException($"The view '{viewPath}' was not found.");
+                }
+
+                var viewContext = new ViewContext(
+                    ControllerContext,
+                    viewResult.View,
+                    ViewData,
+                    TempData,
+                    writer,
+                    new HtmlHelperOptions()
+                );
+
+                await viewResult.View.RenderAsync(viewContext);
+                return writer.GetStringBuilder().ToString();
+            }
+        }
+
+        public async Task CreateAndSend(DocumentViewModel document)
+        {
+            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
+            {
+                    smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
+                    smtpClient.EnableSsl = true;
+
+                    document.Company = _config.Value;
+                    document.IsForPdf = true;
+
+                    string htmlContent =
+                        await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
+                    var request = _httpContextAccessor?.HttpContext?.Request;
+                    string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
+                    HtmlToPdf converter = new HtmlToPdf();
+                    PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
+                    // create memory stream to save PDF
+                    MemoryStream pdfStream = new MemoryStream();
+
+                    // save pdf document into a MemoryStream
+                    doc.Save(pdfStream);
+
+                    // reset stream position
+                    pdfStream.Position = 0;
+                    string emailBody =
+                        @$"Почитувани,
+
+                            Во прилог ви ја праќаме сметката за {document.Date.Value.Month}/{document.Date.Value.Year}. Ве молиме, проверете ја прикачената сметка и извршете ги потребните активности за плаќање.
+
+                            Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
+                            Со почит,
+
+                            {_config.Value.Name}
+                            {_config.Value.PhoneNumber}
+                            {_config.Value.Email}
+                            {_config.Value.Address}";
+                    // create email message
+                    MailMessage message = new MailMessage();
+                    message.From = new MailAddress(_smtpConfig.Value.Email);
+                    message.To.Add(document.Customer.Email);
+                    message.Subject = string.Concat("Сметка Марти Хигиена ", document.Customer.CustomerInfo, " за ", document.Date.Value.Month, "/",
+                        document.Date.Value.Year);
+                    message.Body = emailBody;
+                    message.Attachments.Add(new Attachment(pdfStream,
+                        string.Concat("МартиХигиена", document.Date.Value.Month, "/", document.Date.Value.Year, ".pdf")));
+                    smtpClient.UseDefaultCredentials = false;
+                    // send email
+                    smtpClient.Send(message);
+                    // close pdf document
+                    doc.Close();
+                }
+        }
 
         //[Route("Unpayed")]
         //[Route("Неплатени")]
@@ -158,7 +238,7 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-           
+
             Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
             if (!buildingId.HasValue)
             {
@@ -228,7 +308,7 @@ namespace CleanHub.Controllers
                 query = (List<Document>)query.Where(d => d.Date >= startDate && d.Date <= endDate);
             }
 
-            return  query;
+            return query;
         }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
@@ -237,7 +317,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var documentEntity =  await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id,d=>d.Include(x => x.Books).Include(d => d.Customer));
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
             if (documentViewModel == null)
@@ -275,7 +355,7 @@ namespace CleanHub.Controllers
                     Id = b.Id,
                     Name = b.Name,
                     ReserveFund = b.ReserveFund,
-                    Customers = b.Customers.Where(x=> x.Inactive == false).ToList(),
+                    Customers = b.Customers.Where(x => x.Inactive == false).ToList(),
                     BuildingProducts = b.BuildingProducts
                 }));
             _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: 1201, status: null, documentViewModel);
@@ -297,7 +377,7 @@ namespace CleanHub.Controllers
             {
                 var basicProducts = (id == 0)
                     ? await _unitOfWork.Products.GetAllAsync()
-                    : await _unitOfWork.Products.GetAllAsync(x=>x.Where((x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез"))));
+                    : await _unitOfWork.Products.GetAllAsync(x => x.Where((x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез"))));
 
                 if (documentViewModel.Building != null)
                 {
@@ -359,7 +439,7 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DocumentViewModel document)
+        public async Task<IActionResult> Create(DocumentViewModel document,bool send)
         {
             if (ModelState.IsValid)
             {
@@ -395,16 +475,16 @@ namespace CleanHub.Controllers
                     }
                 }
 
-                var building =await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.Building.Id,
+                var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.Building.Id,
                     inc => inc.Include(x => x.Customers));
                 if (building != null)
                 {
-                    foreach (var customer in building.Customers.Where(x=>x.Inactive == false ).ToList())
+                    foreach (var customer in building.Customers.Where(x => x.Inactive == false).ToList())
                     {
                         var docEntity = await CreateCustomerDocument(customer.Id, document, building);
 
                         if (document?.Building?.BuildingProducts != null)
-                            foreach (var buildingProduct in document.Building.BuildingProducts.Where(x=>x.PriceWithTax != 0))
+                            foreach (var buildingProduct in document.Building.BuildingProducts.Where(x => x.PriceWithTax != 0))
                             {
                                 try
                                 {
@@ -418,15 +498,19 @@ namespace CleanHub.Controllers
                                 }
                             }
 
-                       //CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                        if (send)
+                        {
+                           await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(docEntity));
+                        }
+                        //CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
                     }
                 }
 
-                //CreateSpecialInvoice(document);
+                CreateSpecialInvoice(document);
                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
 
-                return RedirectToAction(nameof(Create));
+                return RedirectToAction(nameof(Create), new { id = 0, buildingId = document.Building.Id });
             }
             //ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
             return View(document);
@@ -436,8 +520,8 @@ namespace CleanHub.Controllers
         {
             int sum = 0;
             var energyValues = document.Building?.BuildingProducts
-                .Where(x => x.ArticleNotes != null &&  x.Total != 0 &&  (x.ArticleNotes.ToLower().Contains("енер.")
-                                                                        || x.ArticleNotes.ToLower().Contains("осветлување") ))
+                .Where(x => x.ArticleNotes != null && x.Total != 0 && (x.ArticleNotes.ToLower().Contains("енер.")
+                                                                        || x.ArticleNotes.ToLower().Contains("осветлување")))
                 .ToList();
             if (energyValues != null && energyValues.Any())
             {
@@ -453,13 +537,13 @@ namespace CleanHub.Controllers
                 ForDate = document.Date ?? DateOnly.MinValue.AddMonths(-1),
                 Total = sum,
                 InvoiceId = Constants.Energy,
-                BuildingId = document.BuildingId,
+                BuildingId = document.Building.Id,
                 Status = PaymentStatus.Неплатено
             };
+            specialInvoiceViewModel.Building = null;
             var specialInvoice = App.FullMapper.Map<SpecialInvoice>(specialInvoiceViewModel);
             _unitOfWork.SpecialInvoices.UpdateSpecialInvoices(document, specialInvoice);
         }
-
         private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType paymentType, string? paymentNumber)
         {
             var bookFinancialViewModel = new BookFinancialViewModel
@@ -522,9 +606,10 @@ namespace CleanHub.Controllers
                 documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
                                               document.Date.Value.Year;
             documentCustomer.Description = building.Name;
+            documentCustomer.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentCustomer.CreatedTime = DateTime.UtcNow;
-            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(10));
-            var calculator = new PriceCalculator(building.Customers.Where(x=>x.Inactive == false).Count());
+            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15));
+            var calculator = new PriceCalculator(building.Customers.Where(x => x.Inactive == false).Count());
 
             // Calculate prices for each product
             if (document?.Building?.BuildingProducts != null)
@@ -541,16 +626,6 @@ namespace CleanHub.Controllers
             var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId);
             if (customer != null && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
             {
-                float price = 0;
-                float priceWithTax = 0;
-                if (int.TryParse(documentCustomer.TotalOutput.ToString(), out int priceInt))
-                {
-                    price = priceInt / 100f;
-                }
-                if (int.TryParse(documentCustomer.TotalOutput.Value.ToString(), out int priceWithTaxInt))
-                {
-                    priceWithTax = priceWithTaxInt / 100f;
-                }
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
                 documentCustomer.PaymentStatus = PaymentStatus.Платено;
                 _unitOfWork.Customers.Update(customer);
@@ -565,6 +640,7 @@ namespace CleanHub.Controllers
             await _unitOfWork.SaveChangesAsync();
             return docEntity;
         }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> SetStatusPayment(DocumentViewModel model)
@@ -575,7 +651,7 @@ namespace CleanHub.Controllers
             }
             try
             {
-                var documentToUpdate =  await _unitOfWork.Documents.GetByIdAsync(x=>x.Id == model.Id);
+                var documentToUpdate = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id);
                 if (documentToUpdate == null)
                 {
                     return NotFound();
@@ -586,7 +662,7 @@ namespace CleanHub.Controllers
                 documentToUpdate.PaymentNumber = model.PaymentNumber;
 
                 // Update related BookFinancials
-                var bookfinancialToUpdate =  await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
+                var bookfinancialToUpdate = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
                 if (bookfinancialToUpdate == null) throw new ArgumentNullException(nameof(bookfinancialToUpdate));
                 foreach (var item in bookfinancialToUpdate)
                 {
@@ -621,7 +697,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x=>x.Id ==id.Value, d => d
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
                 .Include(x => x.Books)
                 .Include(d => d.Customer));
 
@@ -683,7 +759,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var invoice = await _unitOfWork.Documents.GetByIdAsync(x=>x.Id == id.Value, x => x
+            var invoice = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, x => x
                 .Include(i => i.Books));
 
             if (invoice == null)
@@ -699,7 +775,7 @@ namespace CleanHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var invoice = await _unitOfWork.Documents.GetByIdAsync(x=>x.Id == id);
+            var invoice = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id);
             if (invoice != null)
             {
                 _unitOfWork.Documents.Delete(invoice);
@@ -733,18 +809,19 @@ namespace CleanHub.Controllers
 
             PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
             MemoryStream pdfStream = new MemoryStream();
-            foreach (var item in customers)
+            foreach (var item in customers.Where(x=>x.Inactive == false))
             {
-                var document = App.FullMapper.Map<DocumentViewModel>(_unitOfWork.Documents.GetByIdAsync(da =>
+                var documentEntity = await  _unitOfWork.Documents.GetByIdAsync(da =>
                     da.CustomerId == item.Id && da.Date!.Value.Year == startDate.Year &&
                     da.Date!.Value.Month == endDate.Month, d => d
                     .Include(x => x.Customer)
-                    .Include(x => x.Books)));
-                
+                    .Include(x => x.Books));
+                var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
+
 
                 if (document == null)
                 {
-                    continue;  
+                    continue;
                 }
                 document.TotalBuildingDemands = demands;
                 document.TotalBuildingOwes = owes;
@@ -766,34 +843,8 @@ namespace CleanHub.Controllers
             endDoc.Close();
 
             FileResult fileResult = new FileContentResult(pdf, "application/pdf");
-            fileResult.FileDownloadName = $"{Buildings.FirstOrDefault(x => x.Id == buildingId.Value)?.Name}_{dateFrom}_{dateTo}";
+            fileResult.FileDownloadName = $"{Buildings.FirstOrDefault(x => x.Id == buildingId.Value)?.Name}_{startDate.Month}_{startDate.Year}.pdf";
             return fileResult;
-        }
-
-        private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
-        {
-            ViewData.Model = model;
-            using (var writer = new StringWriter())
-            {
-                var viewResult = _viewEngine.GetView("", viewPath, false);
-
-                if (viewResult.View == null)
-                {
-                    throw new ArgumentNullException($"The view '{viewPath}' was not found.");
-                }
-
-                var viewContext = new ViewContext(
-                    ControllerContext,
-                    viewResult.View,
-                    ViewData,
-                    TempData,
-                    writer,
-                    new HtmlHelperOptions()
-                );
-
-                await viewResult.View.RenderAsync(viewContext);
-                return writer.GetStringBuilder().ToString();
-            }
         }
     }
 }

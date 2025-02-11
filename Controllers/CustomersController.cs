@@ -1,8 +1,8 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Helpers;
+using CleanHub.Infrastructure.Data;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
-using Newtonsoft.Json;
 
 namespace CleanHub.Controllers
 {
@@ -22,8 +21,6 @@ namespace CleanHub.Controllers
         private SMTPConfig _smtpConfig;
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
-
-        private readonly TimeSpan _cacheExpiration = TimeSpan.FromMinutes(20); // Adjust expiration time as needed
 
         public CustomersController(ApplicationDbContext context, IOptions<SMTPConfig> config)
         {

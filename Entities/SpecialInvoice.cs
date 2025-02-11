@@ -17,11 +17,6 @@ namespace CleanHub.Entities
         [ForeignKey(nameof(Building))]
         public int? BuildingId { get; set; }
         public Building Building { get; set; } = null!;
-
-        [ForeignKey(nameof(Customer))]
-        public int? CustomerId { get; set; }
-        public Customer Customer { get; set; } = null!;
-
         public decimal Total { get; set; }
         public PaymentStatus Status { get; set; }
         [NotMapped]

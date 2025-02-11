@@ -91,7 +91,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model != null )
+                    @if (Model != null)
                     {
                         @foreach (var invoice in Model)
                         {
@@ -199,7 +199,7 @@
                                                                 <label for="paymentNumber">Број на плаќање</label>
                                                                 <div class="input-group mb-3">
                                                                     <span class="input-group-text">
-                                                                       
+
                                                                     </span>
                                                                     <input type="text" id="paymentNumber" name="PaymentNumber" asp-for="@invoice.PaymentNumber" class="form-control form-control-sm" />
                                                                 </div>
@@ -258,4 +258,35 @@
         // Set the hidden input's value
         document.getElementById('buildingId').value = selectedId || '';
     });
+
+
+    document.addEventListener("DOMContentLoaded", function () {
+        var dateFromInput = document.getElementById("dateFrom");
+        var dateToInput = document.getElementById("dateTo");
+        var navigateButton = document.getElementById("navigateButton");
+
+        // Regulärer Ausdruck für dd.mm.yyyy
+        var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
+
+        function isValidDate(dateString) {
+            return dateRegex.test(dateString);
+        }
+
+        function toggleButtonState() {
+            if (isValidDate(dateFromInput.value.trim()) && isValidDate(dateToInput.value.trim())) {
+                navigateButton.disabled = false;
+            } else {
+                navigateButton.disabled = true;
+            }
+        }
+
+        // Initial prüfen (z.B. falls Werte aus ViewBag geladen wurden)
+        toggleButtonState();
+
+        // Event-Listener für Änderungen an den Inputs
+        dateFromInput.addEventListener("input", toggleButtonState);
+        dateToInput.addEventListener("input", toggleButtonState);
+    });
+
+
 </script>
