@@ -125,7 +125,7 @@ namespace CleanHub.Services
         {
             if (bookFinancial != null)
             {
-                if (document.DateReceived.Value < document.DateReceived.Value.AddMonths(1))
+                if (document.DateReceived.HasValue && document.DateReceived.Value < document.DateReceived.Value.AddMonths(1))
                 {
                     return PaymentStatus.Задоцнето;
                 }

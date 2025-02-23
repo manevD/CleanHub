@@ -12,11 +12,11 @@
         var difference = @ViewBag.Owes - @ViewBag.Demands;
         if (@ViewBag.Demand > @ViewBag.Owes)
         {
-            result = "Во претплата " + (-difference); 
+            result = "Во минус " + difference; 
         }
         else
         {
-            result = "Во минус " + difference; 
+            result = "Во претплата " + (-difference);
         }
     }
 }

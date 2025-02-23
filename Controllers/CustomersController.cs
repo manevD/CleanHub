@@ -161,21 +161,21 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
             var customerEntity = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
-            if (customerEntity?.Documents != null && customerEntity.Documents.Any())
-            {
-                foreach (var doc in customerEntity.Documents)
-                {
-                    if (doc.ToDocument != null)
-                    {
-                        var year = DocumentService.ExtractYear(doc.ToDocument);
-                        var month = DocumentService.ExtractMonth(doc.ToDocument);
-                        var searchCriteria = string.Concat(month, "/", year);
+            //if (customerEntity?.Documents != null && customerEntity.Documents.Any())
+            //{
+            //    foreach (var doc in customerEntity.Documents)
+            //    {
+            //        if (doc.ToDocument != null)
+            //        {
+            //            var year = DocumentService.ExtractYear(doc.ToDocument);
+            //            var month = DocumentService.ExtractMonth(doc.ToDocument);
+            //            var searchCriteria = string.Concat(month, "/", year);
 
-                        var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x => x.Description != null && x.Description.Contains(searchCriteria) && x.InvoiceId == Constants.Recieve);
-                        doc.PaymentStatus = DocumentService.GetStatus(bookFinancial, doc);
-                    }
-                }
-            }
+            //            var bookFinancial = await _context.BookFinancials.FirstOrDefaultAsync(x => x.Description != null && x.Description.Contains(searchCriteria) && x.InvoiceId == Constants.Recieve);
+            //            doc.PaymentStatus = DocumentService.GetStatus(bookFinancial, doc);
+            //        }
+            //    }
+            //}
             var customer = App.FullMapper.Map<CustomerViewModel>(customerEntity);
 
             PopulateViewData(customer.BuildingId, customer.ActivityId);

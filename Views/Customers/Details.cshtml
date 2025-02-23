@@ -52,10 +52,10 @@
             </div>
         </div>
     </div>
-    <h1 />
+
 
     @if (Model.Documents != null && Model.Documents.Any())
-    {
+    {    
         @await Html.PartialAsync("_DocumentsPartial", Model.Documents.ToList())
     } 
 </div>

@@ -305,7 +305,7 @@ namespace CleanHub.Controllers
             {
                 var startDate = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 var endDate = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
-                query = (List<Document>)query.Where(d => d.Date >= startDate && d.Date <= endDate);
+                query = query.Where(d => d.Date >= startDate && d.Date <= endDate).ToList();
             }
 
             return query;
@@ -464,7 +464,6 @@ namespace CleanHub.Controllers
                             DatumF = document.Date,
                             InvoiceId = (int)InvoiceTyp.Reserve,
                             Demands = 0,
-                            DocumentId = document.Id,
                             Owes = (double)invoice.Total,
                             CustomerId = document.Building?.Id,
                             DocumentTypId = 5,
@@ -609,6 +608,7 @@ namespace CleanHub.Controllers
             documentCustomer.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentCustomer.CreatedTime = DateTime.UtcNow;
             documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15));
+            documentCustomer.TotalInput = 0;
             var calculator = new PriceCalculator(building.Customers.Where(x => x.Inactive == false).Count());
 
             // Calculate prices for each product

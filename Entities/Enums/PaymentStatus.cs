@@ -1,6 +1,4 @@
-﻿using System.ComponentModel;
-
-namespace CleanHub.Entities.Enums
+﻿namespace CleanHub.Entities.Enums
 {
     public enum PaymentStatus
     {
