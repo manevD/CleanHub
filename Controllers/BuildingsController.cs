@@ -94,6 +94,7 @@ namespace CleanHub.Controllers
         }
 
         // GET: Buildings/Create
+        [Route("КреирајЗграда")]
         public async Task<IActionResult> Create()
         {
             var buildingViewModel = new BuildingViewModel
@@ -107,6 +108,7 @@ namespace CleanHub.Controllers
         }
 
         // POST: Buildings/Create
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(BuildingViewModel building)
@@ -138,7 +140,7 @@ namespace CleanHub.Controllers
                 Total = 0,
                 Price = 0,
                 ArticleNotes = string.Empty,
-                UnitOfMeasurement = "br."
+                UnitOfMeasurement = "бр."
             }, 4).ToList();
         }
         // GET: Buildings/Edit/5

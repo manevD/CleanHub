@@ -649,6 +649,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
+            var bookfinancialToUpdate = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
             try
             {
                 var documentToUpdate = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id);
@@ -662,18 +663,19 @@ namespace CleanHub.Controllers
                 documentToUpdate.PaymentNumber = model.PaymentNumber;
 
                 // Update related BookFinancials
-                var bookfinancialToUpdate = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
                 if (bookfinancialToUpdate == null) throw new ArgumentNullException(nameof(bookfinancialToUpdate));
-                foreach (var item in bookfinancialToUpdate)
+                if (bookfinancialToUpdate.Any())
                 {
-                    if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
-                    item.PaymentType = model.PaymentType;
-                    item.PaymentNumber = model.PaymentNumber;
-                    item.Status = PaymentStatus.Платено;
+                    foreach (var item in bookfinancialToUpdate)
+                    {
+                        if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
+                        item.PaymentType = model.PaymentType;
+                        item.PaymentNumber = model.PaymentNumber;
+                        item.Status = PaymentStatus.Платено;
+                    }
+                    _unitOfWork.BookFinancials.UpdateRange(bookfinancialToUpdate);
                 }
-
-                _unitOfWork.Documents.Add(documentToUpdate);
-                _unitOfWork.BookFinancials.UpdateRange(bookfinancialToUpdate);
+                _unitOfWork.Documents.Update(documentToUpdate);
                 await _unitOfWork.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)

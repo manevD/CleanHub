@@ -39,7 +39,7 @@ namespace CleanHub.Controllers
                 documentEntity = await context.Buildings
                     .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents ?? new List<Document>())
+                    .SelectMany(c => c.Documents)
                     .Select(c => new Entities.Document
                     {
                         Id = c.Id,
@@ -65,7 +65,7 @@ namespace CleanHub.Controllers
                 documentEntity = await context.Buildings
                     .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents ?? new List<Document>())
+                    .SelectMany(c => c.Documents)
                     .Select(c => new Entities.Document
                     {
                         Id = c.Id,
@@ -89,7 +89,7 @@ namespace CleanHub.Controllers
                 documentEntity = await context.Buildings
                     .Where(b => buildingId != null && b.Id == buildingId.Value)
                     .SelectMany(b => b.Customers)
-                    .SelectMany(c => c.Documents ?? new List<Document>())
+                    .SelectMany(c => c.Documents) // Entferne die `?? new List<Document>()`
                     .Select(c => new Document
                     {
                         Id = c.Id,
@@ -104,42 +104,46 @@ namespace CleanHub.Controllers
                         Customer = new Customer
                         {
                             CustomerInfo = c.Customer.CustomerInfo,
-                        } 
+                        }
                     })
                     .ToListAsync();
+
             }
 
-            ViewBag.InvoiceId = invoiceId.Value;
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntity);
+            var today = DateOnly.FromDateTime(DateTime.Now);
+
             foreach (var doc in documents.Where(x =>
                          x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
             {
-                var today = DateOnly.FromDateTime(DateTime.Now);
-                var overdueDays = (today.DayNumber - doc.DueDate.Value.DayNumber); // Calculate overdue days
-                doc.Delay = (today.DayNumber - doc.DueDate.Value.DayNumber); // DayNumber gives day difference directly
-                if (doc.Delay > 30)
+                // Null-Check für DueDate
+                if (!doc.DueDate.HasValue)
                 {
-                    doc.PaymentStatus = PaymentStatus.Задоцнето;
-                }
-                else
-                {
-                    doc.PaymentStatus = PaymentStatus.Неплатено;
+                    continue; // Überspringe dieses Dokument, wenn kein Fälligkeitsdatum vorhanden ist
                 }
 
-                // Determine the percentage based on overdue days
+                int overdueDays = today.DayNumber - doc.DueDate.Value.DayNumber; // Berechne überfällige Tage
+                doc.Delay = overdueDays;
+
+                // Zahlungsstatus aktualisieren
+                doc.PaymentStatus = overdueDays > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
+
+                // Prozentsatz basierend auf überfälligen Tagen bestimmen
                 double percentage = overdueDays switch
                 {
-                    < 0 => 0, // Not overdue
+                    < 0 => 0, // Noch nicht fällig
                     < 30 => 0.02, // 2%
                     >= 30 and <= 60 => 0.04, // 4%
                     >= 61 and <= 90 => 0.06, // 6%
                     >= 91 and <= 180 => 0.08, // 8%
                     >= 181 and <= 360 => 0.10, // 10%
                     >= 361 and <= 730 => 0.13, // 13%
-                    _ => 0.16 // 16% for 730+ days
+                    _ => 0.16 // 16% für 730+ Tage
                 };
 
-                doc.NewTotal = (int)Math.Round(doc.TotalOutput ?? 0 * (1 + percentage), MidpointRounding.AwayFromZero);
+                // Null-Check für TotalOutput
+                double totalOutput = doc.TotalOutput ?? 0;
+                doc.NewTotal = (int)Math.Round(totalOutput * (1 + percentage), MidpointRounding.AwayFromZero);
             }
 
             return View("Index", documents);
@@ -318,10 +322,9 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-                
+            var invoiceToUpdate = await context.SpecialInvoices.FirstOrDefaultAsync(x => x.Id == id);
             try
             {
-                var invoiceToUpdate = await context.SpecialInvoices.FirstOrDefaultAsync(x => x.Id == id);
                 if (invoiceToUpdate == null)
                 {
                     return NotFound();

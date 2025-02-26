@@ -1,9 +1,7 @@
 ﻿using CleanHub.Attribute;
 using CleanHub.Config;
 using CleanHub.Entities;
-using CleanHub.Helpers;
 using CleanHub.Infrastructure.Data;
-using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -58,9 +56,12 @@ namespace CleanHub.Controllers
             }
 
             var customer = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
-
+            if (customer == null)
+            {
+                return NotFound();
+            }
             var customerViewModel = App.FullMapper.Map<CustomerViewModel>(customer);
-
+          
             return View(customerViewModel);
         }
 
@@ -121,6 +122,8 @@ namespace CleanHub.Controllers
         }
 
         // GET: customers/Create
+        [Route("КреирајСтанар")]
+        [HttpGet("Create")] // Ermöglicht Zugriff auf /Customers/Create
         public IActionResult Create(int? buildingId, CustomerViewModel? customer)
         {
             customer ??= new CustomerViewModel();
@@ -129,13 +132,13 @@ namespace CleanHub.Controllers
 
             ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", customer.BuildingId);
             ViewData["ActivityId"] = new SelectList(_context.Activity, "Id", "Name", customer.ActivityId);
-
+         
             return View(customer);
         }
         // POST: customer/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
+        [HttpPost("Create")]
         public async Task<IActionResult> Create(CustomerViewModel customer)
         {
             if (ModelState.IsValid)
