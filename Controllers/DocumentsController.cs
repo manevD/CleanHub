@@ -236,6 +236,7 @@ namespace CleanHub.Controllers
         //    return App.FullMapper.Map<List<BookFinancialViewModel>>(invoicesQuery);
         //}
 
+        [HttpGet]
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
 
@@ -298,7 +299,10 @@ namespace CleanHub.Controllers
             );
             if (paymentStatusId.HasValue)
             {
-                query = query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value).ToList();
+                if (paymentStatusId.Value != (int)PaymentStatus.Сите)
+                {
+                    query = query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value).ToList();
+                }
             }
 
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
@@ -818,6 +822,7 @@ namespace CleanHub.Controllers
                     da.Date!.Value.Month == endDate.Month, d => d
                     .Include(x => x.Customer)
                     .Include(x => x.Books));
+           
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
 

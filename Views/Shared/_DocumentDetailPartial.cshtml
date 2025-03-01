@@ -84,7 +84,7 @@
         }
     }
 </style>
-<div class="row invoice layout-top-spacing layout-spacing" id="Grid">
+<div class="row invoice layout-top-spacing layout-spacing" id="Grid" style="font-size: 0.70rem;">
     <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
         <div class="doc-container">
             <div class="row">
@@ -120,15 +120,6 @@
                                                         <span class="inv-title">Рок на плаќање до: </span>
                                                         <span class="inv-date">@Model?.DueDate</span>
                                                     </p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="inv--detail-section inv--customer-detail-section compact-section">
-                                            <div class="row">
-                                                <div class="col-xl-8 col-lg-7 col-md-6 col-sm-4 align-self-center">
-                                                    <p class="inv-to"></p>
-                                                </div>
-                                                <div class="col-xl-4 col-lg-5 col-md-6 col-sm-8 col-12 order-sm-0 order-1 text-sm-end compact-customer-info">
                                                     <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
                                                     <p class="inv-email-address">@Model?.Customer?.Adress</p>
                                                     <p class="inv-email-address">@Model?.Customer?.Email</p>
@@ -136,9 +127,10 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="inv--product-table-section">
+                                       
+                                        <div class="inv--detail-section inv--customer-detail-section compact-section">
                                             <tr class="table-responsive">
-                                                <table class="table">
+                                            <table class="table">
                                                     <thead class="">
                                                         <tr>
                                                             <th scope="col">Артикал</th>
@@ -164,14 +156,14 @@
                                                             <td></td>
                                                             <td></td>
                                                             <td></td>
-                                                            <td class="text-end">ЗА НАПЛАТА: @(Model?.TotalOutput ?? 0)</td>
+                                                            <td class="text-end">за наплата: @(Model?.TotalOutput ?? 0)</td>
                                                         </tr>
                                                     </tbody>
                                                 </table>
                                         </div>
                                     </div>
 
-                                    <div class="inv--additional-notes">
+                                    <div class="inv--additional-notes mt-2">
                                         @Html.Raw(@Model?.Company?.InvoiceNotice)
                                         @Html.Raw("<strong>" + @result + "</strong>")
                                     </div>
@@ -188,24 +180,22 @@
                                     </div>
                                     <br />
                                     <div class="horizontal_line"></div>
-                                    <div class="inv--footer mt-4">
+                                    <div class="inv--footer mt-2">
                                         <div class="row">
                                             <div class="col-sm-4 col-12">
-                                                <div class="boxed">
                                                     <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
                                                     <p class="inv-email-address">@Model?.Customer?.Adress</p>
-                                                </div>
                                             </div>
-                                            <div class="col-sm-4 col-12 text-center">
-                                                <h3 class="in-heading align-self-center">@Model?.Company?.Name</h3>
-                                                <p class="inv-street-addr mt-3">@Model?.Company?.Address</p>
+                                            <div class="col-sm-4 col-12 text-center mt-2">
+                                                <p>@Model?.Company?.Name</p>
+                                                <p class="inv-street-addr" >@Model?.Company?.Address</p>
                                             </div>
-                                            <div class="col-sm-4 col-12 text-sm-end">
-                                                <p class="inv-list-number mt-sm-3 pb-sm-2 mt-4">
-                                                    <span class="inv-title">ИСПРАТНИЦА-ФАКТУРА БР: </span>
-                                                    <span class="inv-number">@Model?.Number</span>
+                                            <div class="col-sm-4 col-12 text-sm-end" >
+                                                <p class="inv-list-number mt-2">
+                                                    <span class="inv-title">испратница-фактура бр:</span>
+                                                    <span>@Model?.Number</span>
                                                 </p>
-                                                <p class="text-end">ВКУПНО ЗА НАПЛАТА: @Model?.TotalOutput ден</p>
+                                                <p class="text-end">вкупно за наплата: @Model?.TotalOutput ден</p>
                                                 <b>@Model?.ToDocument</b>
                                             </div>
                                         </div>

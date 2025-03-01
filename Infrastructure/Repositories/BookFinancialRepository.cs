@@ -5,24 +5,18 @@ using CleanHub.ViewModels;
 
 namespace CleanHub.Infrastructure.Repositories
 {
-    public class BookFinancialRepository : GenericRepository<BookFinancial>,IBookFinancialsRepository
+    public class BookFinancialRepository(ApplicationDbContext context) : GenericRepository<BookFinancial>(context),
+        IBookFinancialsRepository
     {
-        private readonly ApplicationDbContext _context;
-
-        public BookFinancialRepository(ApplicationDbContext context) : base(context)
-        {
-            _context = context;
-        }
-
         public List<BookFinancial> GetBuldingReserve(int buildingId, int? invoiceId)
         {
             var query = new List<BookFinancial>();
-            var building = _context.Buildings.FirstOrDefault(x => x.Id == buildingId);
+            var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
             if (invoiceId.HasValue)
             {
-                query = _context.BookFinancials.Where(bf =>
+                query = context.BookFinancials.Where(bf =>
                     bf.CustomerId != null && ((bf.CustomerId == building.CustomerRefId.Value && bf.InvoiceId == invoiceId.Value) ||
-                                              (_context.Customers.Where(c => c.BuildingId == buildingId).Select(c => c.Id).Contains(bf.CustomerId.Value) && bf.InvoiceId == invoiceId.Value))
+                                              (context.Customers.Where(c => c.BuildingId == buildingId).Select(c => c.Id).Contains(bf.CustomerId.Value) && bf.InvoiceId == invoiceId.Value))
                 ).ToList();
             }
             return query;
@@ -33,14 +27,14 @@ namespace CleanHub.Infrastructure.Repositories
             var owes = 0;
             var demands = 0;
 
-            var building = _context.Buildings.FirstOrDefault(x => x.Id == buildingId);
+            var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
             if (invoiceId.HasValue && invoiceId.Value == 1201)
             {
-                var query = _context.BookFinancials.Where(bf =>
+                var query = context.BookFinancials.Where(bf =>
                     building != null && building.CustomerRefId != null &&
                     (
                         (bf.CustomerId == building.CustomerRefId.Value && bf.InvoiceId == invoiceId.Value) ||
-                        (_context.Customers.Where(c => c.BuildingId == buildingId)
+                        (context.Customers.Where(c => c.BuildingId == buildingId)
                             .Select(c => c.Id)
                             .Contains(bf.CustomerId.Value) && bf.InvoiceId == invoiceId.Value)
                     )

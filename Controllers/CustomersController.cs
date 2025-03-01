@@ -13,18 +13,13 @@ namespace CleanHub.Controllers
 {
     [RequireLogin]
 
-    public class CustomersController : Controller
+    public class CustomersController(IUnitOfWork _unitOfWork, IOptions<SMTPConfig> _smtpConfig) : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private SMTPConfig _smtpConfig;
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
+        public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
+        public List<Activity> ActivitiesList { get; set; } = _unitOfWork.Activities.GetAll().ToList();
 
-        public CustomersController(ApplicationDbContext context, IOptions<SMTPConfig> config)
-        {
-            _context = context;
-            _smtpConfig = config.Value;
-        }
 
         // GET: Customers
         [Route("Станари")]
@@ -33,7 +28,7 @@ namespace CleanHub.Controllers
             var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-               return App.ReaderMapper.Map <List<CustomerViewModel>>(await _context.Customers.AsNoTracking().Select(c => new Customer
+               return App.ReaderMapper.Map <List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Select(c => new Customer
                {
                    Id = c.Id,
                    CustomerInfo = c.CustomerInfo ?? string.Empty,
@@ -42,7 +37,7 @@ namespace CleanHub.Controllers
                    PhoneNumber = c.PhoneNumber,
                    Inactive = c.Inactive,
                    Adress = c.Adress
-               }).ToListAsync());
+               }));
             });
            
             return View(customers);
@@ -55,7 +50,7 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var customer = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(cus => cus.Id == id,x=>x.Include(c => c.Activity).Include(c=>c.Documents));
             if (customer == null)
             {
                 return NotFound();
@@ -82,10 +77,8 @@ namespace CleanHub.Controllers
             ViewBag.DateFrom = DateFrom.ToString("dd.MM.yyyy");
             ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
 
-            var customer = await _context.Customers
-                .Include(c => c.Documents)
-                .FirstOrDefaultAsync(c => c.Id == id);
-
+            var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id, c => c.Include(cust => cust.Documents));
+               
             if (customer == null)
                 return NotFound();
 
@@ -104,8 +97,8 @@ namespace CleanHub.Controllers
         // GET: Customers/Create
         public IActionResult CreateWithBuilding(int buildingId)
         {
-
-            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", buildingId);
+            ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name");
+            ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", buildingId);
             var customer = new CustomerViewModel
             {
                 BuildingId = buildingId
@@ -115,8 +108,8 @@ namespace CleanHub.Controllers
 
         public IActionResult CreateWithModel(CustomerViewModel customer)
         {
-            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", customer.BuildingId);
-            ViewData["ActivityId"] = new SelectList(_context.Activity, "Id", "Name", customer.ActivityId);
+            ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", customer.BuildingId);
+            ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", customer.ActivityId);
 
             return View(nameof(Create), customer);
         }
@@ -130,8 +123,8 @@ namespace CleanHub.Controllers
             if (buildingId.HasValue)
                 customer.BuildingId = buildingId.Value;
 
-            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", customer.BuildingId);
-            ViewData["ActivityId"] = new SelectList(_context.Activity, "Id", "Name", customer.ActivityId);
+            ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", customer.BuildingId);
+            ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", customer.ActivityId);
          
             return View(customer);
         }
@@ -145,9 +138,8 @@ namespace CleanHub.Controllers
             {
                 var customerEntity = App.FullMapper.Map<Customer>(customer);
                 customerEntity.Inactive = false;
-                _context.Add(customerEntity);
-                await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Customers");
+                _unitOfWork.Customers.Add(customerEntity);
+                await _unitOfWork.SaveChangesAsync();
                 return RedirectToAction(nameof(Index));
             }
             PopulateViewData(customer.BuildingId, customer.ActivityId);
@@ -163,7 +155,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var customerEntity = await _context.Customers.Include(x => x.Activity).Include(d => d.Documents).FirstOrDefaultAsync(c => c.Id == id);
+            var customerEntity = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id,cu=>cu.Include(cust => cust.Activity).Include(cus => cus.Documents).Include(x => x.Activity).Include(d => d.Documents));
             //if (customerEntity?.Documents != null && customerEntity.Documents.Any())
             //{
             //    foreach (var doc in customerEntity.Documents)
@@ -198,25 +190,36 @@ namespace CleanHub.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", customer.BuildingId);
-                ViewData["ActivityId"] = new SelectList(_context.Activity, "Id", "Name", customer.ActivityId);
+                ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", customer.BuildingId);
+                ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", customer.ActivityId);
                 return View(customer);
             }
 
             try
             {
-                var existingCustomer = await _context.Customers.FindAsync(id);
+                var existingCustomer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
                 if (existingCustomer == null)
                     return NotFound();
 
                 // Prüfe Inaktivitätslogik
-                var navigateToCreate = !existingCustomer.Inactive.HasValue && customer.Inactive == true
-                                       || existingCustomer.Inactive == false && customer.Inactive == true;
+                var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
+                                       || (existingCustomer.Inactive == false && customer.Inactive == true);
 
-                // Aktualisiere Felder
-                _context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
-                await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Customers");
+                // Aktualisiere NUR die Eigenschaften von existingCustomer
+                App.FullMapper.Map(customer, existingCustomer);
+                if (customer.BuildingId != null)
+                {
+                    existingCustomer.BuildingId = customer.BuildingId;
+                    existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
+                }
+                if (customer.ActivityId != null)
+                {
+                    existingCustomer.ActivityId = customer.ActivityId;
+                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.BuildingId);
+                }
+                _unitOfWork.Customers.Update(existingCustomer);
+                //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
+                await _unitOfWork.SaveChangesAsync();
 
                 if (navigateToCreate)
                 {
@@ -234,8 +237,8 @@ namespace CleanHub.Controllers
         }
         private void PopulateViewData(int? buildingId = null, int? activityId = null)
         {
-            ViewData["BuildingId"] = new SelectList(_context.Buildings, "Id", "Name", buildingId);
-            ViewData["ActivityId"] = new SelectList(_context.Activity, "Id", "Name", activityId);
+            ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", buildingId);
+            ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", activityId);
         }
         // GET: customers/Delete/5
         public async Task<IActionResult> Delete(int? id)
@@ -243,15 +246,14 @@ namespace CleanHub.Controllers
             if (id == null)
                 return NotFound();
 
-            var customer = await _context.Customers.FindAsync(id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(x=>x.Id == id);
             if (customer == null)
                 return NotFound();
 
             try
             {
-                _context.Customers.Remove(customer);
-                await _context.SaveChangesAsync();
-                HttpContext.Session.Remove("Customers");
+                _unitOfWork.Customers.Delete(customer);
+                await _unitOfWork.SaveChangesAsync();
             }
             catch (Exception ex)
             {
@@ -261,10 +263,10 @@ namespace CleanHub.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-
         private bool CustomertExists(int id)
         {
-            return _context.Customers.Any(e => e.Id == id);
+            var customer = _unitOfWork.Customers.GetByIdAsync(e => e.Id == id).Result;
+            return customer != null;
         }
     }
 }

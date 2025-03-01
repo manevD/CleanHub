@@ -13,6 +13,8 @@ namespace CleanHub.Infrastructure.Data
         IBuildingRepository Buildings { get; }
         IBookFinancialsRepository BookFinancials { get; }
         ISpecialInvoiceRepository SpecialInvoices { get; }
+        IActivitiesRepository Activities { get; }
+
         Task SaveChangesAsync();
     }
 
@@ -26,12 +28,15 @@ namespace CleanHub.Infrastructure.Data
             Buildings = new BuildingRepository(context);
             Documents = new DocumentRepository(context);
             Products = new ProductRepository(context);
+            Activities = new ActivityRepository(context);
             BookFinancials = new BookFinancialRepository(context);
             SpecialInvoices = new SpecialInvoiceRepository(context);
             Books = new BookRepository(context);
             Customers = new CustomersRepository(context);
             BuildingProducts = new BuildingProductRepository(context);
         }
+        public IActivitiesRepository Activities { get; private set; }
+
         public IBuildingProductRepository BuildingProducts { get; private set; }
         public ICustomerRepository Customers { get; private set; }
         public IBookFinancialsRepository BookFinancials { get; private set; }
