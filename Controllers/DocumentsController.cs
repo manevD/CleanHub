@@ -265,7 +265,7 @@ namespace CleanHub.Controllers
             var documentEntities = await GetDocuments(buildingId, paymentStatusId, dateFrom, dateTo);
 
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
-            foreach (var doc in documents)
+            foreach (var doc in documents.Where(x=>x.PaymentStatus != (int) PaymentStatus.Платено))
             {
                 doc.Delay = CalculateOverdueDays(doc.DueDate);
                 if (doc.Delay != 0)
@@ -817,12 +817,15 @@ namespace CleanHub.Controllers
             MemoryStream pdfStream = new MemoryStream();
             foreach (var item in customers.Where(x=>x.Inactive == false))
             {
-                var documentEntity = await  _unitOfWork.Documents.GetByIdAsync(da =>
-                    da.CustomerId == item.Id && da.Date!.Value.Year == startDate.Year &&
-                    da.Date!.Value.Month == endDate.Month, d => d
-                    .Include(x => x.Customer)
-                    .Include(x => x.Books));
-           
+                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(
+                    da => da.CustomerId.HasValue && da.CustomerId == item.Id &&
+                          da.Date.HasValue && da.Date.Value >= startDate &&
+                          da.Date.Value <= endDate,
+                    d => d.Include(x => x.Customer).Include(x => x.Books)
+                );
+
+
+
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
 
@@ -835,7 +838,7 @@ namespace CleanHub.Controllers
                 document.Company = _config.Value;
                 document.IsForPdf = true;
 
-                string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartial.cshtml", document);
+                string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                 var request = _httpContextAccessor?.HttpContext?.Request;
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";

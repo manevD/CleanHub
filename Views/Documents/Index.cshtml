@@ -85,7 +85,7 @@
                         <th>Платено на</th>
                         <th>Тип на плаќање</th>
                         <th>Број на плаќање</th>
-                        <th>Задоцнуванје</th>
+                        <th>Задоцнување</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
                     </tr>
@@ -148,7 +148,7 @@
                                     @((invoice.Delay ?? 0))
                                 </td>
                                 <td>
-                                    @((invoice.NewTotal ?? 0) + " МКД")
+                                    @((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")
                                 </td>
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
@@ -237,11 +237,20 @@
     </div>
 </div>
 <script>
-    document.getElementById('navigateButton').addEventListener('click', function () {
-        // Change the form's action to a different one
-        const form = document.getElementById('filterForm');
-        form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
-        form.submit();
+    document.addEventListener("DOMContentLoaded", function () {
+        const form = document.getElementById("filterForm");
+        const navigateButton = document.getElementById("navigateButton");
+        const searchButton = form.querySelector('button[type="submit"]'); // Der "Пребарувај" Button
+        const originalAction = form.action; // Speichert die ursprüngliche Action
+
+        navigateButton.addEventListener("click", function () {
+            form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
+            form.submit();
+        });
+
+        searchButton.addEventListener("click", function () {
+            form.action = originalAction; // Setzt die ursprüngliche Action zurück
+        });
     });
     document.getElementById('buildingSearch').addEventListener('input', function () {
         const selectedValue = this.value;
@@ -258,7 +267,6 @@
         // Set the hidden input's value
         document.getElementById('buildingId').value = selectedId || '';
     });
-
 
     document.addEventListener("DOMContentLoaded", function () {
         var dateFromInput = document.getElementById("dateFrom");
