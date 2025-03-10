@@ -21,10 +21,10 @@ namespace CleanHub.ViewModels
         public DateOnly? DueDate { get; set; }
         [Ignore]
         public int? Delay { get; set; }
-        [Ignore]
         public int? NewTotal { get; set; }
         public float? TotalInput { get; set; }
         public float? TotalOutput { get; set; }
+        public DateOnly? DateReceived { get; set; }
         public DateTime? CreatedTime { get; set; }
         public bool IsForPdf { get; set; }
         public DateTime? DateTimeChanged { get; set; }

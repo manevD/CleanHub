@@ -22,40 +22,11 @@ public partial class Document
     private DateOnly? _dateReceived;
     private DateOnly? _dueDate;
 
-    public DateOnly? DateReceived
-    {
-        get => _dateReceived;
-        set
-        {
-            _dateReceived = value;
-            // Automatically update DueDate when DateReceived is set
-            if (_dateReceived.HasValue)
-            {
-                DueDate = _dateReceived.Value.AddMonths(1);
-            }
-            else
-            {
-                DueDate = null; // Clear DueDate if DateReceived is null
-            }
-        }
-    }
+    public DateOnly? DateReceived { get; set; }
 
-    public DateOnly? DueDate
-    {
-        get => _dueDate;
-        set
-        {
-            // Ensure DueDate can only be set if DateReceived has a value
-            if (DateReceived != null && DateReceived.HasValue)
-            {
-                _dueDate = value;
-            }
-            else
-            {
-                return;
-            }
-        }
-    }
+    public DateOnly? DueDate { get; set; }
+  
+    public int? NewTotal { get; set; }
     public string? PaymentNumber { get; set; }
     public float? TotalInput { get; set; }
     public float? TotalOutput { get; set; }

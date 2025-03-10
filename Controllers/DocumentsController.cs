@@ -153,20 +153,21 @@ namespace CleanHub.Controllers
         private float GetOverdueFeePercentage(int overdueDays)
         {
             if (overdueDays < 30)
-                return 2f;
-            else if (overdueDays < 60)
-                return 4f;
-            else if (overdueDays < 90)
-                return 6f;
-            else if (overdueDays < 180)
-                return 8f;
-            else if (overdueDays < 360)
-                return 10f;
-            else if (overdueDays < 730)
-                return 13f;
+                return 0.02f;
+            else if (overdueDays >= 31 && overdueDays <= 60)
+                return 0.04f;
+            else if (overdueDays >= 61 && overdueDays <= 90)
+                return 0.06f;
+            else if (overdueDays >= 91 && overdueDays <= 180)
+                return 0.08f;
+            else if (overdueDays >= 181 && overdueDays <= 360)
+                return 0.10f;
+            else if (overdueDays >= 361 && overdueDays <= 730)
+                return 0.13f;
             else
-                return 16f;
+                return 0.16f;
         }
+
         //[Route("Partially")]
         //[Route("Делумни")]
         //public async Task<IActionResult> Partially()
@@ -295,15 +296,10 @@ namespace CleanHub.Controllers
         {
             var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
                 query => query.Include(d => d.Customer).ThenInclude(c => c.Building),
-                d => !buildingId.HasValue || d.Customer.BuildingId == buildingId.Value
+                d =>
+                    (buildingId.GetValueOrDefault() == 0 || d.Customer.BuildingId == buildingId.Value) &&
+                    (paymentStatusId == (int)PaymentStatus.Сите || (int)d.PaymentStatus == paymentStatusId)
             );
-            if (paymentStatusId.HasValue)
-            {
-                if (paymentStatusId.Value != (int)PaymentStatus.Сите)
-                {
-                    query = query.Where(d => (int)d.PaymentStatus == paymentStatusId.Value).ToList();
-                }
-            }
 
             if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
             {
@@ -611,7 +607,9 @@ namespace CleanHub.Controllers
             documentCustomer.Description = building.Name;
             documentCustomer.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentCustomer.CreatedTime = DateTime.UtcNow;
-            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(15));
+            documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14));
+
+            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1));
             documentCustomer.TotalInput = 0;
             var calculator = new PriceCalculator(building.Customers.Where(x => x.Inactive == false).Count());
 

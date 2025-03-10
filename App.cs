@@ -118,8 +118,7 @@ public class App : Profile
 
             #region Document
 
-            cfg.CreateMap<DocumentViewModel, Document>()
-                .ForMember(dest => dest.DateReceived, opts => opts.Ignore());
+            cfg.CreateMap<DocumentViewModel, Document>();
 
             cfg.CreateMap<Document, DocumentViewModel>()
 

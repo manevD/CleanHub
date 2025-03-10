@@ -96,20 +96,10 @@
                         @foreach (var invoice in Model)
                         {
                             <tr>
-                                <td>
-                                    @* ReSharper disable once CSharpWarnings::CS8602 *@
-                                    @Html.DisplayFor(modelItem => invoice.Customer.CustomerInfo)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.Description)
-                                </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.TotalOutput) МКД
-                                </td>
-
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.ToDocument)
-                                </td>
+                                <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
+                                <td>@invoice.Description</td>
+                                <td>@invoice.TotalOutput МКД</td>
+                                <td>@(invoice.ToDocument ?? "")</td>
                                 <td>
                                     @if (invoice.PaymentStatus == PaymentStatus.Платено)
                                     {
@@ -132,24 +122,12 @@
                                         <span>Неопределен статус</span>
                                     }
                                 </td>
-                                <td>
-                                    @Html.DisplayFor(modelItem => invoice.DueDate)
-                                </td>
-                                <td>
-                                    @((invoice.PaymentDate ?? null))
-                                </td>
-                                <td>
-                                    @(invoice.PaymentType.GetEnumDescription())
-                                </td>
-                                <td>
-                                    @((invoice.PaymentNumber ?? ""))
-                                </td>
-                                <td>
-                                    @((invoice.Delay ?? 0))
-                                </td>
-                                <td>
-                                    @((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")
-                                </td>
+                                <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "")</td>
+                                <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
+                                <td>@(invoice.PaymentType.GetEnumDescription() ?? "")</td>
+                                <td>@(invoice.PaymentNumber ?? "—")</td>
+                                <td>@(invoice.Delay ?? 0) дена</td>
+                                <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
                                     {
