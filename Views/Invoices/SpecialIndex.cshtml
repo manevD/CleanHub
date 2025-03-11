@@ -76,7 +76,7 @@
                                     @Html.DisplayFor(modelItem => invoice.Total)
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.ForDate)
+                                   @invoice.ForDate.Value.Month  / @invoice.ForDate.Value.Year
                                 </td>
                                 @if (@invoice.Status == PaymentStatus.Платено)
                                 {
@@ -97,8 +97,12 @@
                                 <td>
                                     @if (invoice.Status != PaymentStatus.Платено)
                                     {
-                                        <form asp-action="SetStatusPayment" asp-controller="Invoices" asp-route-id="@invoice.Id" method="post">
+                                        <form asp-action="SetStatusPayment" asp-controller="Invoices" method="post">
                                             @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@invoice.Id" />
+                                            <input type="hidden" name="dateFrom" value="@ViewBag.DateFrom" />
+                                            <input type="hidden" name="dateTo" value="@ViewBag.DateTo" />
+                                            <input type="hidden" name="buildingId" value="@ViewBag.BuildingId" />
                                             <button type="submit" class="btn btn-success">Плати</button>
                                         </form>
                                     }

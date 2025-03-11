@@ -277,10 +277,19 @@ namespace CleanHub.Controllers
 
             return View("Index", documents);
         }
+
         private int CalculateOverdueDays(DateOnly? dueDate)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
-            if (dueDate != null) return (today.DayNumber - dueDate.Value.DayNumber); // Direct day difference
+            if (dueDate != null)
+            {
+                if (dueDate >= today)
+                {
+                    return 0;
+                }
+               return today.DayNumber - dueDate.Value.DayNumber;
+            }
+
             return 0;
         }
 
@@ -328,7 +337,8 @@ namespace CleanHub.Controllers
             if (documentViewModel.Customer != null)
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId,
                     invoiceId: 1201, status: null, documentViewModel);
-
+            documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DueDate);
+            documentViewModel.NewTotal = CalculateNewTotal(documentViewModel);
             documentViewModel.Company = _config.Value;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);

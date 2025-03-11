@@ -128,7 +128,7 @@
                                             }
                                             <tr>
                                                 <td colspan="3"></td>
-                                                <td class="text-end">за наплата: @(Model?.TotalOutput ?? 0)</td>
+                                                <td class="text-end">за наплата: @(Model?.NewTotal ?? Model?.TotalOutput)</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -136,6 +136,38 @@
                                 <div class="inv--additional-notes mt-2">
                                     @Html.Raw(Model?.Company?.InvoiceNotice ?? "")
                                     <strong>@result</strong>
+                                </div>
+                                <div class="inv--note">
+                                    <div class="row mt-4">
+                                        <div class="col-sm-6 col-12 order-sm-0 order-1">
+                                            <p>Примил</p>
+                                        </div>
+                                        <div class="col-sm-6 col-12 order-sm-1 order-1 text-sm-end">
+                                            <p>Потпис Виолета</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <br />
+                                <div class="horizontal_line"></div>
+                                <div class="inv--footer mt-2">
+                                    <div class="row">
+                                        <div class="col-sm-4 col-12">
+                                            <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
+                                            <p class="inv-email-address">@Model?.Customer?.Adress</p>
+                                        </div>
+                                        <div class="col-sm-4 col-12 text-center mt-2">
+                                            <p>@Model?.Company?.Name</p>
+                                            <p class="inv-street-addr" >@Model?.Company?.Address</p>
+                                        </div>
+                                        <div class="col-sm-4 col-12 text-sm-end" >
+                                            <p class="inv-list-number mt-2">
+                                                <span class="inv-title">испратница-фактура бр:</span>
+                                                <span>@Model?.Number</span>
+                                            </p>
+                                            <p class="text-end">вкупно за наплата: @Model?.TotalOutput ден</p>
+                                            <b>@Model?.ToDocument</b>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>

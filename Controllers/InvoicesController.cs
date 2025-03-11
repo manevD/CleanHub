@@ -316,12 +316,13 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetStatusPayment(int? id)
+        public async Task<IActionResult> SetStatusPayment(int? id, string dateFrom, string dateTo, int? buildingId)
         {
             if (!id.HasValue || id == 0)
             {
                 return NotFound();
             }
+
             var invoiceToUpdate = await context.SpecialInvoices.FirstOrDefaultAsync(x => x.Id == id);
             try
             {
@@ -345,7 +346,7 @@ namespace CleanHub.Controllers
                 throw;
             }
 
-            return RedirectToAction(nameof(Index));
+            return RedirectToAction(nameof(DetailsFiltered), new { buildingId, dateFrom, dateTo });
         }
         // GET: InvoicesController/Delete/5
         public ActionResult Delete(int id)
