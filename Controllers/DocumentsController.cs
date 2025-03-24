@@ -490,13 +490,17 @@ namespace CleanHub.Controllers
                 {
                     foreach (var customer in building.Customers.Where(x => x.Inactive == false).ToList())
                     {
-                        var docEntity = await CreateCustomerDocument(customer.Id, document, building);
+                        var docEntity = await CreateCustomerDocument(customer, document, building);
 
                         if (document?.Building?.BuildingProducts != null)
                             foreach (var buildingProduct in document.Building.BuildingProducts.Where(x => x.PriceWithTax != 0))
                             {
                                 try
                                 {
+                                    if (buildingProduct.ArticleNotes.Contains("гаража")  && (!customer.Garage.HasValue && !customer.Garage.Value))
+                                    {
+                                        continue;
+                                    }
                                     CreateBook(buildingProduct, docEntity);
                                 }
 
@@ -588,7 +592,6 @@ namespace CleanHub.Controllers
 
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
         {
-
             var bookEntity = new BookViewModel
             {
                 DocId = docEntity.Id,
@@ -605,10 +608,10 @@ namespace CleanHub.Controllers
             _unitOfWork.Books.Add(entityBook);
         }
 
-        private async Task<Document> CreateCustomerDocument(int customerId, DocumentViewModel document, Building building)
+        private async Task<Document> CreateCustomerDocument(Customer customer, DocumentViewModel document, Building building)
         {
             var documentCustomer = new DocumentViewModel();
-            documentCustomer.CustomerId = customerId;
+            documentCustomer.CustomerId = customer.Id;
             documentCustomer.Number =
                 (await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0) + 1; documentCustomer.Date = document.Date;
             if (document.Date != null)
@@ -626,7 +629,7 @@ namespace CleanHub.Controllers
             // Calculate prices for each product
             if (document?.Building?.BuildingProducts != null)
             {
-                calculator.CalculatePrices(document.Building.BuildingProducts);
+                calculator.CalculatePrices(document.Building.BuildingProducts, customer);
             }
             // Calculate the total PriceWithTax sum
             if (document?.Building?.BuildingProducts != null)
@@ -634,8 +637,6 @@ namespace CleanHub.Controllers
                 float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(document?.Building?.BuildingProducts);
                 documentCustomer.TotalOutput = totalPriceWithTax;
             }
-
-            var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId);
             if (customer != null && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
             {
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);

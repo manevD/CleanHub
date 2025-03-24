@@ -87,8 +87,13 @@
                                                                name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "")/>
                                                     </div>
                                                 </div>
-
-
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Со гаража</label>
+                                                        <input type="checkbox" class="form-check-input" id="Garage"
+                                                               name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-12 mt-1">
                                                     <div class="form-group text-end">
                                                         <input type="submit" value="Зачувај" class="btn btn-primary"/>

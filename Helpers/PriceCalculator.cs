@@ -12,8 +12,12 @@ namespace CleanHub.Helpers
             this.customerCount = customerCount;
         }
 
-        public void CalculatePrices(List<BuildingProductViewModel> buildingProducts)
+        public void CalculatePrices(List<BuildingProductViewModel> buildingProducts,Customer customer)
         {
+            if (customer.Garage.HasValue && customer.Garage.Value)
+            {
+                buildingProducts = buildingProducts.Where(x => !x.ArticleNotes.Contains("гаража")).ToList();
+            }
             foreach (var product in buildingProducts)
             {
                 // Step 1: Calculate price per customer if total is provided
