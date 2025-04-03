@@ -215,7 +215,7 @@ namespace CleanHub.Controllers
                 if (customer.ActivityId != null)
                 {
                     existingCustomer.ActivityId = customer.ActivityId;
-                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.BuildingId);
+                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
                 }
                 _unitOfWork.Customers.Update(existingCustomer);
                 //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));

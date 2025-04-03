@@ -15,13 +15,12 @@ public partial class Customer
 
     [EmailAddress]
     public string? Email { get; set; }
+    public string? PartnerOpis { get; set; }
 
     public string? Web { get; set; }
 
-    public string? PartnerOpis { get; set; }
-
     public bool? Inactive { get; set; }
-    public bool? Garage { get; set; }
+    public bool Garage { get; set; }
 
     public DateOnly? InactiveDatum { get; set; }
 

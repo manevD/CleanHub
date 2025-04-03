@@ -3,20 +3,13 @@ using CleanHub.ViewModels;
 
 namespace CleanHub.Helpers
 {
-    public class PriceCalculator
+    public class PriceCalculator(int customerCount)
     {
-        private readonly int customerCount;
-
-        public PriceCalculator(int customerCount)
-        {
-            this.customerCount = customerCount;
-        }
-
         public void CalculatePrices(List<BuildingProductViewModel> buildingProducts,Customer customer)
         {
-            if (customer.Garage.HasValue && customer.Garage.Value)
+            if (!customer.Garage)
             {
-                buildingProducts = buildingProducts.Where(x => !x.ArticleNotes.Contains("гаража")).ToList();
+                buildingProducts = buildingProducts.Where(x => !x.ArticleNotes!.Contains("гаража")).ToList();
             }
             foreach (var product in buildingProducts)
             {

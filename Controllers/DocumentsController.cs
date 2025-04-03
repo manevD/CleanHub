@@ -400,22 +400,22 @@ namespace CleanHub.Controllers
                             product.Price = documentViewModel.Building.ReserveFund.Value;
                     }
                 }
-                for (int i = 0; i < 3; i++)
-                {
-                    documentViewModel.Building?.BuildingProducts.Add(new BuildingProductViewModel
-                    {
-                        ArticleNotes = "",
-                        UnitOfMeasurement = "",
-                        Quantity = 1,
-                        Price = 0,
-                        Tax = 0,
-                        PriceWithTax = 0,
-                        Total = 0,
-                        GetFromReserve = true
-                    });
-                }
+                
             }
-
+            for (int i = 0; i < 3; i++)
+            {
+                documentViewModel.Building?.BuildingProducts.Add(new BuildingProductViewModel
+                {
+                    ArticleNotes = "",
+                    UnitOfMeasurement = "",
+                    Quantity = 1,
+                    Price = 0,
+                    Tax = 0,
+                    PriceWithTax = 0,
+                    Total = 0,
+                    GetFromReserve = true
+                });
+            }
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
@@ -497,7 +497,7 @@ namespace CleanHub.Controllers
                             {
                                 try
                                 {
-                                    if (buildingProduct.ArticleNotes.Contains("гаража")  && (!customer.Garage.HasValue && !customer.Garage.Value))
+                                    if (buildingProduct.ArticleNotes.Contains("гаража")  && !customer.Garage)
                                     {
                                         continue;
                                     }

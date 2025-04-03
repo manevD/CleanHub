@@ -19,7 +19,7 @@ namespace CleanHub.ViewModels
 
         public string? PartnerOpis { get; set; }
 
-        public bool? Garage { get; set; }
+        public bool Garage { get; set; }
 
         public bool? Inactive { get; set; }
 
