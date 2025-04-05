@@ -1,11 +1,10 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using CleanHub.Entities;
-using CleanHub.Migrations;
-using Elfie.Serialization;
+﻿using CleanHub.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography;
+using System.Text;
+using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
 namespace CleanHub.Infrastructure.Data
 {
