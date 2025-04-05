@@ -54,9 +54,9 @@ namespace CleanHub
         {
             _userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-            IdentityUser anabelaUserExist = await _userManager.FindByEmailAsync("dimitar@email.com");
+            IdentityUser dimitarUser = await _userManager.FindByEmailAsync("dimitar@email.com");
 
-            if (anabelaUserExist == null)
+            if (dimitarUser == null)
             {
                 var user = new IdentityUser
                 {
@@ -72,6 +72,25 @@ namespace CleanHub
                     AccessFailedCount=1
                 };
                 const string userPassword = "Hallo123!";
+                await _userManager.CreateAsync(user, userPassword);
+            }
+            IdentityUser martiUser = await _userManager.FindByEmailAsync("marti@email.com");
+            if (martiUser == null)
+            {
+                var user = new IdentityUser
+                {
+                    Id = "2",
+                    UserName = "marti@email.com",
+                    Email = "marti@email.com",
+                    NormalizedUserName = "MARTI@EMAIL.COM",
+                    NormalizedEmail = "MARTI@EMAIL.COM",
+                    EmailConfirmed = true,
+                    TwoFactorEnabled = false,
+                    LockoutEnabled = true,
+                    PhoneNumberConfirmed = true,
+                    AccessFailedCount = 1
+                };
+                const string userPassword = "Marti123!";
                 await _userManager.CreateAsync(user, userPassword);
             }
         }
