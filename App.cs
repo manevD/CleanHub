@@ -104,12 +104,6 @@ public class App : Profile
 
             #endregion
 
-            #region Article
-
-            cfg.CreateMap<Article, ArticleViewModel>().ReverseMap();
-
-            #endregion
-
             #region Activity
 
             cfg.CreateMap<Activity, ActivityViewModel>().ReverseMap();

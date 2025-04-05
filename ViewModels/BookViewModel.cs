@@ -8,8 +8,6 @@
 
         public int? ArticleId { get; set; }
 
-        public ArticleViewModel Article { get; set; }
-
         public float? Input { get; set; }
 
         public float? Output { get; set; }

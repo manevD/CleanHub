@@ -12,7 +12,6 @@ namespace CleanHub.Infrastructure.Data
         public virtual DbSet<Product> Products { get; set; }
         public virtual DbSet<BuildingProduct> BuildingProducts { get; set; }
 
-        public virtual DbSet<Article> Articles { get; set; }
         public virtual DbSet<Building> Buildings { get; set; }
         public virtual DbSet<Activity> Activity { get; set; }
 
@@ -23,8 +22,6 @@ namespace CleanHub.Infrastructure.Data
         public virtual DbSet<Book> Books { get; set; }
 
         public virtual DbSet<BookFinancial> BookFinancials { get; set; }
-
-        public virtual DbSet<BookFinancialSub> BookFinancialSub { get; set; }
         
         public virtual DbSet<SpecialInvoice> SpecialInvoices { get; set; }
 
@@ -136,6 +133,6 @@ namespace CleanHub.Infrastructure.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew122024;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }
