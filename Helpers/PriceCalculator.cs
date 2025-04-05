@@ -3,20 +3,22 @@ using CleanHub.ViewModels;
 
 namespace CleanHub.Helpers
 {
-    public class PriceCalculator(int customerCount)
+    public class PriceCalculator(int customerCount, int customerGarage)
     {
-        public void CalculatePrices(List<BuildingProductViewModel> buildingProducts,Customer customer)
+        public void CalculatePrices(List<BuildingProductViewModel> buildingProducts, Customer customer)
         {
-            if (!customer.Garage)
-            {
-                buildingProducts = buildingProducts.Where(x => !x.ArticleNotes!.Contains("гаража")).ToList();
-            }
+
             foreach (var product in buildingProducts)
             {
                 // Step 1: Calculate price per customer if total is provided
                 if (product.Total > 0)
                 {
                     float pricePerCustomer = product.Total.Value / customerCount;
+
+                    if (product.ArticleNotes.Contains("гаража"))
+                    {
+                        pricePerCustomer = product.Total.Value / customerGarage;
+                    }
                     product.Price = (float)Math.Round(pricePerCustomer, 2); // Round to 2 decimal places
                 }
 
