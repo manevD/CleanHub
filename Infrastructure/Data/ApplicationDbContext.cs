@@ -1,6 +1,8 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 using CleanHub.Entities;
+using CleanHub.Migrations;
+using Elfie.Serialization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -133,6 +135,6 @@ namespace CleanHub.Infrastructure.Data
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew122024;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Data Source = SQL6032.site4now.net; Initial Catalog = db_aae56c_marti; User Id = db_aae56c_marti_admin; Password=Hallo123!");
     }
 }
