@@ -309,7 +309,7 @@ namespace CleanHub.Controllers
                     // create email message
                     MailMessage message = new MailMessage();
                     message.From = new MailAddress(_smtpConfig.Value.Email);
-                    message.To.Add(_smtpConfig.Value.Recipient);
+                    message.To.Add(item.Email);
                     message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/",
                         year);
                     message.Body = emailBody;
