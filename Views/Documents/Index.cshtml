@@ -86,6 +86,7 @@
                         <th>Тип на плаќање</th>
                         <th>Број на плаќање</th>
                         <th>Задоцнување</th>
+                        <th>Камата</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
                     </tr>
@@ -122,11 +123,12 @@
                                         <span>Неопределен статус</span>
                                     }
                                 </td>
-                                <td>@(invoice.DueDate?.ToString("dd.MM.yyyy") ?? "")</td>
+                                <td>@(invoice.DateReceived?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@(invoice.PaymentType.GetEnumDescription() ?? "")</td>
                                 <td>@(invoice.PaymentNumber ?? "—")</td>
                                 <td>@(invoice.Delay ?? 0) дена</td>
+                                <td>@(invoice.ChargesInPercent ?? 0) %</td>
                                 <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)

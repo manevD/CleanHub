@@ -102,24 +102,24 @@ namespace CleanHub.Controllers
                 }
         }
 
-        private float GetOverdueFeePercentage(int overdueDays)
+        private int GetOverdueFeePercentage(int overdueDays)
         {
             if (overdueDays == 0)
                 return 0;
             if (overdueDays < 30)
-                return 0.02f;
+                return 2;
             else if (overdueDays >= 31 && overdueDays <= 60)
-                return 0.04f;
+                return 4;
             else if (overdueDays >= 61 && overdueDays <= 90)
-                return 0.06f;
+                return 6;
             else if (overdueDays >= 91 && overdueDays <= 180)
-                return 0.08f;
+                return 8;
             else if (overdueDays >= 181 && overdueDays <= 360)
-                return 0.10f;
+                return 10;
             else if (overdueDays >= 361 && overdueDays <= 730)
-                return 0.13f;
+                return 13;
             else
-                return 0.16f;
+                return 16;
         }
 
 
@@ -179,26 +179,27 @@ namespace CleanHub.Controllers
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
             foreach (var doc in documents.Where(x=>x.PaymentStatus != (int) PaymentStatus.Платено))
             {
-                doc.Delay = CalculateOverdueDays(doc.DueDate);
+                doc.Delay = CalculateOverdueDays(doc.DateReceived);
                 if (doc.Delay != 0)
                 {
-                    doc.NewTotal = CalculateNewTotal(doc);
+                    doc.NewTotal = (int?)(doc.TotalOutput + CalculateNewTotal(doc));
                 }
             }
 
             return View("Index", documents);
         }
 
-        private int CalculateOverdueDays(DateOnly? dueDate)
+
+        private int CalculateOverdueDays(DateOnly? dateReceived)
         {
             var today = DateOnly.FromDateTime(DateTime.Now);
-            if (dueDate != null)
+            if (dateReceived != null)
             {
-                if (dueDate >= today)
+                if (dateReceived >= today)
                 {
                     return 0;
                 }
-               return today.DayNumber - dueDate.Value.DayNumber;
+               return today.DayNumber - dateReceived.Value.DayNumber;
             }
 
             return 0;
@@ -206,9 +207,9 @@ namespace CleanHub.Controllers
 
         private int CalculateNewTotal(DocumentViewModel doc)
         {
-            double percentage = GetOverdueFeePercentage(doc.Delay.Value);
+            doc.ChargesInPercent = GetOverdueFeePercentage(doc.Delay.Value);
             if (doc.TotalOutput != null)
-                return (int)Math.Round(doc.TotalOutput.Value * (1 + percentage), MidpointRounding.AwayFromZero);
+                return (int)Math.Round(doc.TotalOutput.Value * (doc.ChargesInPercent.Value / 100f), MidpointRounding.AwayFromZero);
             return 0;
         }
 
@@ -248,8 +249,15 @@ namespace CleanHub.Controllers
             if (documentViewModel.Customer != null)
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId,
                     invoiceId: 1201, status: null, documentViewModel);
-            documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DueDate);
-            documentViewModel.NewTotal = CalculateNewTotal(documentViewModel);
+            documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
+            if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
+            {
+                documentViewModel.NewTotal = (int?)documentViewModel.TotalOutput;
+            }
+            else
+            {
+                documentViewModel.NewTotal = (int?)(documentViewModel.TotalOutput + CalculateNewTotal(documentViewModel));
+            }
             documentViewModel.Company = _config.Value;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);
@@ -479,7 +487,7 @@ namespace CleanHub.Controllers
                 CustomerId = customerId,
                 Time = DateTime.Now,
                 Status = PaymentStatus.Неплатено,
-                DatumF = docEntity.DueDate,
+                DatumF = docEntity.DateReceived,
                 Description = string.Empty,
             };
 
@@ -489,7 +497,7 @@ namespace CleanHub.Controllers
                 DocumentId = docEntity.Id,
                 Demands = reserve,
                 Owes = 0,
-                DatumF = docEntity.DueDate,
+                DatumF = docEntity.DateReceived,
                 CustomerId = customerId,
                 Status = PaymentStatus.Неплатено,
                 Time = DateTime.Now,
@@ -531,9 +539,7 @@ namespace CleanHub.Controllers
             documentCustomer.Description = building.Name;
             documentCustomer.Date = DateOnly.FromDateTime(DateTime.UtcNow);
             documentCustomer.CreatedTime = DateTime.UtcNow;
-            documentCustomer.DateReceived = DateOnly.FromDateTime(DateTime.UtcNow.AddDays(14));
-
-            documentCustomer.DueDate = DateOnly.FromDateTime(DateTime.UtcNow.AddMonths(1));
+            documentCustomer.DateReceived = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10));
             documentCustomer.TotalInput = 0;
             var calculator = new PriceCalculator(building.Customers.Count(x => !x.Inactive.Value), building.Customers.Count(x => x.Garage));
 

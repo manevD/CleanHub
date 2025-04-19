@@ -192,7 +192,8 @@
     */
 
 
-    $('#html5-extension').DataTable( {
+    $('#html5-extension').DataTable({
+     
         "dom": "<'dt--top-section'<'row'<'col-sm-12 col-md-6 d-flex justify-content-md-start justify-content-center'B><'col-sm-12 col-md-6 d-flex justify-content-md-end justify-content-center mt-md-0 mt-3'f>>>" +
     "<'table-responsive'tr>" +
     "<'dt--bottom-section d-sm-flex justify-content-sm-between text-center'<'dt--pages-count  mb-sm-0 mb-3'i><'dt--pagination'p>>",
@@ -255,7 +256,9 @@
     }         
 
 
-    $('#example').DataTable( {
+    $('#example').DataTable({
+        "ordering": false,
+        "order": [],  
         "columns": [
             null,
             { "orderDataType": "dom-text-numeric" },
@@ -277,37 +280,4 @@
         "pageLength": 10 
     } );
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 } );
-
-
-
-

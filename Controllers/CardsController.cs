@@ -168,7 +168,11 @@ namespace CleanHub.Controllers
                 cardsViewModel.CustomerDemandsTotal = customers.SelectMany(x => x.Documents).Sum(d => d.TotalOutput.Value);
                 cardsViewModel.CustomerOwesTotal = (float)customers.SelectMany(x => x.BookFinancials).Sum(d => d.Demands);
             }
-
+            if (cardsViewModel.BuildingFinancial != null && cardsViewModel.BuildingFinancial.Any())
+            {
+                cardsViewModel.BuildingFinancial = cardsViewModel.BuildingFinancial.OrderBy(x => x.DatumF)
+                    .ToList();
+            }
             return View(cardsViewModel);
         }
 
@@ -251,6 +255,12 @@ namespace CleanHub.Controllers
                 cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents.GetAllNoTrakcing().Where(x =>
                     x.CustomerId == customerId).Sum(x=>x.TotalOutput.Value);
             }
+            if (cardsViewModel.CustomerData != null &&  cardsViewModel.CustomerData.Any())
+            {
+                cardsViewModel.CustomerData = cardsViewModel.CustomerData
+                    .OrderBy(x => x.Date)
+                    .ToList();
+            }
             return View(cardsViewModel);
         }
 
@@ -302,6 +312,13 @@ namespace CleanHub.Controllers
             cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials.GetAllNoTrakcing().Where(x => x.CustomerId == customerId && x.InvoiceId == 1200).Sum(x => x.Demands);
             cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents.GetAllNoTrakcing().Where(x =>
                 x.CustomerId == customerId).Sum(x => x.TotalOutput.Value); cardsViewModel.CustomerFinanfical = bookFinancials;
+            if (cardsViewModel.CustomerFinanfical != null && cardsViewModel.CustomerFinanfical.Any())
+            {
+                cardsViewModel.CustomerFinanfical = cardsViewModel.CustomerFinanfical
+                    .OrderBy(x => x.DatumF)
+                    .ToList();
+            }
+           
             return View(cardsViewModel);
         }
     }

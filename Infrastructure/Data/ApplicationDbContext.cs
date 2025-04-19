@@ -131,9 +131,11 @@ namespace CleanHub.Infrastructure.Data
                 }
             }
         }
-
+         //   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+         //    => optionsBuilder.UseSqlServer(
+         //"Data Source = SQL6032.site4now.net; Initial Catalog = db_aae56c_marti; User Id = db_aae56c_marti_admin; Password=Hallo123!");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Data Source = SQL6032.site4now.net; Initial Catalog = db_aae56c_marti; User Id = db_aae56c_marti_admin; Password=Hallo123!");
+        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

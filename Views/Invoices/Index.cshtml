@@ -59,7 +59,7 @@
                         <th>Сметка</th>
                         <th>Статус</th>
                         <th>Дата на плаќање</th>
-                        <th>Задоцнуванје</th>
+                        <th>Задоцнување</th>
                         <th>Нова вредност</th>
                         <th>Функции</th>
                     </tr>
@@ -108,7 +108,7 @@
                                     }
                                 </td>
                                 <td>
-                                    @Html.DisplayFor(modelItem => invoice.DueDate)
+                                    @Html.DisplayFor(modelItem => invoice.DateReceived)
                                 </td>
                                 <td>
                                     @((invoice.Delay ?? 0))

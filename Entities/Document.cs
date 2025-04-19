@@ -19,13 +19,7 @@ public partial class Document
 
     public string? Description { get; set; }
 
-    private DateOnly? _dateReceived;
-    private DateOnly? _dueDate;
-
     public DateOnly? DateReceived { get; set; }
-
-    public DateOnly? DueDate { get; set; }
-  
     public int? NewTotal { get; set; }
     public string? PaymentNumber { get; set; }
     public float? TotalInput { get; set; }

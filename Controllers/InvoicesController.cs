@@ -46,7 +46,6 @@ namespace CleanHub.Controllers
                         Number = c.Number,
                         ToDocument = c.ToDocument,
                         Date = c.Date,
-                        DueDate = c.DueDate,
                         Description = c.Description,
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
@@ -72,7 +71,6 @@ namespace CleanHub.Controllers
                         Number = c.Number,
                         ToDocument = c.ToDocument,
                         Date = c.Date,
-                        DueDate = c.DueDate,
                         Description = c.Description,
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
@@ -96,7 +94,6 @@ namespace CleanHub.Controllers
                         Number = c.Number,
                         ToDocument = c.ToDocument,
                         Date = c.Date,
-                        DueDate = c.DueDate,
                         Description = c.Description,
                         DateReceived = c.DateReceived,
                         PaymentStatus = c.PaymentStatus,
@@ -117,12 +114,12 @@ namespace CleanHub.Controllers
                          x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
             {
                 // Null-Check für DueDate
-                if (!doc.DueDate.HasValue)
+                if (!doc.DateReceived.HasValue)
                 {
                     continue; // Überspringe dieses Dokument, wenn kein Fälligkeitsdatum vorhanden ist
                 }
 
-                int overdueDays = today.DayNumber - doc.DueDate.Value.DayNumber; // Berechne überfällige Tage
+                int overdueDays = today.DayNumber - doc.DateReceived.Value.DayNumber; // Berechne überfällige Tage
                 doc.Delay = overdueDays;
 
                 // Zahlungsstatus aktualisieren

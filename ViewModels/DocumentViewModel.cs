@@ -18,10 +18,11 @@ namespace CleanHub.ViewModels
         public CompanyConfig? Company { get; set; }  
         public string? ToDocument { get; set; }
         public string? Description { get; set; }
-        public DateOnly? DueDate { get; set; }
         [Ignore]
         public int? Delay { get; set; }
         public int? NewTotal { get; set; }
+        [Ignore]
+        public int? ChargesInPercent { get; set; }
         public float? TotalInput { get; set; }
         public float? TotalOutput { get; set; }
         public DateOnly? DateReceived { get; set; }

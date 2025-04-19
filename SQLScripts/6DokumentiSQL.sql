@@ -29,24 +29,6 @@ BEGIN CATCH
     THROW;
 END CATCH;
 
-
-BEGIN TRANSACTION;
-BEGIN TRY
-
-UPDATE Documents
-SET DueDate = DATEADD(MONTH, 1, GETUTCDATE())
-where DueDate is null;
-
-    COMMIT TRANSACTION;
-    PRINT 'DueDate updated successfully.';
-END TRY
-BEGIN CATCH
-    ROLLBACK TRANSACTION;
-    PRINT 'Error occurred. Transaction rolled back.';
-    THROW;
-END CATCH;
-
-
 BEGIN TRANSACTION;
 BEGIN TRY
 

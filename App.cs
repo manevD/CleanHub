@@ -123,6 +123,7 @@ public class App : Profile
                       .ForMember(dest => dest.Buildings, opt => opt.Ignore())
                       .ForMember(dest => dest.Building, opt => opt.Ignore())
                       .ForMember(dest => dest.Delay, opt => opt.Ignore())
+                      .ForMember(dest => dest.ChargesInPercent, opt => opt.Ignore())
                       .ForMember(dest => dest.NewTotal, opt => opt.Ignore())
                       .ForMember(dest => dest.BuildingId, opt => opt.Ignore())
                       .ForMember(dest => dest.Books, opt => opt.MapFrom(src => src.Books));

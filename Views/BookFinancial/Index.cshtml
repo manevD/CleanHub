@@ -105,22 +105,21 @@
 </form>
 
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-    <br />
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr role="row">
-                        <th>Опис</th>
-                        <th>Должи</th>
-                        <th>Побарува</th>
-                        <th>Дата на издавање</th>
+                    <tr>
+                        <th data-sorter="false">Дата на издавање</th>
+                        <th data-sorter="false">Опис</th>
+                        <th data-sorter="false">Должи</th>
+                        <th data-sorter="false">Побарува</th>
                         @if (Model != null && Model.Any() && Model.FirstOrDefault()?.Status != PaymentStatus.Платено)
                         {
-                            <th>Статус</th>
-                            <th>Задоцнување</th>
-                            <th>Нова вредност</th>
-                            <th>Функции</th>
+                            <th data-sorter="false">Статус</th>
+                            <th data-sorter="false">Задоцнување</th>
+                            <th data-sorter="false">Нова вредност</th>
+                            <th data-sorter="false">Функции</th>
                         }
                     </tr>
                 </thead>
@@ -130,10 +129,10 @@
                         @foreach (var invoice in Model)
                         {
                             <tr role="row">
+                                <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
 
                                 @if (Model.FirstOrDefault()?.Status != PaymentStatus.Платено)
                                 {

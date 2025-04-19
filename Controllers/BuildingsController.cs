@@ -94,7 +94,7 @@ namespace CleanHub.Controllers
         }
 
         // GET: Buildings/Create
-        [Route("КреирајЗграда")]
+        [HttpGet]
         public async Task<IActionResult> Create()
         {
             var buildingViewModel = new BuildingViewModel
