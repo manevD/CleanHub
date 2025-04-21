@@ -210,13 +210,6 @@ namespace CleanHub.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-
-            ViewBag.Errors = errors;
-            ViewBag.ShowErrorModal = true;
             return View(specialInvoice);
         }
 

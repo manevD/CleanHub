@@ -92,56 +92,33 @@ namespace CleanHub.Controllers
             }
             catch (Exception e)
             {
-                var errors =e.Message.ToList();
-                ViewBag.Errors = errors;
-                ViewBag.ShowErrorModal = true;
-                ViewBag.ModalId = "errorModal"; 
-
-                return View();
+                throw e;
             }
            
         }
         private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
         {
-            if (string.IsNullOrEmpty(dateFrom))
-                return;
+            DateOnly? DateFrom = null;
+            DateOnly? DateTo = null;
 
-            var DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-            ViewBag.DateFrom = DateFrom;
+            if (!string.IsNullOrEmpty(dateFrom))
+            {
+                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                ViewBag.DateFrom = DateFrom;
+            }
 
             if (!string.IsNullOrEmpty(dateTo))
             {
-                var DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                 ViewBag.DateTo = DateTo;
-                if (paymentStatusId == (int)PaymentStatus.Сите)
-                {
-                    results = results.Where(x =>
-                            (x.DatumF >= DateFrom && x.DatumF <= DateTo))
-                        .ToList();
-                }
-                else
-                {
-                    results = results.Where(x =>
-                            (x.DatumF >= DateFrom && x.DatumF <= DateTo) &&
-                            (int)x.Status == paymentStatusId)
-                        .ToList();
-                }
             }
-            else
-            {
-                if (paymentStatusId == (int)PaymentStatus.Сите)
-                {
-                    results = results.Where(x =>
-                            (x.DatumF >= DateFrom))
-                        .ToList();
-                }
-                else
-                {
-                    results = results.Where(x =>
-                            (x.DatumF >= DateFrom) && (int)x.Status == paymentStatusId)
-                        .ToList();
-                }
-            }
+
+            results = results
+                .Where(x =>
+                    (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                    (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
+                    (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
+                .ToList();
         }
 
         private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)

@@ -7,7 +7,7 @@ public partial class Customer
 {
     public int Id { get; set; }
 
-    public string? CustomerInfo { get; set; }
+    public string CustomerInfo { get; set; }
 
     public string? Adress { get; set; }
 

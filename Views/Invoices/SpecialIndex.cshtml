@@ -5,20 +5,13 @@
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var invoiceId = @ViewBag.InvoiceId;
-    var errors = ViewBag.Errors as List<string>;
-    var showModal = ViewBag.ShowErrorModal ?? false;
-}
+};
 
-@if (showModal && errors != null && errors.Any())
-{
-    @await Html.PartialAsync("Error", errors)
-}
 
 <hr />
 <form asp-action="DetailsFiltered" asp-controller="Invoices" method="get">
     <input type="hidden" id="invoiceId" name="invoiceId" value="@ViewBag.InvoiceId" />
-    <div class="row ">
+    <div class="row">
         @if (ViewBag.Buildings != null)
         {
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
@@ -32,26 +25,31 @@
         {
             <p>Нема пронајдено објекти!</p>
         }
+
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година"
+                       type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
             </div>
         </div>
+
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <h6>До</h6>
+                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година"
+                       type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
             </div>
         </div>
-        <li class="divider"></li> <!-- Optional: Trennlinie -->
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
+
+        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
+            <div class="form-group mb-0 mt-4">
+                <button type="submit" class="btn btn-primary form-control">Пребарувај</button>
             </div>
         </div>
     </div>
 </form>
+
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     </br>
     <div class="statbox widget box box-shadow">
@@ -83,7 +81,7 @@
                                     @Html.DisplayFor(modelItem => invoice.Total)
                                 </td>
                                 <td>
-                                   @invoice.ForDate.Value.Month  / @invoice.ForDate.Value.Year
+                                    @invoice.ForDate.Value.Month  / @invoice.ForDate.Value.Year
                                 </td>
                                 @if (@invoice.Status == PaymentStatus.Платено)
                                 {

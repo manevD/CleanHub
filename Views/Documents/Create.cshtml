@@ -33,14 +33,8 @@
         {
             result = message + " Во минус " + difference;
         }
-        var errors = ViewBag.Errors as List<string>;
-        var showModal = ViewBag.ShowErrorModal ?? false;
 }
 
-@if (showModal && errors != null && errors.Any())
-{
-    @await Html.PartialAsync("Error", errors)
-}
 
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     <div class="row invoice layout-top-spacing layout-spacing">

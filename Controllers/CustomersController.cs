@@ -28,18 +28,18 @@ namespace CleanHub.Controllers
             var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-               return App.ReaderMapper.Map <List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Select(c => new Customer
-               {
-                   Id = c.Id,
-                   CustomerInfo = c.CustomerInfo ?? string.Empty,
-                   Email = c.Email,
-                   Subscription = c.Subscription ?? 0,
-                   PhoneNumber = c.PhoneNumber,
-                   Inactive = c.Inactive,
-                   Adress = c.Adress
-               }));
+                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Select(c => new Customer
+                {
+                    Id = c.Id,
+                    CustomerInfo = c.CustomerInfo ?? string.Empty,
+                    Email = c.Email,
+                    Subscription = c.Subscription ?? 0,
+                    PhoneNumber = c.PhoneNumber,
+                    Inactive = c.Inactive,
+                    Adress = c.Adress
+                }));
             });
-           
+
             return View(customers);
         }
 
@@ -50,13 +50,13 @@ namespace CleanHub.Controllers
                 return NotFound();
             }
 
-            var customer = await _unitOfWork.Customers.GetByIdAsync(cus => cus.Id == id,x=>x.Include(c => c.Activity).Include(c=>c.Documents));
+            var customer = await _unitOfWork.Customers.GetByIdAsync(cus => cus.Id == id, x => x.Include(c => c.Activity).Include(c => c.Documents));
             if (customer == null)
             {
                 return NotFound();
             }
             var customerViewModel = App.FullMapper.Map<CustomerViewModel>(customer);
-          
+
             return View(customerViewModel);
         }
 
@@ -78,7 +78,7 @@ namespace CleanHub.Controllers
             ViewBag.DateTo = DateTo.ToString("dd.MM.yyyy");
 
             var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id, c => c.Include(cust => cust.Documents));
-               
+
             if (customer == null)
                 return NotFound();
 
@@ -125,7 +125,7 @@ namespace CleanHub.Controllers
 
             ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", customer.BuildingId);
             ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", customer.ActivityId);
-         
+
             return View(customer);
         }
         // POST: customer/Create
@@ -144,14 +144,6 @@ namespace CleanHub.Controllers
             }
             PopulateViewData(customer.BuildingId, customer.ActivityId);
 
-            var errors = ModelState.Values
-                .SelectMany(v => v.Errors)
-                .Select(e => e.ErrorMessage)
-                .ToList();
-
-            ViewBag.Errors = errors;
-            ViewBag.ShowErrorModal = true;
-
             return View(customer);
         }
 
@@ -163,7 +155,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var customerEntity = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id,cu=>cu.Include(cust => cust.Activity).Include(cus => cus.Documents).Include(x => x.Activity).Include(d => d.Documents));
+            var customerEntity = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id, cu => cu.Include(cust => cust.Activity).Include(cus => cus.Documents).Include(x => x.Activity).Include(d => d.Documents));
             //if (customerEntity?.Documents != null && customerEntity.Documents.Any())
             //{
             //    foreach (var doc in customerEntity.Documents)
@@ -196,49 +188,41 @@ namespace CleanHub.Controllers
             if (id != customer.Id)
                 return NotFound();
 
-            if (!ModelState.IsValid)
-            {
-                PopulateViewData(customer.BuildingId, customer.ActivityId);
-                var errors = ModelState.Values
-                    .SelectMany(v => v.Errors)
-                    .Select(e => e.ErrorMessage)
-                    .ToList();
-
-                ViewBag.Errors = errors;
-                ViewBag.ShowErrorModal = true;
-                return View(customer);
-            }
-
             try
             {
-                var existingCustomer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
-                if (existingCustomer == null)
-                    return NotFound();
-
-                // Prüfe Inaktivitätslogik
-                var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
-                                       || (existingCustomer.Inactive == false && customer.Inactive == true);
-
-                // Aktualisiere NUR die Eigenschaften von existingCustomer
-                App.FullMapper.Map(customer, existingCustomer);
-                if (customer.BuildingId != null)
+                if (ModelState.IsValid)
                 {
-                    existingCustomer.BuildingId = customer.BuildingId;
-                    existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
-                }
-                if (customer.ActivityId != null)
-                {
-                    existingCustomer.ActivityId = customer.ActivityId;
-                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
-                }
-                _unitOfWork.Customers.Update(existingCustomer);
-                //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
-                await _unitOfWork.SaveChangesAsync();
+                    var existingCustomer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
+                    if (existingCustomer == null)
+                        return NotFound();
 
-                if (navigateToCreate)
-                {
-                    return RedirectToAction(nameof(CreateWithModel), new CustomerViewModel { BuildingId = customer.BuildingId });
+                    // Prüfe Inaktivitätslogik
+                    var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
+                                           || (existingCustomer.Inactive == false && customer.Inactive == true);
+
+                    // Aktualisiere NUR die Eigenschaften von existingCustomer
+                    App.FullMapper.Map(customer, existingCustomer);
+                    if (customer.BuildingId != null)
+                    {
+                        existingCustomer.BuildingId = customer.BuildingId;
+                        existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
+                    }
+                    if (customer.ActivityId != null)
+                    {
+                        existingCustomer.ActivityId = customer.ActivityId;
+                        existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
+                    }
+                    _unitOfWork.Customers.Update(existingCustomer);
+                    //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
+                    await _unitOfWork.SaveChangesAsync();
+
+                    if (navigateToCreate)
+                    {
+                        return RedirectToAction(nameof(CreateWithModel), new CustomerViewModel { BuildingId = customer.BuildingId });
+                    }
                 }
+
+                return View(customer);
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -246,8 +230,6 @@ namespace CleanHub.Controllers
                     return NotFound();
                 throw;
             }
-
-            return RedirectToAction(nameof(Index));
         }
         private void PopulateViewData(int? buildingId = null, int? activityId = null)
         {
@@ -260,7 +242,7 @@ namespace CleanHub.Controllers
             if (id == null)
                 return NotFound();
 
-            var customer = await _unitOfWork.Customers.GetByIdAsync(x=>x.Id == id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
             if (customer == null)
                 return NotFound();
 

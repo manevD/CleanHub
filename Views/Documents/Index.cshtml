@@ -1,20 +1,14 @@
 ﻿@using CleanHub.Entities.Enums
 @using CleanHub.Extensions
 @model List<CleanHub.ViewModels.DocumentViewModel>
+
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var invoiceId = @ViewBag.InvoiceId;
-    var errors = ViewBag.Errors as List<string>;
-    var showModal = ViewBag.ShowErrorModal ?? false;
-}
-
-@if (showModal && errors != null && errors.Any())
-{
-    @await Html.PartialAsync("Error", errors)
 }
 
 <hr />
+
 <form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
     <div class="row">
         @if (ViewBag.Buildings != null)
@@ -22,8 +16,8 @@
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај">
-                    <input type="hidden" id="buildingId" name="buildingId">
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај" />
+                    <input type="hidden" id="buildingId" name="buildingId" />
                     <datalist id="buildingOptions">
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
@@ -37,6 +31,7 @@
         {
             <p>Нема пронајдено објекти!</p>
         }
+
         @if (ViewBag.PaymentStatusList != null)
         {
             <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
@@ -50,24 +45,27 @@
         {
             <p>Нема пронајдено статус!</p>
         }
+
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
-                <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+                <label>Од</label>
+                <input id="dateFrom" name="dateFrom" type="text" class="form-control flatpickr flatpickr-input active" placeholder="ден.месец.година" value="@ViewBag.DateFrom" />
             </div>
         </div>
+
         <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <h6>До</h6>
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="Внесете датум во формат ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <label>До</label>
+                <input id="dateTo" name="dateTo" type="text" class="form-control flatpickr flatpickr-input active" placeholder="ден.месец.година" value="@ViewBag.DateTo" />
             </div>
         </div>
-        <li class="divider"></li> <!-- Optional: Trennlinie -->
+
         <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
                 <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
             </div>
         </div>
+
         <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
             <div class="form-group mb-0">
                 <button type="button" class="form-control btn btn-secondary" id="navigateButton">Извади сметки</button>
@@ -75,9 +73,10 @@
         </div>
     </div>
 </form>
+
 <br />
 
-<div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
@@ -99,9 +98,9 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @if (Model != null)
+                    @if (Model != null && Model.Any())
                     {
-                        @foreach (var invoice in Model)
+                        foreach (var invoice in Model)
                         {
                             <tr>
                                 <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
@@ -109,30 +108,30 @@
                                 <td>@invoice.TotalOutput МКД</td>
                                 <td>@(invoice.ToDocument ?? "")</td>
                                 <td>
-                                    @if (invoice.PaymentStatus == PaymentStatus.Платено)
+                                    @switch (invoice.PaymentStatus)
                                     {
-                                        <span class="badge badge-light-success inv-status">@invoice.PaymentStatus</span>
-                                    }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Неплатено)
-                                    {
-                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
-                                    }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Делумно)
-                                    {
-                                        <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
-                                    }
-                                    else if (invoice.PaymentStatus == PaymentStatus.Задоцнето)
-                                    {
-                                        <span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span>
-                                    }
-                                    else
-                                    {
-                                        <span>Неопределен статус</span>
+                                        case PaymentStatus.Платено:
+                                            <span class="badge badge-light-success inv-status">@invoice.PaymentStatus</span>
+                                            ;
+                                            break;
+                                        case PaymentStatus.Неплатено:
+                                        case PaymentStatus.Делумно:
+                                            <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
+                                            ;
+                                            break;
+                                        case PaymentStatus.Задоцнето:
+                                            <span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span>
+                                            ;
+                                            break;
+                                        default:
+                                            <span>Неопределен статус</span>
+                                            ;
+                                            break;
                                     }
                                 </td>
                                 <td>@(invoice.DateReceived?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
-                                <td>@(invoice.PaymentType.GetEnumDescription() ?? "")</td>
+                                <td>@invoice.PaymentType.GetEnumDescription()</td>
                                 <td>@(invoice.PaymentNumber ?? "—")</td>
                                 <td>@(invoice.Delay ?? 0) дена</td>
                                 <td>@(invoice.ChargesInPercent ?? 0) %</td>
@@ -140,28 +139,27 @@
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
                                     {
-                                        <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id" class="badge badge-light-primary text-start me-2 action-edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
                                         </a>
-                                        <button type="button" class="btn btn-dark mb-2 me-4" data-bs-toggle="modal" data-bs-target="#inputFormModal">
-                                            Плати
-                                        </button>
-                                        <div class="modal fade inputForm-modal" id="inputFormModal" tabindex="-1" role="dialog" aria-labelledby="inputFormModalLabel" aria-hidden="true">
+
+                                        <button type="button" class="btn btn-dark mb-2 me-4" data-bs-toggle="modal" data-bs-target="#inputFormModal-@invoice.Id">Плати</button>
+
+                                        <div class="modal fade inputForm-modal" id="inputFormModal-@invoice.Id" tabindex="-1" role="dialog" aria-labelledby="inputFormModalLabel" aria-hidden="true">
                                             <div class="modal-dialog modal-dialog-centered" role="document">
                                                 <div class="modal-content">
-                                                    <div class="modal-header" id="inputFormModalLabel">
+                                                    <div class="modal-header">
                                                         <h5 class="modal-title">Внесете податоци</h5>
                                                     </div>
                                                     <div class="modal-body">
-                                                        <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post" class="mt-0">
-
-                                                            <!-- Hidden input to include the model -->
-                                                            @Html.HiddenFor(m => @invoice.Id)
+                                                        <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
                                                             @Html.AntiForgeryToken()
 
-                                                            <!-- Тип на плакање -->
                                                             <div class="form-group">
-                                                                <label for="paymentType">Тип на плакање</label>
+                                                                <label for="paymentType">Тип на плаќање</label>
                                                                 <select id="paymentType" name="PaymentTypee" class="form-control form-control-sm">
                                                                     @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
                                                                     {
@@ -170,42 +168,32 @@
                                                                 </select>
                                                             </div>
 
-                                                            <!-- Дата на плаќање -->
                                                             <div class="form-group">
-
                                                                 <label for="paymentDate">Дата на плаќање</label>
-                                                                <div class="input-group mb-3">
-                                                                    <span class="input-group-text">
-                                                                    </span>
-                                                                    <input type="datetime-local" asp-for="@invoice.PaymentDate" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
-                                                                </div>
+                                                                <input type="datetime-local" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
                                                             </div>
-                                                            <!-- Број на плаќање -->
+
                                                             <div class="form-group">
-
                                                                 <label for="paymentNumber">Број на плаќање</label>
-                                                                <div class="input-group mb-3">
-                                                                    <span class="input-group-text">
-
-                                                                    </span>
-                                                                    <input type="text" id="paymentNumber" name="PaymentNumber" asp-for="@invoice.PaymentNumber" class="form-control form-control-sm" />
-                                                                </div>
+                                                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
                                                             </div>
 
                                                             <div class="modal-footer">
-                                                                <button type="submit" class="btn btn-primary mt-2 mb-2 btn-no-effect" data-bs-dismiss="modal">Плати</button>
+                                                                <button type="submit" class="btn btn-primary">Плати</button>
                                                             </div>
                                                         </form>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
-
                                     }
                                     else
                                     {
-                                        <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                        <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id" class="badge badge-light-primary text-start me-2 action-edit">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                                <circle cx="12" cy="12" r="3"></circle>
+                                            </svg>
                                         </a>
                                     }
                                 </td>
@@ -215,7 +203,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="13" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
@@ -223,65 +211,45 @@
         </div>
     </div>
 </div>
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const form = document.getElementById("filterForm");
-        const navigateButton = document.getElementById("navigateButton");
-        const searchButton = form.querySelector('button[type="submit"]'); // Der "Пребарувај" Button
-        const originalAction = form.action; // Speichert die ursprüngliche Action
 
-        navigateButton.addEventListener("click", function () {
-            form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
-            form.submit();
-        });
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.getElementById("filterForm");
+            const navigateButton = document.getElementById("navigateButton");
+            const searchButton = form.querySelector('button[type="submit"]');
+            const originalAction = form.action;
 
-        searchButton.addEventListener("click", function () {
-            form.action = originalAction; // Setzt die ursprüngliche Action zurück
-        });
-    });
-    document.getElementById('buildingSearch').addEventListener('input', function () {
-        const selectedValue = this.value;
-        const options = document.querySelectorAll('#buildingOptions option');
-        let selectedId = '';
+            navigateButton.addEventListener("click", function () {
+                form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
+                form.submit();
+            });
 
-        // Find the matching option and get its data-id
-        options.forEach(option => {
-            if (option.value === selectedValue) {
-                selectedId = option.getAttribute('data-id');
+            searchButton.addEventListener("click", function () {
+                form.action = originalAction;
+            });
+
+            const dateFromInput = document.getElementById("dateFrom");
+            const dateToInput = document.getElementById("dateTo");
+
+            function isValidDate(dateString) {
+                return /^\d{2}\.\d{2}\.\d{4}$/.test(dateString);
             }
-        });
 
-        // Set the hidden input's value
-        document.getElementById('buildingId').value = selectedId || '';
-    });
-
-    document.addEventListener("DOMContentLoaded", function () {
-        var dateFromInput = document.getElementById("dateFrom");
-        var dateToInput = document.getElementById("dateTo");
-        var navigateButton = document.getElementById("navigateButton");
-
-        // Regulärer Ausdruck für dd.mm.yyyy
-        var dateRegex = /^\d{2}\.\d{2}\.\d{4}$/;
-
-        function isValidDate(dateString) {
-            return dateRegex.test(dateString);
-        }
-
-        function toggleButtonState() {
-            if (isValidDate(dateFromInput.value.trim()) && isValidDate(dateToInput.value.trim())) {
-                navigateButton.disabled = false;
-            } else {
-                navigateButton.disabled = true;
+            function toggleButtonState() {
+                navigateButton.disabled = !(isValidDate(dateFromInput.value) && isValidDate(dateToInput.value));
             }
-        }
 
-        // Initial prüfen (z.B. falls Werte aus ViewBag geladen wurden)
-        toggleButtonState();
+            toggleButtonState();
+            dateFromInput.addEventListener("input", toggleButtonState);
+            dateToInput.addEventListener("input", toggleButtonState);
 
-        // Event-Listener für Änderungen an den Inputs
-        dateFromInput.addEventListener("input", toggleButtonState);
-        dateToInput.addEventListener("input", toggleButtonState);
-    });
-
-
-</script>
+            document.getElementById('buildingSearch').addEventListener('input', function () {
+                const selectedValue = this.value;
+                const options = document.querySelectorAll('#buildingOptions option');
+                const selected = Array.from(options).find(option => option.value === selectedValue);
+                document.getElementById('buildingId').value = selected?.dataset.id || '';
+            });
+        });
+    </script>
+}

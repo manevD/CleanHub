@@ -6,7 +6,7 @@ namespace CleanHub.ViewModels
     {
         public int Id { get; set; }
 
-        public string? CustomerInfo { get; set; }
+        public string CustomerInfo { get; set; }
 
         public string? Adress { get; set; }
         public int? Subscription { get; set; }

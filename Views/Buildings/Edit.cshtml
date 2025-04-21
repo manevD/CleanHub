@@ -2,14 +2,8 @@
 
 @{
     ViewData["Title"] = "Измени Објект";
-    var errors = ViewBag.Errors as List<string>;
-    var showModal = ViewBag.ShowErrorModal ?? false;
 }
 
-@if (showModal && errors != null && errors.Any())
-{
-    @await Html.PartialAsync("Error", errors)
-}
 <hr />
 <div class="tab-content" id="animateLineContent-4" style=" max-height: 900px;">
     <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
