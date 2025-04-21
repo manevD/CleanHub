@@ -1,12 +1,16 @@
-﻿@using CleanHub.Entities
-@using CleanHub.Entities.Enums
+﻿@using CleanHub.Entities.Enums
 @model List<CleanHub.ViewModels.DocumentViewModel>
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var invoiceId = @ViewBag.InvoiceId;
+    var errors = ViewBag.Errors as List<string>;
+    var showModal = ViewBag.ShowErrorModal ?? false;
 }
 
+@if (showModal && errors != null && errors.Any())
+{
+    @await Html.PartialAsync("Error", errors)
+}
 <hr />
 <form asp-action="InvoiceFiltered" asp-controller="Invoices" method="get">
     <div class="row ">

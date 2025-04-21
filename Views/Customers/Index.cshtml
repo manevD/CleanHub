@@ -1,8 +1,14 @@
 ﻿@model IEnumerable<CleanHub.ViewModels.CustomerViewModel>
 @{
     ViewData["Title"] = "Партнер Листа";
+    var errors = ViewBag.Errors as List<string>;
+    var showModal = ViewBag.ShowErrorModal ?? false;
 }
 
+@if (showModal && errors != null && errors.Any())
+{
+    @await Html.PartialAsync("Error", errors)
+}
 <hr />
 
 <div class="col-lg-12 col-md-12 layout-spacing">

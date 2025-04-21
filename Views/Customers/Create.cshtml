@@ -1,6 +1,12 @@
 ﻿@model CleanHub.ViewModels.CustomerViewModel
-
 @{
+    var errors = ViewBag.Errors as List<string>;
+    var showModal = ViewBag.ShowErrorModal ?? false;
+}
+
+@if (showModal && errors != null && errors.Any())
+{
+    @await Html.PartialAsync("Error", errors)
 }
 <hr />
 
@@ -69,14 +75,14 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Опис</label>
-                                                        <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis"/>
+                                                        <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis" />
                                                     </div>
                                                 </div>
 
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Во претплата</label>
-                                                        <input asp-for="Subscription" class="form-control mb-3" id="Subscription"/>
+                                                        <input asp-for="Subscription" class="form-control mb-3" id="Subscription" />
                                                     </div>
                                                 </div>
 
@@ -84,7 +90,7 @@
                                                     <div class="form-check">
                                                         <label>Физичко Лице</label>
                                                         <input type="checkbox" class="form-check-input" id="PhysicalPerson"
-                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "")/>
+                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
@@ -96,7 +102,7 @@
                                                 </div>
                                                 <div class="col-md-12 mt-1">
                                                     <div class="form-group text-end">
-                                                        <input type="submit" value="Зачувај" class="btn btn-primary"/>
+                                                        <input type="submit" value="Зачувај" class="btn btn-primary" />
                                                     </div>
                                                 </div>
 

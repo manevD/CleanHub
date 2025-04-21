@@ -19,8 +19,14 @@
             result = "Во претплата " + (-difference);
         }
     }
+    var errors = ViewBag.Errors as List<string>;
+    var showModal = ViewBag.ShowErrorModal ?? false;
 }
 
+@if (showModal && errors != null && errors.Any())
+{
+    @await Html.PartialAsync("Error", errors)
+}
 <hr />
 <form asp-action="Books" asp-controller="BookFinancial" method="get">
     <div class="row">

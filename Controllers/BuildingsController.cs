@@ -24,7 +24,7 @@ namespace CleanHub.Controllers
     {
         private static int _month = DateTime.Now.Month;
         private static int _year = DateTime.Now.Year;
-      
+
         //private async Task<List<Building>> GetBuildings()
         //{
         //    var allBuildings = new List<Building> { new Building { Name = "Сите", Id = 0 } };
@@ -41,7 +41,7 @@ namespace CleanHub.Controllers
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
 
             List<BuildingViewModel>? buildings = string.IsNullOrEmpty(buildingsJson)
-                ? App.FullMapper.Map<List<BuildingViewModel>>( _unitOfWork.Buildings.GetAll())
+                ? App.FullMapper.Map<List<BuildingViewModel>>(_unitOfWork.Buildings.GetAll())
                 : JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
 
             if (string.IsNullOrEmpty(buildingsJson))
@@ -55,7 +55,7 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id,x=>x
+            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id, x => x
                 .Include(x => x.Customers));
 
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
@@ -76,7 +76,7 @@ namespace CleanHub.Controllers
 
                 if (buildingViewModel.CustomerRefId.HasValue)
                 {
-                    bookFinancial = (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh=> wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
+                    bookFinancial = (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
                 }
                 else
                 {
@@ -124,6 +124,17 @@ namespace CleanHub.Controllers
 
                 return RedirectToAction(nameof(Index));
             }
+            else
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                ViewBag.Errors = errors;
+                ViewBag.ShowErrorModal = true;
+                return View();
+            }
 
             return View(building);
         }
@@ -148,7 +159,7 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id,inc => inc
+            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id, inc => inc
                 .Include(x => x.BuildingProducts));
 
             if (buildingEntity == null) return NotFound();
@@ -238,6 +249,14 @@ namespace CleanHub.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            ViewBag.Errors = errors;
+            ViewBag.ShowErrorModal = true;
+
             return View(building);
         }
 
@@ -246,7 +265,7 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var building = await _unitOfWork.Buildings.GetByIdAsync(x=>x.Id == id);
+            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == id);
             if (building == null) return NotFound();
 
             _unitOfWork.Buildings.Delete(building);
@@ -325,7 +344,7 @@ namespace CleanHub.Controllers
             }
             return RedirectToAction("Details", new { id = id });
         }
-        
+
         private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
         {
             ViewData.Model = model;

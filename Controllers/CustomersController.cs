@@ -144,6 +144,14 @@ namespace CleanHub.Controllers
             }
             PopulateViewData(customer.BuildingId, customer.ActivityId);
 
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            ViewBag.Errors = errors;
+            ViewBag.ShowErrorModal = true;
+
             return View(customer);
         }
 
@@ -190,8 +198,14 @@ namespace CleanHub.Controllers
 
             if (!ModelState.IsValid)
             {
-                ViewData["BuildingId"] = new SelectList(BuildingsList, "Id", "Name", customer.BuildingId);
-                ViewData["ActivityId"] = new SelectList(ActivitiesList, "Id", "Name", customer.ActivityId);
+                PopulateViewData(customer.BuildingId, customer.ActivityId);
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                ViewBag.Errors = errors;
+                ViewBag.ShowErrorModal = true;
                 return View(customer);
             }
 

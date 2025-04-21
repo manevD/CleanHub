@@ -11,17 +11,10 @@ using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class BookFinancialController : Controller
+    public class BookFinancialController(IUnitOfWork _unitOfWork) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
-
-        private readonly IUnitOfWork _unitOfWork;
-
-        public BookFinancialController(IUnitOfWork unitOfWork)
-        {
-            _unitOfWork = unitOfWork;
-        }
 
         private List<Building> GetBuildings()
         {
@@ -70,30 +63,43 @@ namespace CleanHub.Controllers
         //select sum(demands) from BookFinancials where CustomerId in (select id from Customers where BuildingId = 80) and InvoiceId = 1201 and DatumF >='01.12.2022' Pobaruva
         public async Task<IActionResult> Books(int? invoiceId, int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
         {
-            List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
-            var building = new Building();
-            if (!buildingId.HasValue)
+            try
             {
+                List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+                var building = new Building();
+                if (!buildingId.HasValue)
+                {
+                    ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                    ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
+                    ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
+                    return RedirectToAction(nameof(Index));
+                }
+
+                building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+                if (building != null)
+                {
+                    results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
+                    FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
+                    if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
+                    {
+                        CalculateOverdueStatus(results);
+                    }
+                }
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
-                return RedirectToAction(nameof(Index));
+                return View("Index", results);
             }
-
-            building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
-            if (building != null)
+            catch (Exception e)
             {
-                results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
-                FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? 1201, paymentStatusId);
-                if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int) PaymentStatus.Сите)
-                {
-                    CalculateOverdueStatus(results);
-                }
+                var errors =e.Message.ToList();
+                ViewBag.Errors = errors;
+                ViewBag.ShowErrorModal = true;
+                ViewBag.ModalId = "errorModal"; 
+
+                return View();
             }
-            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
-            ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
-            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
-            return View("Index", results);
+           
         }
         private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
         {
