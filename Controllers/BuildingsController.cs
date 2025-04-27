@@ -14,6 +14,7 @@ using Newtonsoft.Json;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
+using System.Linq;
 
 namespace CleanHub.Controllers
 {
@@ -70,22 +71,23 @@ namespace CleanHub.Controllers
                     })
                     .ToList();
 
-            if (buildingViewModel != null)
+            if (buildingViewModel != null &&  buildingViewModel.Customers.Any())
             {
-                List<BookFinancial> bookFinancial;
+                IEnumerable<BookFinancial> bookFinancial;
 
                 if (buildingViewModel.CustomerRefId.HasValue)
                 {
-                    bookFinancial = (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
+                    bookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
                 }
                 else
                 {
-                    bookFinancial =
-                        (List<BookFinancial>)await _unitOfWork.BookFinancials.GetAllAsync(wh =>
-                            wh.Where(x => x.CustomerId == buildingViewModel.Id));
+                    bookFinancial = await _unitOfWork.BookFinancials
+                        .GetAllAsync(x => x.Where(y => buildingViewModel.Customers
+                            .Select(c => c.Id)
+                            .Contains(y.CustomerId.Value)));
                 }
 
-                buildingViewModel.ReserveTotal = (int)bookFinancial.Sum(x => x.Owes);
+                buildingViewModel.ReserveTotal = (int)bookFinancial.Where(x=>x.InvoiceId == (int)InvoiceTyp.Reserve).Sum(x => x.Demands);
             }
 
             ViewBag.Month = _month;

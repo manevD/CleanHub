@@ -30,3 +30,18 @@ BEGIN CATCH
     -- Optionally, you can re-throw the error to see more details
     THROW;
 END CATCH;
+
+ ---Update BookFinancial Status
+UPDATE bf
+SET bf.Status = 0
+FROM BookFinancials bf
+INNER JOIN Customers cs ON cs.Id = bf.CustomerId
+INNER JOIN Documents d ON d.CustomerId = cs.Id
+WHERE d.PaymentStatus = 0;
+
+UPDATE bf
+SET bf.Status = 1
+FROM BookFinancials bf
+INNER JOIN Customers cs ON cs.Id = bf.CustomerId
+INNER JOIN Documents d ON d.CustomerId = cs.Id
+WHERE d.PaymentStatus = 1;

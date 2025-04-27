@@ -306,7 +306,7 @@ namespace CleanHub.Controllers
             {
                 var basicProducts = (id == 0)
                     ? await _unitOfWork.Products.GetAllAsync()
-                    : await _unitOfWork.Products.GetAllAsync(x => x.Where((x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез"))));
+                    : await _unitOfWork.Products.GetAllAsync(x => x.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")));
 
                 if (documentViewModel.Building != null)
                 {
@@ -372,7 +372,6 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
-
                 var buildingProdutsToRemove = document.Building?.BuildingProducts
                     .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
                 if (buildingProdutsToRemove != null && buildingProdutsToRemove.Any())
@@ -419,10 +418,12 @@ namespace CleanHub.Controllers
                             {
                                 try
                                 {
+                                    // Continue creating the book if the article exists
                                     if (buildingProduct.ArticleNotes.Contains("гаража") && !customer.Garage)
                                     {
                                         continue;
                                     }
+
                                     CreateBook(buildingProduct, docEntity);
                                 }
 
@@ -432,13 +433,13 @@ namespace CleanHub.Controllers
                                     throw;
                                 }
                             }
+                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                        documents.Add(docEntity);
 
                         if (send)
                         {
                             await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(docEntity));
                         }
-                        documents.Add(docEntity);
-                        //CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
                     }
                 }
 
@@ -461,7 +462,7 @@ namespace CleanHub.Controllers
                 .ToList();
             if (energyValues != null && energyValues.Any())
             {
-                sum = (int)Math.Round((decimal)energyValues.Sum(x => x.PriceWithTax), MidpointRounding.AwayFromZero);
+                sum = (int)Math.Round((decimal)energyValues.Sum(x => x.Total), MidpointRounding.AwayFromZero);
             }
             if (sum == 0)
             {
@@ -480,6 +481,7 @@ namespace CleanHub.Controllers
             var specialInvoice = App.FullMapper.Map<SpecialInvoice>(specialInvoiceViewModel);
             _unitOfWork.SpecialInvoices.UpdateSpecialInvoices(document, specialInvoice);
         }
+
         private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType paymentType, string? paymentNumber)
         {
             var bookFinancialViewModel = new BookFinancialViewModel
@@ -488,6 +490,7 @@ namespace CleanHub.Controllers
                 DocumentId = docEntity.Id,
                 Demands = docEntity!.TotalOutput!.Value!,
                 Owes = 0,
+                DocumentTypId = 4,
                 CustomerId = customerId,
                 Time = DateTime.Now,
                 Status = PaymentStatus.Неплатено,
@@ -500,7 +503,8 @@ namespace CleanHub.Controllers
                 InvoiceId = Constants.Reserve,
                 DocumentId = docEntity.Id,
                 Demands = reserve,
-                Owes = 0,
+                DocumentTypId = 4,
+                //Owes = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
                 DatumF = docEntity.DateReceived,
                 CustomerId = customerId,
                 Status = PaymentStatus.Неплатено,
@@ -522,7 +526,6 @@ namespace CleanHub.Controllers
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTax,
                 Tax = book.Tax,
-                ArticleId = book.Id,
                 Total = book.PriceWithTax,
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
@@ -793,45 +796,50 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> PrintDocuments(List<Document> documents, Building building)
         {
-            var owes = 0;
-            var demands = 0;
-            (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(building.Id, invoiceId: 1201, status: null);
-
-            PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
-            MemoryStream pdfStream = new MemoryStream();
-            foreach (var item in documents)
+            if (documents != null && documents.Any())
             {
-                var document = App.FullMapper.Map<DocumentViewModel>(item);
+                var owes = 0;
+                var demands = 0;
+                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(building.Id, invoiceId: 1201, status: null);
 
-                if (document == null)
+                PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
+                MemoryStream pdfStream = new MemoryStream();
+                foreach (var item in documents)
                 {
-                    continue;
+                    var document = App.FullMapper.Map<DocumentViewModel>(item);
+
+                    if (document == null)
+                    {
+                        continue;
+                    }
+                    document.TotalBuildingDemands = demands;
+                    document.TotalBuildingOwes = owes;
+                    document.Company = _config.Value;
+                    document.IsForPdf = true;
+
+                    string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
+
+                    var request = _httpContextAccessor?.HttpContext?.Request;
+                    string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
+
+                    HtmlToPdf converter = new HtmlToPdf();
+                    PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
+                    endDoc.Append(doc);
                 }
-                document.TotalBuildingDemands = demands;
-                document.TotalBuildingOwes = owes;
-                document.Company = _config.Value;
-                document.IsForPdf = true;
 
-                string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
+                byte[] pdf = endDoc.Save();
 
-                var request = _httpContextAccessor?.HttpContext?.Request;
-                string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
+                endDoc.Close();
 
-                HtmlToPdf converter = new HtmlToPdf();
-                PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
-                endDoc.Append(doc);
+                FileResult fileResult = new FileContentResult(pdf, "application/pdf");
+                var dateOnly = documents.FirstOrDefault().Date;
+                if (dateOnly != null)
+                    fileResult.FileDownloadName =
+                        $"{building?.Name}_{dateOnly.Value.Month}_{dateOnly.Value.Year}.pdf";
+                return fileResult;
             }
 
-            byte[] pdf = endDoc.Save();
-
-            endDoc.Close();
-
-            FileResult fileResult = new FileContentResult(pdf, "application/pdf");
-            var dateOnly = documents.FirstOrDefault().Date;
-            if (dateOnly != null)
-                fileResult.FileDownloadName =
-                    $"{building?.Name}_{dateOnly.Value.Month}_{dateOnly.Value.Year}.pdf";
-            return fileResult;
+            return null;
         }
     }
 }
