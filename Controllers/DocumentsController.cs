@@ -600,6 +600,10 @@ namespace CleanHub.Controllers
                 {
                     return NotFound();
                 }
+                if (model.NewTotal.HasValue && model.NewTotal != 0)
+                {
+                    documentToUpdate.NewTotal = model.NewTotal.Value;
+                }
                 documentToUpdate.PaymentStatus = PaymentStatus.Платено;
                 documentToUpdate.PaymentDate = model.PaymentDate;
                 documentToUpdate.PaymentType = model.PaymentType;
@@ -628,8 +632,6 @@ namespace CleanHub.Controllers
                 {
                     return NotFound();
                 }
-
-                // Optionally log error here for better debugging
                 throw;
             }
 
