@@ -423,7 +423,6 @@ namespace CleanHub.Controllers
                                     {
                                         continue;
                                     }
-
                                     CreateBook(buildingProduct, docEntity);
                                 }
 
@@ -488,8 +487,8 @@ namespace CleanHub.Controllers
             {
                 InvoiceId = Constants.Recieve,
                 DocumentId = docEntity.Id,
-                Demands = docEntity!.TotalOutput!.Value!,
-                Owes = 0,
+                Demands = 0,
+                Owes = docEntity!.TotalOutput!.Value!,
                 DocumentTypId = 4,
                 CustomerId = customerId,
                 Time = DateTime.Now,
@@ -502,9 +501,9 @@ namespace CleanHub.Controllers
             {
                 InvoiceId = Constants.Reserve,
                 DocumentId = docEntity.Id,
-                Demands = reserve,
+                Demands = 0,
                 DocumentTypId = 4,
-                //Owes = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
+                Owes = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
                 DatumF = docEntity.DateReceived,
                 CustomerId = customerId,
                 Status = PaymentStatus.Неплатено,
@@ -605,7 +604,6 @@ namespace CleanHub.Controllers
                 documentToUpdate.PaymentDate = model.PaymentDate;
                 documentToUpdate.PaymentType = model.PaymentType;
                 documentToUpdate.PaymentNumber = model.PaymentNumber;
-
                 // Update related BookFinancials
                 if (bookfinancialToUpdate == null) throw new ArgumentNullException(nameof(bookfinancialToUpdate));
                 if (bookfinancialToUpdate.Any())
@@ -615,6 +613,8 @@ namespace CleanHub.Controllers
                         if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
                         item.PaymentType = model.PaymentType;
                         item.PaymentNumber = model.PaymentNumber;
+                        item.Demands = item.Owes;
+                        item.Owes = 0;
                         item.Status = PaymentStatus.Платено;
                     }
                     _unitOfWork.BookFinancials.UpdateRange(bookfinancialToUpdate);
