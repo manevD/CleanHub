@@ -274,7 +274,7 @@ namespace CleanHub.Controllers
                     var document = App.FullMapper.Map<DocumentViewModel>(await _unitOfWork.Documents.GetByIdAsync(
                         x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month,
                         inc => inc.Include(x => x.Customer)
-                            .Include(x => x.Books)));
+                            .Include(x => x.Books.Where(x=>!x.Hide))));
                     if (document == null)
                     {
                         RedirectToAction(nameof(Index));

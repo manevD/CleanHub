@@ -30,4 +30,5 @@ public partial class Book
     public string? ArticleNotes { get; set; }
 
     public string? UnitOfMeasurement { get; set; }
+    public bool Hide { get; set; }
 }

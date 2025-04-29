@@ -1,6 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
-using AutoMapper.Configuration.Annotations;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
+﻿using AutoMapper.Configuration.Annotations;
+using System.ComponentModel.DataAnnotations;
 
 namespace CleanHub.ViewModels
 {
@@ -9,6 +8,10 @@ namespace CleanHub.ViewModels
         public int Id { get; set; }
         public int BuildingId { get; set; } // Foreign Key
         public bool GetFromReserve { get; set; } = false;
+
+        [Ignore]
+        public bool Hide { get; set; } = false;
+
         [DisplayFormat(DataFormatString = "{0.00}")]
         public float? Input { get; set; }
         [DisplayFormat(DataFormatString = "{0.00}")]

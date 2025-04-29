@@ -16,6 +16,7 @@ using Microsoft.Extensions.Options;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
+using System.Text;
 
 namespace CleanHub.Controllers
 {
@@ -259,7 +260,20 @@ namespace CleanHub.Controllers
                 documentViewModel.NewTotal = (int?)(documentViewModel.TotalOutput + CalculateNewTotal(documentViewModel));
             }
             documentViewModel.Company = _config.Value;
+            if (documentViewModel.Books != null && documentViewModel.Books.Any(x => x.Hide))
+            {
+                foreach (var book in documentViewModel.Books.Where(x => x.Hide))
+                {
+                    var sb = new StringBuilder();
+                    if (!string.IsNullOrWhiteSpace(documentViewModel.Company?.InvoiceNotice))
+                        sb.AppendLine(documentViewModel.Company.InvoiceNotice);
 
+                    if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
+                        sb.AppendLine(book.ArticleNotes);
+                }
+
+                documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
+            }
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
 
@@ -433,6 +447,7 @@ namespace CleanHub.Controllers
                                 }
                             }
                         CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                        docEntity.Books = docEntity.Books.Where(x => !x.Hide).ToList();
                         documents.Add(docEntity);
 
                         if (send)
@@ -522,6 +537,7 @@ namespace CleanHub.Controllers
             {
                 DocId = docEntity.Id,
                 Output = 1,
+                Hide = book.Hide,
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTax,
                 Tax = book.Tax,
@@ -646,7 +662,7 @@ namespace CleanHub.Controllers
             }
 
             var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
-                .Include(x => x.Books)
+                .Include(x => x.Books.Where(x => !x.Hide))
                 .Include(d => d.Customer));
 
             if (documentEntity == null)
@@ -765,6 +781,7 @@ namespace CleanHub.Controllers
                     d => d.Include(x => x.Customer).Include(x => x.Books)
                 );
 
+               
 
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
@@ -776,7 +793,20 @@ namespace CleanHub.Controllers
                 document.TotalBuildingOwes = owes;
                 document.Company = _config.Value;
                 document.IsForPdf = true;
+                if (document.Books != null && document.Books.Any(x => x.Hide))
+                {
+                    foreach (var book in document.Books.Where(x=>x.Hide))
+                    {
+                        var sb = new StringBuilder();
+                        if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
+                            sb.AppendLine(document.Company.InvoiceNotice);
 
+                        if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
+                            sb.AppendLine(book.ArticleNotes);
+                    }
+
+                    document.Books = document.Books.Where(x => !x.Hide).ToList();
+                }
                 string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                 var request = _httpContextAccessor?.HttpContext?.Request;

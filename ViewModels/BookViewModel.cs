@@ -5,7 +5,7 @@
         public int Id { get; set; }
         public int DocId { get; set; }
         public DocumentViewModel Document { get; set; }
-
+        public bool Hide { get; set; }
         public int? ArticleId { get; set; }
 
         public float? Input { get; set; }

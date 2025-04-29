@@ -1,5 +1,4 @@
 ﻿using CleanHub.Config;
-using CleanHub.Entities;
 using System.ComponentModel.DataAnnotations.Schema;
 using AutoMapper.Configuration.Annotations;
 using CleanHub.Entities.Enums;
@@ -12,7 +11,6 @@ namespace CleanHub.ViewModels
         public int? Number { get; set; }
         public DateOnly? Date { get; set; }
         public int? CustomerId { get; set; }
-
         public CustomerViewModel? Customer { get; set; }
         [NotMapped]
         public CompanyConfig? Company { get; set; }  
