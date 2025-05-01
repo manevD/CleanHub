@@ -12,5 +12,10 @@ namespace CleanHub.Infrastructure.Repositories
         {
             _context = context; 
         }
+
+        public IEnumerable<BuildingProduct> GetAllBuildingProducts(int buildingId)
+        {
+            return _context.BuildingProducts.Where(x => x.BuildingId == buildingId);
+        }
     }
 }

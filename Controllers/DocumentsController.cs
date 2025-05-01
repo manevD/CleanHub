@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
+using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -386,6 +387,7 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
+                var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(document.Building.Id).ToList();
                 var buildingProdutsToRemove = document.Building?.BuildingProducts
                     .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
                 if (buildingProdutsToRemove != null && buildingProdutsToRemove.Any())
@@ -414,6 +416,35 @@ namespace CleanHub.Controllers
                             Status = PaymentStatus.Неплатено
                         };
                         _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
+                    }
+                }
+
+                if (buildingProductsFromBuilding != null && buildingProductsFromBuilding.Any())
+                {
+                    if (buildingProductsFromBuilding.Count != document.Building?.BuildingProducts.Count)
+                    {
+                        var productsToAdd = document.Building?.BuildingProducts
+                            .Where(x => !buildingProductsFromBuilding
+                                .Select(bp => bp.ArticleNotes)
+                                .Contains(x.ArticleNotes))
+                            .ToList();
+                        foreach (var product in productsToAdd)
+                        {
+                            var bookFinancialViewModelReserve = new BookFinancialViewModel
+                            {
+                                InvoiceId = Constants.Reserve,
+                                Demands = 0,
+                                DocumentTypId = 5,
+                                Owes = product.Total ?? 0,
+                                DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
+                                CustomerId = document.Building?.Id,
+                                Status = PaymentStatus.Неплатено,
+                                Time = DateTime.Now,
+                                Description = product.ArticleNotes,
+                            };
+                            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+                            _unitOfWork.BookFinancials.Add(bookFinancialReserve);
+                        }
                     }
                 }
 
@@ -512,6 +543,14 @@ namespace CleanHub.Controllers
                 Description = string.Empty,
             };
 
+            CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber);
+            var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
+            _unitOfWork.BookFinancials.Add(bookFinancial);
+        }
+
+        public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate,
+            PaymentType paymentType, string? paymentNumber)
+        {
             var bookFinancialViewModelReserve = new BookFinancialViewModel
             {
                 InvoiceId = Constants.Reserve,
@@ -525,9 +564,7 @@ namespace CleanHub.Controllers
                 Time = DateTime.Now,
                 Description = string.Empty,
             };
-            var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
             var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
-            _unitOfWork.BookFinancials.Add(bookFinancial);
             _unitOfWork.BookFinancials.Add(bookFinancialReserve);
         }
 
@@ -781,7 +818,7 @@ namespace CleanHub.Controllers
                     d => d.Include(x => x.Customer).Include(x => x.Books)
                 );
 
-               
+
 
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
@@ -795,7 +832,7 @@ namespace CleanHub.Controllers
                 document.IsForPdf = true;
                 if (document.Books != null && document.Books.Any(x => x.Hide))
                 {
-                    foreach (var book in document.Books.Where(x=>x.Hide))
+                    foreach (var book in document.Books.Where(x => x.Hide))
                     {
                         var sb = new StringBuilder();
                         if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
@@ -848,7 +885,20 @@ namespace CleanHub.Controllers
                     document.TotalBuildingOwes = owes;
                     document.Company = _config.Value;
                     document.IsForPdf = true;
+                    if (document.Books != null && document.Books.Any(x => x.Hide))
+                    {
+                        foreach (var book in document.Books.Where(x => x.Hide))
+                        {
+                            var sb = new StringBuilder();
+                            if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
+                                sb.AppendLine(document.Company.InvoiceNotice);
 
+                            if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
+                                sb.AppendLine(book.ArticleNotes);
+                        }
+
+                        document.Books = document.Books.Where(x => !x.Hide).ToList();
+                    }
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                     var request = _httpContextAccessor?.HttpContext?.Request;
