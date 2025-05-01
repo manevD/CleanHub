@@ -73,21 +73,10 @@ namespace CleanHub.Controllers
 
             if (buildingViewModel != null &&  buildingViewModel.Customers.Any())
             {
-                IEnumerable<BookFinancial> bookFinancial;
-
-                if (buildingViewModel.CustomerRefId.HasValue)
-                {
-                    bookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.CustomerId == buildingViewModel.CustomerRefId.Value));
-                }
-                else
-                {
-                    bookFinancial = await _unitOfWork.BookFinancials
-                        .GetAllAsync(x => x.Where(y => buildingViewModel.Customers
-                            .Select(c => c.Id)
-                            .Contains(y.CustomerId.Value)));
-                }
-
-                buildingViewModel.ReserveTotal = (int)bookFinancial.Where(x=>x.InvoiceId == (int)InvoiceTyp.Reserve).Sum(x => x.Demands);
+                var owes = 0;
+                var demands = 0;
+                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingViewModel.Id, invoiceId: (int)InvoiceTyp.Reserve, status: null);
+                buildingViewModel.ReserveTotal = owes - demands;
             }
 
             ViewBag.Month = _month;

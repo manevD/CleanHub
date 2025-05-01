@@ -250,7 +250,7 @@ namespace CleanHub.Controllers
 
             if (documentViewModel.Customer != null)
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId,
-                    invoiceId: 1201, status: null, documentViewModel);
+                    invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
             documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
             if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
             {
@@ -302,7 +302,7 @@ namespace CleanHub.Controllers
                     Customers = b.Customers.Where(x => x.Inactive == false).ToList(),
                     BuildingProducts = b.BuildingProducts
                 }));
-            _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: 1201, status: null, documentViewModel);
+            _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
             ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.HasValue ? buildingId.Value : 1);
@@ -397,7 +397,6 @@ namespace CleanHub.Controllers
                         document.Building?.BuildingProducts.Remove(buildingProduct);
                     }
                 }
-                /// da se napravie site drugo so ne spagaat u normalni BuildingProducts, da se knizat na trosok na 1201 i sumata na Owes
                 var buildingProductsFromReserve =
                     document.Building?.BuildingProducts.Where(x => x.GetFromReserve).ToList();
                 if (buildingProductsFromReserve != null && buildingProductsFromReserve.Any())
@@ -423,10 +422,16 @@ namespace CleanHub.Controllers
                 {
                     if (buildingProductsFromBuilding.Count != document.Building?.BuildingProducts.Count)
                     {
+                        var existingNotes = buildingProductsFromBuilding
+                            .Select(bp => bp.ArticleNotes?.Trim())
+                            .Where(note => !string.IsNullOrEmpty(note))
+                            .ToList();
+
                         var productsToAdd = document.Building?.BuildingProducts
-                            .Where(x => !buildingProductsFromBuilding
-                                .Select(bp => bp.ArticleNotes)
-                                .Contains(x.ArticleNotes))
+                            .Where(x =>
+                                !string.IsNullOrWhiteSpace(x.ArticleNotes) &&
+                                !existingNotes.Any(existing =>
+                                    x.ArticleNotes.Trim().StartsWith(existing, StringComparison.OrdinalIgnoreCase)))
                             .ToList();
                         foreach (var product in productsToAdd)
                         {
@@ -435,7 +440,7 @@ namespace CleanHub.Controllers
                                 InvoiceId = Constants.Reserve,
                                 Demands = 0,
                                 DocumentTypId = 5,
-                                Owes = product.Total ?? 0,
+                                Owes = product.PriceWithTax ?? 0,
                                 DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
                                 CustomerId = document.Building?.Id,
                                 Status = PaymentStatus.Неплатено,
@@ -444,6 +449,7 @@ namespace CleanHub.Controllers
                             };
                             var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
                             _unitOfWork.BookFinancials.Add(bookFinancialReserve);
+                            document.Building.BuildingProducts.Remove(product);
                         }
                     }
                 }
@@ -478,20 +484,15 @@ namespace CleanHub.Controllers
                                 }
                             }
                         CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
-                        docEntity.Books = docEntity.Books.Where(x => !x.Hide).ToList();
                         documents.Add(docEntity);
-
-                        if (send)
-                        {
-                            await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(docEntity));
-                        }
                     }
                 }
 
                 CreateSpecialInvoice(document);
                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Documents");
-                return await PrintDocuments(documents, building);
+                
+                return await PrintDocuments(documents, building,send);
             }
 
             return View(document);
@@ -574,6 +575,7 @@ namespace CleanHub.Controllers
             {
                 DocId = docEntity.Id,
                 Output = 1,
+                Input = 0,
                 Hide = book.Hide,
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTax,
@@ -583,7 +585,11 @@ namespace CleanHub.Controllers
                 UnitOfMeasurement = book.UnitOfMeasurement,
             };
             var entityBook = App.FullMapper.Map<Book>(bookEntity);
-            _unitOfWork.Books.Add(entityBook);
+            docEntity.Books.Add(entityBook);
+            if (!bookEntity.Hide)
+            {
+                _unitOfWork.Books.Add(entityBook);
+            }
         }
 
         private async Task<Document> CreateCustomerDocument(Customer customer, DocumentViewModel document, Building building)
@@ -670,6 +676,7 @@ namespace CleanHub.Controllers
                         if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
                         item.PaymentType = model.PaymentType;
                         item.PaymentNumber = model.PaymentNumber;
+                        item.Description = model.Description;
                         item.Demands = item.Owes;
                         item.Owes = 0;
                         item.Status = PaymentStatus.Платено;
@@ -805,7 +812,7 @@ namespace CleanHub.Controllers
             }
             var owes = 0;
             var demands = 0;
-            (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingId.Value, invoiceId: 1201, status: null);
+            (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingId.Value, invoiceId: (int)InvoiceTyp.Reserve, status: null);
 
             PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
             MemoryStream pdfStream = new MemoryStream();
@@ -863,15 +870,15 @@ namespace CleanHub.Controllers
             return fileResult;
         }
 
-        public async Task<IActionResult> PrintDocuments(List<Document> documents, Building building)
+        public async Task<IActionResult> PrintDocuments(List<Document> documents, Building building,bool send)
         {
             if (documents != null && documents.Any())
             {
                 var owes = 0;
                 var demands = 0;
-                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(building.Id, invoiceId: 1201, status: null);
-
-                PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
+                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(building.Id, invoiceId: (int)InvoiceTyp.Reserve, status: null);
+                var total = owes - demands;
+                PdfDocument endDoc = new PdfDocument(); 
                 MemoryStream pdfStream = new MemoryStream();
                 foreach (var item in documents)
                 {
@@ -887,15 +894,17 @@ namespace CleanHub.Controllers
                     document.IsForPdf = true;
                     if (document.Books != null && document.Books.Any(x => x.Hide))
                     {
+                        var sb = new StringBuilder();
                         foreach (var book in document.Books.Where(x => x.Hide))
                         {
-                            var sb = new StringBuilder();
                             if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
                                 sb.AppendLine(document.Company.InvoiceNotice);
 
                             if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
-                                sb.AppendLine(book.ArticleNotes);
+                                sb.AppendLine($"за {document.ToDocument} трошок за {book.ArticleNotes} имате {book.Total} мкд");
+                            sb.AppendLine(Environment.NewLine);
                         }
+                        document.Company.InvoiceNotice = sb.ToString();
 
                         document.Books = document.Books.Where(x => !x.Hide).ToList();
                     }
@@ -907,6 +916,10 @@ namespace CleanHub.Controllers
                     HtmlToPdf converter = new HtmlToPdf();
                     PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                     endDoc.Append(doc);
+                    if (send)
+                    {
+                        await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(document));
+                    }
                 }
 
                 byte[] pdf = endDoc.Save();

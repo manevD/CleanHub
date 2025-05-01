@@ -16,7 +16,7 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> InvoiceFiltered(int? invoiceId, int? buildingId, string dateFrom,
             string dateTo)
         {
-            ViewBag.InvoiceId = invoiceId ?? 1201;
+            ViewBag.InvoiceId = invoiceId ?? (int)InvoiceTyp.Reserve;
 
             Buildings.Insert(0, new Building
             {

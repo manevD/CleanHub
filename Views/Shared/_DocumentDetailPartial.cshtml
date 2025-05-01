@@ -94,7 +94,7 @@
                                         </div>
                                         <div class="col-sm-6 text-sm-end">
                                             <p><span>ИСПРАТНИЦА-ФАКТУРА БР: </span><span>@Model?.Number</span></p>
-                                            <p><span>Издадена на : </span><span>@Model?.CreatedTime?.ToString("dd.MM.yyyy")</span></p>
+                                            <p><span>Издадена на : </span><span>@Model?.Date?.ToString("dd.MM.yyyy")</span></p>
                                             <p><span>Рок на плаќање до: </span><span>@Model?.DateReceived?.ToString("dd.MM.yyyy")</span></p>
                                             <p>@Model?.Customer?.CustomerInfo</p>
                                             <p>@Model?.Customer?.Adress</p>

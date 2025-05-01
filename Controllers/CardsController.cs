@@ -223,7 +223,7 @@ namespace CleanHub.Controllers
                 // Summen (unabhängig vom Datum)
                 cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
                     .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId && x.InvoiceId == 1200)
+                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Recieve)
                     .Sum(x => x.Demands);
 
                 cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents

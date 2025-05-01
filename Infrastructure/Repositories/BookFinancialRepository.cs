@@ -36,7 +36,7 @@ namespace CleanHub.Infrastructure.Repositories
             var demands = 0;
 
             var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
-            if (building == null || building.CustomerRefId == null || !invoiceId.HasValue || invoiceId.Value != 1201)
+            if (building == null || building.CustomerRefId == null || !invoiceId.HasValue || invoiceId.Value != (int)InvoiceTyp.Reserve)
             {
                 return (owes, demands);
             }
@@ -50,7 +50,7 @@ namespace CleanHub.Infrastructure.Repositories
                 .Where(bf => bf.CustomerId != null
                              && bf.InvoiceId == invoiceId.Value
                              && (
-                                 bf.CustomerId == building.CustomerRefId.Value
+                                 bf.CustomerId == building.CustomerRefId.Value || bf.CustomerId == building.Id
                                  || customerIdsInBuilding.Contains(bf.CustomerId.Value)
                              ))
                 .ToList();
