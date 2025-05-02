@@ -50,7 +50,8 @@ namespace CleanHub.Infrastructure.Repositories
                 .Where(bf => bf.CustomerId != null
                              && bf.InvoiceId == invoiceId.Value
                              && (
-                                 bf.CustomerId == building.CustomerRefId.Value || bf.CustomerId == building.Id
+                                 (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
+                                 || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
                                  || customerIdsInBuilding.Contains(bf.CustomerId.Value)
                              ))
                 .ToList();

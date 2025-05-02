@@ -905,7 +905,11 @@ namespace CleanHub.Controllers
                             sb.AppendLine(Environment.NewLine);
                         }
                         document.Company.InvoiceNotice = sb.ToString();
-
+                        //Check if work?
+                        if (send)
+                        {
+                            await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(document));
+                        }
                         document.Books = document.Books.Where(x => !x.Hide).ToList();
                     }
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
@@ -916,10 +920,7 @@ namespace CleanHub.Controllers
                     HtmlToPdf converter = new HtmlToPdf();
                     PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                     endDoc.Append(doc);
-                    if (send)
-                    {
-                        await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(document));
-                    }
+                    
                 }
 
                 byte[] pdf = endDoc.Save();
