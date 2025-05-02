@@ -18,7 +18,11 @@ namespace CleanHub.Infrastructure.Repositories
                     .Where(bf => bf.CustomerId != null
                                  && invoiceId.HasValue
                                  && (
-                                     (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value && bf.InvoiceId == invoiceId.Value)
+                                     (
+                                         (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
+                                         || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
+                                     )
+                                     && bf.InvoiceId == invoiceId.Value
                                      ||
                                      (bf.InvoiceId == invoiceId.Value &&
                                       context.Customers
@@ -27,6 +31,7 @@ namespace CleanHub.Infrastructure.Repositories
                                           .Contains(bf.CustomerId.Value))
                                  ))
                     .ToList();
+
             }
             return query;
         }
