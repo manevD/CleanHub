@@ -45,3 +45,8 @@ FROM BookFinancials bf
 INNER JOIN Customers cs ON cs.Id = bf.CustomerId
 INNER JOIN Documents d ON d.CustomerId = cs.Id
 WHERE d.PaymentStatus = 1;
+
+UPDATE BookFinancials
+SET Demands = Owes,
+    Owes = 0
+WHERE Status = 0 AND Demands = 0;

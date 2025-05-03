@@ -31,10 +31,10 @@ namespace CleanHub.Infrastructure.Repositories
                                           .Contains(bf.CustomerId.Value))
                                  ))
                     .ToList();
-
             }
             return query;
         }
+
         public (int owes, int demands) GetBuildingReserve(int buildingId, int? invoiceId, int? status)
         {
             var owes = 0;

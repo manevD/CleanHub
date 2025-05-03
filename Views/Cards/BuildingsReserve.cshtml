@@ -5,7 +5,7 @@
 }
 
 <hr />
-<form asp-action="BuildingsFinance" asp-controller="Cards" method="get" id="filterForm">
+<form asp-action="BuildingsReserve" asp-controller="Cards" method="get">
     <div class="row">
         @if (ViewBag.Buildings != null)
         {
@@ -27,7 +27,7 @@
         }
         else
         {
-            <p>Нема пронајдено објекти!</p>
+            <p>Нема пронајдено партнери!</p>
         }
 
         <div class="col-lg-2 col-md-3">
@@ -56,62 +56,67 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr role="row">
-                        <th data-sorter="false">Станар</th>
-                        <th data-sorter="false">Адреса</th>
-                        <th data-sorter="false">Побарува</th>
-                        <th data-sorter="false">Должи</th>
-                        <th data-sorter="false">Салдо</>
-                    </tr>
+                <th data-sorter="false">Опис</th>
+                <th data-sorter="false">Сметка</th>
+                <th data-sorter="false">Побарува</th>
+                <th data-sorter="false">Должи</th>
+                <th data-sorter="false">Дата на издавање</th>
                 </thead>
                 <tbody>
-                    @if (Model.BuildingFinanceCardViewModels != null && Model.BuildingFinanceCardViewModels.Any())
+                    @if (Model.BuildingFinancial != null && Model.BuildingFinancial.Any())
                     {
-                        @foreach (var invoice in Model.BuildingFinanceCardViewModels)
+                        @foreach (var invoice in Model.BuildingFinancial)
                         {
                             <tr role="row">
-                                <td>@Html.DisplayFor(modelItem => invoice.CustomerInfo)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Adress)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.InvoiceId.Value)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
-                                <td></td>
+                                <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
                             </tr>
                         }
-                        <tr role="row">
-                            <td><strong>Вкупно</strong></td>
+                       @*  <tr role="row">
+                            <td>Вкупно</td>
                             <td></td>
-                            <td><strong>@Model.CustomerDemandsTotal МКД</strong></td>
-                            <td><strong>@Model.CustomerOwesTotal МКД</strong></td>
-                            <td>
-                                <strong>
-                                    Салдо: @(Model.CustomerDemandsTotal > Model.CustomerOwesTotal ? "" : " - ") @Model.Total МКД
-                                </strong>
-                            </td>
-                        </tr>
+                            <td>Побарува :@Model.CustomerDemandsTotal </td>
+                            <td>Должи : @Model.CustomerOwesTotal</td>
+                            @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
+                            {
+                                <td>Салдо :- @Model.Total</td>
+                            }
+                            else
+                            {
+                                <td>Салдо :@Model.Total</td>
+                            }
+                        </tr> *@
                     }
                     else
                     {
                         <tr>
-                            <td colspan="5" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="6" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <th>Вкупно</th>
-                        <th></th>
-                        <th>Побарува: @Model.CustomerDemandsTotal МКД</th>
-                        <th>Должи: @Model.CustomerOwesTotal МКД</th>
-                        <th>
-                            Салдо: @(Model.CustomerDemandsTotal > Model.CustomerOwesTotal ? "" : " - ") @Model.Total МКД
-                        </th>
-                    </tr>
-                </tfoot>
+                @* <tfoot>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>Побарува : @Model.CustomerDemandsTotal</th>
+                    <th>Должи : @Model.CustomerOwesTotal</th>
+                    @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
+                    {
+                        <th>Салдо :- @Model.Total</th>
+                    }
+                    else
+                    {
+                        <th>Салдо :@Model.Total</th>
+                    }
+                </tr>
+                </tfoot> *@
             </table>
         </div>
     </div>
 </div>
-
 
 <script>
     document.getElementById('buildingSearch').addEventListener('input', function () {

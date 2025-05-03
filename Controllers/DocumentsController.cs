@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
+using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.Mail;
@@ -153,7 +154,6 @@ namespace CleanHub.Controllers
         [HttpGet]
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
-
             Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
             if (!buildingId.HasValue)
             {
@@ -173,9 +173,14 @@ namespace CleanHub.Controllers
                     Selected = (int)e == paymentStatusId
                 })
                 .ToList();
-
-            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", buildingId);
-
+            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+            if (building != null)
+            {
+                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", building.Id);
+                ViewBag.SelectedBuildingName = building.Name;
+                ViewBag.BuildingId = building.Id;
+            }
+          
             var documentEntities = await GetDocuments(buildingId, paymentStatusId, dateFrom, dateTo);
 
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
@@ -387,6 +392,8 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
+                var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.Building.Id,
+                    inc => inc.Include(x => x.Customers));
                 var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(document.Building.Id).ToList();
                 var buildingProdutsToRemove = document.Building?.BuildingProducts
                     .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
@@ -433,6 +440,7 @@ namespace CleanHub.Controllers
                                 !existingNotes.Any(existing =>
                                     x.ArticleNotes.Trim().StartsWith(existing, StringComparison.OrdinalIgnoreCase)))
                             .ToList();
+
                         foreach (var product in productsToAdd)
                         {
                             var bookFinancialViewModelReserve = new BookFinancialViewModel
@@ -440,9 +448,9 @@ namespace CleanHub.Controllers
                                 InvoiceId = Constants.Reserve,
                                 Demands = 0,
                                 DocumentTypId = 5,
-                                Owes = product.PriceWithTax ?? 0,
+                                Owes = PriceHelper.CalculatePriceWithTax(product.Price,product.Tax),
                                 DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
-                                CustomerId = document.Building?.Id,
+                                CustomerId = building.CustomerRefId,
                                 Status = PaymentStatus.Неплатено,
                                 Time = DateTime.Now,
                                 Description = product.ArticleNotes,
@@ -454,8 +462,7 @@ namespace CleanHub.Controllers
                     }
                 }
 
-                var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.Building.Id,
-                    inc => inc.Include(x => x.Customers));
+            
                 var documents = new List<Document>();
 
                 if (building != null)

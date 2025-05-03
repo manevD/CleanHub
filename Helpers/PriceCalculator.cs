@@ -36,6 +36,23 @@ namespace CleanHub.Helpers
                 }
             }
         }
+        static double CalculatePriceWithTaxDouble(double price, int taxRate)
+        {
+            // Calculate the tax amount
+            double taxAmount = price * taxRate / 100.0;  // Tax is an int, but the result is double
+            // Calculate the total price with tax
+            double totalPrice = price + taxAmount;
+
+            // Round according to the condition
+            if (totalPrice % 1 <= 0.5)
+            {
+                return Math.Floor(totalPrice);  // Round down
+            }
+            else
+            {
+                return Math.Ceiling(totalPrice);  // Round up
+            }
+        }
 
         public float CalculateTotalPriceWithTaxSum(List<BuildingProductViewModel> buildingProducts)
         {

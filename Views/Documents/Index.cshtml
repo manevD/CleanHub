@@ -16,8 +16,10 @@
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај" />
-                    <input type="hidden" id="buildingId" name="buildingId" />
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
+                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
                     <datalist id="buildingOptions">
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
@@ -253,8 +255,17 @@
             document.getElementById('buildingSearch').addEventListener('input', function () {
                 const selectedValue = this.value;
                 const options = document.querySelectorAll('#buildingOptions option');
-                const selected = Array.from(options).find(option => option.value === selectedValue);
-                document.getElementById('buildingId').value = selected?.dataset.id || '';
+                let selectedId = '';
+
+                // Find the matching option and get its data-id
+                options.forEach(option => {
+                    if (option.value === selectedValue) {
+                        selectedId = option.getAttribute('data-id');
+                    }
+                });
+
+                // Set the hidden input's value
+                document.getElementById('buildingId').value = selectedId || '';
             });
         });
     </script>

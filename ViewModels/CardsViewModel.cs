@@ -8,6 +8,6 @@
 
         public float CustomerOwesTotal { get; set; }
         public double CustomerDemandsTotal { get; set; }
-        public double Total => CustomerOwesTotal - CustomerDemandsTotal;
+        public double Total => CustomerDemandsTotal - CustomerOwesTotal;
     }
 }

@@ -1,9 +1,9 @@
 ﻿BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Documents ON;
+    SET IDENTITY_INSERT [2025MartiTest].dbo.Documents ON;
 
-    INSERT INTO [2021MartiHigienaNew].dbo.Documents
+    INSERT INTO [2025MartiTest].dbo.Documents
         (Id, Number, Date, CustomerId, ToDocument, Description, DateReceived, TotalInput, TotalOutput, CreatedTime, DateTimeChanged)
     SELECT 
         Dokid,
@@ -17,10 +17,10 @@ BEGIN TRY
         VkupnoIz,
         Vreme,
         VremePromena
-    FROM [2021MartiHigienaOriginal].dbo.Dokumenti
+    FROM [2025MartiHigiena].dbo.Dokumenti
 
     COMMIT TRANSACTION;
-    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Documents OFF;
+    SET IDENTITY_INSERT [2025MartiTest].dbo.Documents OFF;
     PRINT 'Data inserted successfully.';
 END TRY
 BEGIN CATCH
@@ -113,15 +113,15 @@ BEGIN TRY
 UPDATE Documents
 SET NewTotal = 
         CASE 
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) < 30 THEN ROUND(TotalInput * 1.02, 0)
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 31 AND 60 THEN ROUND(TotalOutput * 1.04, 0)
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 61 AND 90 THEN ROUND(TotalOutput * 1.06, 0)
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 91 AND 180 THEN ROUND(TotalOutput * 1.08, 0)
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 181 AND 360 THEN ROUND(TotalOutput * 1.10, 0)
-            WHEN DATEDIFF(DAY, DueDate, GETDATE()) BETWEEN 361 AND 730 THEN ROUND(TotalOutput * 1.13, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) < 30 THEN ROUND(TotalInput * 1.02, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) BETWEEN 31 AND 60 THEN ROUND(TotalOutput * 1.04, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) BETWEEN 61 AND 90 THEN ROUND(TotalOutput * 1.06, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) BETWEEN 91 AND 180 THEN ROUND(TotalOutput * 1.08, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) BETWEEN 181 AND 360 THEN ROUND(TotalOutput * 1.10, 0)
+            WHEN DATEDIFF(DAY, DateReceived, GETDATE()) BETWEEN 361 AND 730 THEN ROUND(TotalOutput * 1.13, 0)
             ELSE ROUND(TotalOutput * 1.16, 0)
         END
-WHERE DueDate IS NOT NULL AND TotalOutput IS NOT NULL and PaymentStatus != 0 ;
+WHERE DateReceived IS NOT NULL AND TotalOutput IS NOT NULL and PaymentStatus != 0 ;
 
     COMMIT TRANSACTION;
     PRINT 'NewTotal updated successfully.';
@@ -131,3 +131,4 @@ BEGIN CATCH
     PRINT 'Error occurred. Transaction rolled back.';
     THROW;
 END CATCH;
+

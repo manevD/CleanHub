@@ -36,8 +36,7 @@ namespace CleanHub.Controllers
         {
             var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
 
-            ViewBag.Owes = query.Sum(x=>x.Owes);
-            ViewBag.Demands = query.Sum(x => x.Demands);
+            
             return query.Select(bf => new BookFinancialInfoViewModel
             {
                 Id = bf.Id,
@@ -71,7 +70,6 @@ namespace CleanHub.Controllers
                 {
                     ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                     ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
-                    ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
                     return RedirectToAction(nameof(Index));
                 }
 
@@ -87,15 +85,17 @@ namespace CleanHub.Controllers
                 }
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
-                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", buildingId);
-                return View("Index", results);
+                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+                ViewBag.SelectedBuildingName = building.Name;
+                ViewBag.BuildingId = building.Id; 
+                return View("Index", results.OrderBy(x=>x.DatumF));
             }
             catch (Exception e)
             {
                 throw e;
             }
-           
         }
+
         private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
         {
             if (string.IsNullOrEmpty(dateFrom) && string.IsNullOrEmpty(dateTo))
@@ -117,13 +117,23 @@ namespace CleanHub.Controllers
                 ViewBag.DateTo = DateTo;
             }
 
-
-            results = results
-                .Where(x =>
-                    (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                    (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
-                    (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
-                .ToList();
+            if (invoiceId == (int)InvoiceTyp.Reserve)
+            {
+                results = results
+                    .Where(x =>
+                        (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)).ToList();
+            }
+            else
+            {
+                results = results
+                    .Where(x =>
+                        (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
+                        (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
+                    .ToList();
+            }
+          
         }
 
         private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)

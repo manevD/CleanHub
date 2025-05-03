@@ -5,6 +5,7 @@ using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json.Linq;
 
 namespace CleanHub.Controllers
 {
@@ -36,9 +37,8 @@ namespace CleanHub.Controllers
 
             foreach (var building in BuildingsList)
             {
-                if (building.CustomerRefId == null)
-                    continue;
-
+                building.CustomerRefId = building.CustomerRefId ?? building.Id;
+                
                 var bookFinancial = _unitOfWork.BookFinancials.GetAllNoTrakcing(
                     inc => inc.Include(x => x.Customer).Where(d =>
                         d.Customer.BuildingId == building.Id &&
@@ -70,6 +70,79 @@ namespace CleanHub.Controllers
         }
 
 
+        public async Task<IActionResult> BuildingsReserve(int? buildingId, string dateFrom, string dateTo)
+        {
+            var cardsViewModel = new CardsViewModel();
+            ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name");
+            if (buildingId.HasValue)
+            {
+                var bookFinancials = new List<BookFinancialViewModel>();
+                var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+                var customerId = building.CustomerRefId ?? building.Id;
+                if (customerId != null)
+                {
+                    ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", building.Id);
+                    ViewBag.SelectedBuildingName = building.Name;
+                    ViewBag.BuildingId = building.Id;
+                    DateOnly? DateFrom = null;
+                    DateOnly? DateTo = null;
+
+                    if (!string.IsNullOrEmpty(dateFrom))
+                    {
+                        DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+                        ViewBag.DateFrom = DateFrom;
+                    }
+
+                    if (!string.IsNullOrEmpty(dateTo))
+                    {
+                        DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                        ViewBag.DateTo = DateTo;
+                    }
+
+                    var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                        .Where(x =>
+                            x.CustomerId == customerId &&
+                            x.InvoiceId == (int)InvoiceTyp.Reserve &&
+                            (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                            (!DateTo.HasValue || x.DatumF <= DateTo.Value))
+                        .ToList();
+
+                    bookFinancials = rawFinancials
+                        .Select(bf => new BookFinancialViewModel
+                        {
+                            Description = bf.Description,
+                            InvoiceId = (int)InvoiceTyp.Reserve,
+                            Owes = bf.Owes,
+                            Demands = bf.Demands,
+                            DatumF = bf.DatumF
+                        })
+                        .ToList();
+
+                    //// Summen
+                    //cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
+                    //    .GetAllNoTrakcing()
+                    //    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
+                    //    .Sum(x => x.Demands);
+
+                    //cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents
+                    //    .GetAllNoTrakcing()
+                    //    .Where(x => x.CustomerId == customerId)
+                    //    .Sum(x => x.TotalOutput ?? 0);
+                }
+
+                cardsViewModel.BuildingFinancial = bookFinancials;
+
+                if (cardsViewModel.BuildingFinancial != null && cardsViewModel.BuildingFinancial.Any())
+                {
+                    cardsViewModel.BuildingFinancial = cardsViewModel.BuildingFinancial
+                        .OrderBy(x => x.DatumF)
+                        .ToList();
+                }
+
+            }
+            return View(cardsViewModel);
+        }
+
         [Route("ФинансоваКартица")]
         public async Task<IActionResult> BuildingsFinance(int? buildingId, string dateFrom, string dateTo)
         {
@@ -86,8 +159,9 @@ namespace CleanHub.Controllers
                 if (building == null)
                     throw new Exception("Building not found.");
 
-                ViewBag.Selected = building.Name;
-                ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", buildingId);
+                ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", building.Id);
+                ViewBag.SelectedBuildingName = building.Name;
+                ViewBag.BuildingId = building.Id;
 
                 DateOnly? DateFrom = null;
                 DateOnly? DateTo = null;
@@ -130,14 +204,13 @@ namespace CleanHub.Controllers
                     cardsViewModel.BuildingFinanceCardViewModels.Add(buildingFinanceCard);
                 }
 
-                // Gesamtwerte berechnen
-                cardsViewModel.CustomerDemandsTotal = customers
+                cardsViewModel.CustomerOwesTotal = customers
                     .SelectMany(x => x.Documents)
                     .Where(d => (!DateFrom.HasValue || d.Date >= DateFrom.Value) &&
                                 (!DateTo.HasValue || d.Date <= DateTo.Value))
                     .Sum(d => d.TotalOutput ?? 0);
 
-                cardsViewModel.CustomerOwesTotal = (float)customers
+                cardsViewModel.CustomerDemandsTotal = (float)customers
                     .SelectMany(x => x.BookFinancials)
                     .Where(d => (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                                 (!DateTo.HasValue || d.DatumF <= DateTo.Value))

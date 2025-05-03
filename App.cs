@@ -85,6 +85,8 @@ public class App : Profile
             cfg.CreateMap<Building, BuildingViewModel>()
                 .ForMember(dest => dest.ReserveTotal, opts => opts.Ignore())
                 .ForMember(dest => dest.ReserveFund, opts => opts.MapFrom(src => src.ReserveFund))
+                .ForMember(dest => dest.CustomerRefId, opts => opts.MapFrom(src => src.CustomerRefId))
+
                 .ForMember(dest => dest.BankAccount, opts => opts.MapFrom(src => src.BankAccount))
                 .ForMember(dest => dest.Name, opts => opts.MapFrom(src => src.Name))
                 .ForMember(dest => dest.Customers, opts => opts.MapFrom(src => src.Customers))

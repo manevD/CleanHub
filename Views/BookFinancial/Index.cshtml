@@ -5,20 +5,25 @@
     ViewData["Title"] = "Книжења";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var invoiceId = @ViewBag.InvoiceId;
-  
+    var owes = 0.0;
+    var demands = 0.0;
     string result = "0";
     if (Model != null && Model.Any())
     {
-        var difference = @ViewBag.Demands - @ViewBag.Owes;
-        if (@ViewBag.Demand > @ViewBag.Owes)
+        owes = Model.Sum(x => x.Owes);
+        demands = Model.Sum(x => x.Demands);
+        var difference = (demands - owes);
+        if (demands > owes)
         {
-            result = "Во минус " + difference; 
+            result = "Во претплата " + difference;
         }
         else
         {
-            result = "Во претплата " + (-difference);
+            result = "Во минус " + (-difference);
         }
     }
+    var showStatusColumns = Model != null && Model.Any() && Model.FirstOrDefault()?.Status != PaymentStatus.Платено;
+
 }
 
 <hr />
@@ -29,8 +34,10 @@
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај">
-                    <input type="hidden" id="buildingId" name="buildingId">
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
+                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
                     <datalist id="buildingOptions">
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
@@ -112,9 +119,9 @@
                     <tr>
                         <th data-sorter="false">Дата на издавање</th>
                         <th data-sorter="false">Опис</th>
-                        <th data-sorter="false">Должи</th>
                         <th data-sorter="false">Побарува</th>
-                        @if (Model != null && Model.Any() && Model.FirstOrDefault()?.Status != PaymentStatus.Платено)
+                        <th data-sorter="false">Должи</th>
+                        @if (showStatusColumns)
                         {
                             <th data-sorter="false">Статус</th>
                             <th data-sorter="false">Задоцнување</th>
@@ -126,15 +133,15 @@
                 <tbody>
                     @if (Model != null && Model.Any())
                     {
-                        @foreach (var invoice in Model)
+                        foreach (var invoice in Model)
                         {
                             <tr role="row">
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
+                                <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
 
-                                @if (Model.FirstOrDefault()?.Status != PaymentStatus.Платено)
+                                @if (showStatusColumns)
                                 {
                                     <td>
                                         @if (invoice.Status == PaymentStatus.Платено)
@@ -156,19 +163,15 @@
                                     </td>
                                     <td>@(invoice.Delay ?? 0)</td>
                                     <td>@((invoice.NewTotal ?? 0) + " МКД")</td>
-                                    @if (invoice.InvoiceId != (int)InvoiceTyp.Reserve)
-                                    {
-                                        <td>
+                                    <td>
+                                        @if (invoice.InvoiceId != (int)InvoiceTyp.Reserve)
+                                        {
                                             <form asp-action="SetStatusPayment" asp-controller="BookFinancial" asp-route-id="@invoice.Id" method="post">
                                                 @Html.AntiForgeryToken()
                                                 <button type="submit" class="btn btn-success">Плати</button>
                                             </form>
-                                        </td>
-                                    }
-                                    else
-                                    {
-                                        <td></td>
-                                    }
+                                        }
+                                    </td>
                                 }
                             </tr>
                         }
@@ -176,16 +179,16 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="@(showStatusColumns ? 8 : 4)" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
                         <th>Вкупно:</th>
-                        <th>@ViewBag.Owes МКД</th>
-                        <th>@ViewBag.Demands МКД</th>
-                        <th colspan="5">@result</th>
+                        <th colspan="@(showStatusColumns ? 5 : 1)">@result</th>
+                        <th>@demands МКД</th>
+                        <th>@owes МКД</th>
                     </tr>
                 </tfoot>
             </table>
@@ -205,6 +208,7 @@
                 selectedId = option.getAttribute('data-id');
             }
         });
+
         // Set the hidden input's value
         document.getElementById('buildingId').value = selectedId || '';
     });

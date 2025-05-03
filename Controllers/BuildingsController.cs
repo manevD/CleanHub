@@ -15,6 +15,7 @@ using SelectPdf;
 using System.Net;
 using System.Net.Mail;
 using System.Linq;
+using System;
 
 namespace CleanHub.Controllers
 {
@@ -76,7 +77,7 @@ namespace CleanHub.Controllers
                 var owes = 0;
                 var demands = 0;
                 (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingViewModel.Id, invoiceId: (int)InvoiceTyp.Reserve, status: null);
-                buildingViewModel.ReserveTotal = owes - demands;
+                buildingViewModel.ReserveTotal = demands - owes;
             }
 
             ViewBag.Month = _month;
@@ -109,6 +110,24 @@ namespace CleanHub.Controllers
 
             if (ModelState.IsValid)
             {
+                int maxAttempts = 100;
+                int attempts = 0;
+                int newCustomerRefId;
+                Random random = new Random();
+                do
+                {
+                    newCustomerRefId = random.Next(75000, 100000);
+                    attempts++;
+
+                    if (attempts > maxAttempts)
+                    {
+                        throw new Exception("Konnte keine eindeutige CustomerRefId finden.");
+                    }
+                }
+                while (_unitOfWork.Customers.GetAll().Any(c => c.Id == newCustomerRefId ) ||
+                       _unitOfWork.Buildings.GetAll().Any(b => b.CustomerRefId == newCustomerRefId));
+
+                building.CustomerRefId = newCustomerRefId;
                 _unitOfWork.Buildings.Add(App.FullMapper.Map<Building>(building));
                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
