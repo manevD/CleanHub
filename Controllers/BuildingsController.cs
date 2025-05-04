@@ -110,26 +110,23 @@ namespace CleanHub.Controllers
 
             if (ModelState.IsValid)
             {
-                int maxAttempts = 100;
-                int attempts = 0;
-                int newCustomerRefId;
-                Random random = new Random();
-                do
+                var buildingEntity = App.FullMapper.Map<Building>(building);
+
+                var customer = new Customer
                 {
-                    newCustomerRefId = random.Next(75000, 100000);
-                    attempts++;
+                    CustomerInfo = building.Name,
+                    ActivityId = 2,
+                    Adress = building.Name,
+                    Inactive = false,
+                    Building = buildingEntity,
+                    Hide = true
+                };
 
-                    if (attempts > maxAttempts)
-                    {
-                        throw new Exception("Konnte keine eindeutige CustomerRefId finden.");
-                    }
-                }
-                while (_unitOfWork.Customers.GetAll().Any(c => c.Id == newCustomerRefId ) ||
-                       _unitOfWork.Buildings.GetAll().Any(b => b.CustomerRefId == newCustomerRefId));
-
-                building.CustomerRefId = newCustomerRefId;
-                _unitOfWork.Buildings.Add(App.FullMapper.Map<Building>(building));
+                _unitOfWork.Customers.Add(customer);
+                _unitOfWork.Buildings.Add(buildingEntity);
                 await _unitOfWork.SaveChangesAsync();
+                buildingEntity.CustomerRefId = customer.Id;
+                 await _unitOfWork.SaveChangesAsync();
                 HttpContext.Session.Remove("Buildings");
 
                 return RedirectToAction(nameof(Index));

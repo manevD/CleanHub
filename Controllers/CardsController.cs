@@ -12,7 +12,7 @@ namespace CleanHub.Controllers
     public class CardsController(IUnitOfWork _unitOfWork) : Controller
     {
         public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll(x => x.Include(c => c.Customers)).ToList();
-        public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().ToList();
+        public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().Where(x=> !x.Hide).ToList();
 
         [Route("КартицаЗгради")]
         public async Task<IActionResult> Buildings(string dateFrom, string dateTo)

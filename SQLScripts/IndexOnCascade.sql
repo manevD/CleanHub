@@ -13,3 +13,22 @@ ALTER TABLE Documents DROP CONSTRAINT FK_Documents_Customers_CustomerId;
 ALTER TABLE Documents
 ADD CONSTRAINT FK_Documents_Customers_CustomerId
 FOREIGN KEY (CustomerId) REFERENCES Customers(Id) ON DELETE CASCADE;
+
+
+
+ALTER TABLE BookFinancials
+DROP CONSTRAINT FK_BookFinancials_Documents_DocumentId;
+
+ALTER TABLE BookFinancials
+ADD CONSTRAINT FK_BookFinancials_Documents_DocumentId
+FOREIGN KEY (DocumentId)
+REFERENCES Documents(Id)
+ON DELETE CASCADE;
+
+ALTER TABLE BookFinancials
+DROP CONSTRAINT FK_BookFinancials_Customers_CustomerId;
+
+ALTER TABLE BookFinancials
+ADD CONSTRAINT FK_BookFinancials_Customers_CustomerId
+FOREIGN KEY (CustomerId)
+REFERENCES Customers(Id)

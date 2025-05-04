@@ -17,6 +17,7 @@ public partial class Customer
     public string? Email { get; set; }
     public string? PartnerOpis { get; set; }
 
+    public bool Hide { get; set; }
     public string? Web { get; set; }
 
     public bool? Inactive { get; set; }

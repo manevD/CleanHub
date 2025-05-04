@@ -20,7 +20,6 @@ namespace CleanHub.Controllers
         public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
         public List<Activity> ActivitiesList { get; set; } = _unitOfWork.Activities.GetAll().ToList();
 
-
         // GET: Customers
         [Route("Станари")]
         public async Task<IActionResult> Index([FromServices] IMemoryCache cache)
@@ -28,7 +27,7 @@ namespace CleanHub.Controllers
             var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Select(c => new Customer
+                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Where(x=>!x.Hide).Select(c => new Customer
                 {
                     Id = c.Id,
                     CustomerInfo = c.CustomerInfo ?? string.Empty,

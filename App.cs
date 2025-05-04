@@ -2,6 +2,7 @@
 // Licensed under the Apache License, version 2.0
 
 using AutoMapper;
+using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.ViewModels;
 
@@ -135,6 +136,10 @@ public class App : Profile
             #region Invoice
             cfg.CreateMap<Invoice, InvoiceViewModel>().ReverseMap();
 
+            #endregion
+
+            #region CompanyConfig
+            cfg.CreateMap<CompanyConfig, CompanyConfig>().ReverseMap();
             #endregion
 
             #region SpecialInvoice
