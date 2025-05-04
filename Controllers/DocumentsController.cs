@@ -238,6 +238,7 @@ namespace CleanHub.Controllers
 
             return query;
         }
+
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -299,13 +300,13 @@ namespace CleanHub.Controllers
             documentViewModel.Company = _config.Value;
 
             var buildings = await _unitOfWork.Buildings.GetAllAsync(query => query.Include(x => x.BuildingProducts)
-                .Include(x => x.Customers)
+                .Include(x => x.Customers.Where(x=> !x.Hide && !x.Inactive.Value))
                 .Select(b => new Building()
                 {
                     Id = b.Id,
                     Name = b.Name,
                     ReserveFund = b.ReserveFund,
-                    Customers = b.Customers.Where(x => x.Inactive == false).ToList(),
+                    Customers = b.Customers,
                     BuildingProducts = b.BuildingProducts
                 }));
             _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);

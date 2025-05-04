@@ -239,10 +239,12 @@ namespace CleanHub.Controllers
             if (customerId.HasValue)
             {
                 cardsViewModel.CustomerData = new List<CustomerDataDTO>();
-
+                var customer =await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId.Value);
                 DateOnly? DateFrom = null;
                 DateOnly? DateTo = null;
-
+                ViewBag.Customers = new SelectList(CustomersList, "Id", "CustomerInfo", customer.CustomerInfo);
+                ViewBag.SelectedCustomerName = customer.CustomerInfo;
+                ViewBag.CustomerId = customer.Id;
                 if (!string.IsNullOrEmpty(dateFrom))
                 {
                     DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
@@ -330,7 +332,11 @@ namespace CleanHub.Controllers
             {
                 DateOnly? DateFrom = null;
                 DateOnly? DateTo = null;
+                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId.Value);
 
+                ViewBag.Customers = new SelectList(CustomersList, "Id", "CustomerInfo", customer.CustomerInfo);
+                ViewBag.SelectedCustomerName = customer.CustomerInfo;
+                ViewBag.CustomerId = customer.Id;
                 if (!string.IsNullOrEmpty(dateFrom))
                 {
                     DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);

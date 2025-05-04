@@ -12,8 +12,10 @@
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="customerSearch">Партнер</label>
-                    <input class="form-control" list="customerOptions" id="customerSearch" name="customerName" placeholder="Пребарувај">
-                    <input type="hidden" id="customerId" name="customerId">
+                    <input class="form-control" list="customerOptions" id="customerSearch" name="customerName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedCustomerName">
+                    <input type="hidden" id="customerId" name="customerId" value="@ViewBag.CustomerId">
+
                     <datalist id="customerOptions">
                         @foreach (var customer in (IEnumerable<SelectListItem>)ViewBag.Customers)
                         {
