@@ -22,8 +22,6 @@
             result = "Во минус " + (-difference);
         }
     }
-    var showStatusColumns = Model != null && Model.Any() && Model.FirstOrDefault()?.Status != PaymentStatus.Платено;
-
 }
 
 <hr />
@@ -72,7 +70,7 @@
             </div>
         }
 
-        @if (ViewBag.PaymentStatusList != null)
+       @*  @if (ViewBag.PaymentStatusList != null)
         {
             <div class="col-lg-2 col-md-3" id="paymentStatusContainer" style="display: none;">
                 <div class="form-group mb-0">
@@ -87,7 +85,7 @@
             <div class="col-lg-2 col-md-3">
                 <p>Нема пронајдено статус!</p>
             </div>
-        }
+        } *@
 
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
@@ -121,13 +119,6 @@
                         <th data-sorter="false">Опис</th>
                         <th data-sorter="false">Побарува</th>
                         <th data-sorter="false">Должи</th>
-                        @if (showStatusColumns)
-                        {
-                            <th data-sorter="false">Статус</th>
-                            <th data-sorter="false">Задоцнување</th>
-                            <th data-sorter="false">Нова вредност</th>
-                            <th data-sorter="false">Функции</th>
-                        }
                     </tr>
                 </thead>
                 <tbody>
@@ -140,53 +131,20 @@
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
-
-                                @if (showStatusColumns)
-                                {
-                                    <td>
-                                        @if (invoice.Status == PaymentStatus.Платено)
-                                        {
-                                            <span class="badge badge-light-success inv-status">@invoice.Status</span>
-                                        }
-                                        else if (invoice.Status == PaymentStatus.Неплатено || invoice.Status == PaymentStatus.Делумно)
-                                        {
-                                            <span class="badge badge-light-warning inv-status">@invoice.Status</span>
-                                        }
-                                        else if (invoice.Status == PaymentStatus.Задоцнето)
-                                        {
-                                            <span class="badge badge-light-danger inv-status">@invoice.Status</span>
-                                        }
-                                        else
-                                        {
-                                            <span>Неопределен статус</span>
-                                        }
-                                    </td>
-                                    <td>@(invoice.Delay ?? 0)</td>
-                                    <td>@((invoice.NewTotal ?? 0) + " МКД")</td>
-                                    <td>
-                                        @if (invoice.InvoiceId != (int)InvoiceTyp.Reserve  && invoice.Status != PaymentStatus.Платено)
-                                        {
-                                            <form asp-action="SetStatusPayment" asp-controller="BookFinancial" asp-route-id="@invoice.Id" method="post">
-                                                @Html.AntiForgeryToken()
-                                                <button type="submit" class="btn btn-success">Плати</button>
-                                            </form>
-                                        }
-                                    </td>
-                                }
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="@(showStatusColumns ? 8 : 4)" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
                 <tfoot>
                     <tr>
                         <th>Вкупно:</th>
-                        <th colspan="@(showStatusColumns ? 5 : 1)">@result</th>
+                        <th colspan="">@result</th>
                         <th>@demands МКД</th>
                         <th>@owes МКД</th>
                     </tr>
