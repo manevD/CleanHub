@@ -183,7 +183,7 @@ namespace CleanHub.Controllers
                        .Include(c => c.Documents)
                        .Where(x => building.CustomerRefId == x.Id || x.BuildingId == buildingId.Value));
 
-                foreach (var customer in customers)
+                foreach (var customer in customers.Where(x=>!x.Hide))
                 {
                     var filteredDocuments = customer.Documents.Where(c =>
                         (!DateFrom.HasValue || c.Date >= DateFrom.Value) &&
@@ -197,8 +197,8 @@ namespace CleanHub.Controllers
                     {
                         Adress = customer.Adress,
                         CustomerInfo = customer.CustomerInfo,
-                        Demands = filteredDocuments.Sum(bf => bf.TotalOutput ?? 0),
-                        Owes = filteredFinancials.Sum(bf => bf.Demands)
+                        Owes = filteredDocuments.Sum(bf => bf.TotalOutput ?? 0),
+                        Demands = filteredFinancials.Sum(bf => bf.Demands)
                     };
 
                     cardsViewModel.BuildingFinanceCardViewModels.Add(buildingFinanceCard);
@@ -283,7 +283,7 @@ namespace CleanHub.Controllers
                     .Select(cc => new CustomerDataDTO
                     {
                         Description = cc.Description,
-                        Owes = 0,
+                        Owes = cc.Owes,
                         Demands = cc.Demands,
                         DocumentTyp = "Фактура",
                         Date = cc.DatumF.Value,
@@ -374,10 +374,10 @@ namespace CleanHub.Controllers
                     .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
                     .Sum(x => x.Demands);
 
-                cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents
+                cardsViewModel.CustomerOwesTotal = (float)_unitOfWork.BookFinancials
                     .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId)
-                    .Sum(x => x.TotalOutput ?? 0);
+                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
+                    .Sum(x => x.Owes);
             }
 
             cardsViewModel.CustomerFinanfical = bookFinancials;

@@ -4,7 +4,7 @@
     {
         public string CustomerInfo { get; set; }
         public string Adress { get; set; }
-        public float Demands { get; set; }
+        public double Demands { get; set; }
         public double Owes { get; set; }
     }
 }

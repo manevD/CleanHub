@@ -59,7 +59,6 @@ namespace CleanHub.Controllers
                 smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
                 smtpClient.EnableSsl = true;
 
-                document.Company = _config.Value;
                 document.IsForPdf = true;
 
                 string htmlContent =
@@ -300,7 +299,7 @@ namespace CleanHub.Controllers
             documentViewModel.Company = _config.Value;
 
             var buildings = await _unitOfWork.Buildings.GetAllAsync(query => query.Include(x => x.BuildingProducts)
-                .Include(x => x.Customers.Where(x=> !x.Hide && !x.Inactive.Value))
+                .Include(x => x.Customers)
                 .Select(b => new Building()
                 {
                     Id = b.Id,
@@ -312,6 +311,7 @@ namespace CleanHub.Controllers
             _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
+            documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive.Value).ToList();
             ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.HasValue ? buildingId.Value : 1);
             var selectedBuildingName = buildings?.FirstOrDefault(x => x.Id == (buildingId ?? 1))?.Name;
             if (selectedBuildingName != null)

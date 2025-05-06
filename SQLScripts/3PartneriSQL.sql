@@ -34,3 +34,5 @@ update Customers set ActivityId = 3 where Id not In(
 update Customers set ActivityId = 1 where Id in (240,320,546,334,549,448,550,551,688,691,694,531,192,554,553,596,605,600,611,650,239,669,687,690,692,696,711,733,823,827,845,847,1043,1047,1050,1117,1119,133,1139,1146,1155,1189,1227,1265,1277,1281,1282,1289,1500,1501,1504,1505,1586,1623,1701,1813,1814,1816,1840)
 
 update Customers set Hide = 1 where ActivityId != 3
+
+update Customers set ApartmentUnit = 1 where ActivityId = 3

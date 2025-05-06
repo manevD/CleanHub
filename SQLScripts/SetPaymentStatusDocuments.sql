@@ -63,3 +63,5 @@ SET d.PaymentStatus =
         ELSE 1 -- Andernfalls setze PaymentStatus auf 1
     END
 FROM Documents d;
+
+

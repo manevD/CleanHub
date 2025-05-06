@@ -77,17 +77,6 @@
                                 <td></td>
                             </tr>
                         }
-                        <tr role="row">
-                            <td><strong>Вкупно</strong></td>
-                            <td></td>
-                            <td><strong>@Model.CustomerDemandsTotal МКД</strong></td>
-                            <td><strong>@Model.CustomerOwesTotal МКД</strong></td>
-                            <td>
-                                <strong>
-                                    Салдо: @(Model.CustomerDemandsTotal > Model.CustomerOwesTotal ? "" : " - ") @Model.Total МКД
-                                </strong>
-                            </td>
-                        </tr>
                     }
                     else
                     {

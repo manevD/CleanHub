@@ -9,6 +9,7 @@ public partial class Customer
 
     public string CustomerInfo { get; set; }
 
+    public int ApartmentUnit { get; set; }
     public string? Adress { get; set; }
 
     public string? PhoneNumber { get; set; }

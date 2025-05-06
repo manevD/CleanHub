@@ -107,9 +107,10 @@ BEGIN CATCH
 END CATCH;
 
 
+
 BEGIN TRANSACTION;
 BEGIN TRY
-
+UPDATE Documents set NewTotal = TotalOutput where PaymentStatus = 0 
 UPDATE Documents
 SET NewTotal = 
         CASE 
@@ -131,4 +132,3 @@ BEGIN CATCH
     PRINT 'Error occurred. Transaction rolled back.';
     THROW;
 END CATCH;
-

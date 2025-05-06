@@ -58,7 +58,7 @@ namespace CleanHub.Controllers
             if (id == null) return NotFound();
 
             var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id, x => x
-                .Include(x => x.Customers));
+                .Include(x => x.Customers.Where(c => !c.Hide)));
 
             var buildingViewModel = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
             if (buildingViewModel == null) return RedirectToAction(nameof(Index));

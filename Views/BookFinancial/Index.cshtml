@@ -164,7 +164,7 @@
                                     <td>@(invoice.Delay ?? 0)</td>
                                     <td>@((invoice.NewTotal ?? 0) + " МКД")</td>
                                     <td>
-                                        @if (invoice.InvoiceId != (int)InvoiceTyp.Reserve)
+                                        @if (invoice.InvoiceId != (int)InvoiceTyp.Reserve  && invoice.Status != PaymentStatus.Платено)
                                         {
                                             <form asp-action="SetStatusPayment" asp-controller="BookFinancial" asp-route-id="@invoice.Id" method="post">
                                                 @Html.AntiForgeryToken()
