@@ -98,7 +98,6 @@ namespace CleanHub.Controllers
 
         private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
         {
-        
             DateOnly? DateFrom = null;
             DateOnly? DateTo = null;
 

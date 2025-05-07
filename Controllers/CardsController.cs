@@ -118,7 +118,7 @@ namespace CleanHub.Controllers
                         })
                         .ToList();
 
-                    //// Summen
+                    // Summen
                     //cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
                     //    .GetAllNoTrakcing()
                     //    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
