@@ -3,7 +3,11 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
+<style>
+    th.no-sort::after {
+        display: none !important;
+    }
+</style>
 <hr />
 <form asp-action="BuildingsFinance" asp-controller="Cards" method="get" id="filterForm">
     <div class="row">
@@ -56,20 +60,30 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr role="row">
-                        <th data-sorter="false">Станар</th>
-                        <th data-sorter="false">Адреса</th>
-                        <th data-sorter="false">Побарува</th>
-                        <th data-sorter="false">Должи</th>
-                        <th data-sorter="false">Салдо</>
-                    </tr>
+                <tr role="row">
+                    <th data-sorter="false">Бр</th>
+                    <th data-sorter="false">Станар</th>
+                    <th data-sorter="false">Адреса</th>
+                    <th data-sorter="false">Побарува</th>
+                    <th data-sorter="false">Должи</th>
+                    <th data-sorter="false">Салдо</>
+                </tr>
                 </thead>
                 <tbody>
                     @if (Model.BuildingFinanceCardViewModels != null && Model.BuildingFinanceCardViewModels.Any())
                     {
-                        @foreach (var invoice in Model.BuildingFinanceCardViewModels)
+                            var sortedInvoices = Model.BuildingFinanceCardViewModels
+                                .OrderBy(invoice =>
+                                {
+                                    var match = System.Text.RegularExpressions.Regex.Match(invoice.CustomerInfo ?? "", @"ст\.(\d+)");
+                                    return match.Success ? int.Parse(match.Groups[1].Value) : int.MaxValue;
+                                }).ToList();
+                        var counter =0;
+                        @foreach (var invoice in @sortedInvoices)
                         {
+                            counter++;
                             <tr role="row">
+                                <td>@counter</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.CustomerInfo)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Adress)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
@@ -77,6 +91,15 @@
                                 <td></td>
                             </tr>
                         }
+                        <tr>
+                            <th>Вкупно</th>
+                            <th></th>
+                            <th>Побарува: @Model.CustomerDemandsTotal МКД</th>
+                            <th>Должи: @Model.CustomerOwesTotal МКД</th>
+                            <th>
+                                Салдо: @(Model.CustomerDemandsTotal > Model.CustomerOwesTotal ? "" : " - ") @Model.Total МКД
+                            </th>
+                        </tr>
                     }
                     else
                     {

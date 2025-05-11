@@ -5,13 +5,11 @@
     ViewData["Title"] = "Книжења";
     Layout = "~/Views/Shared/_Layout.cshtml";
     var invoiceId = @ViewBag.InvoiceId;
-    var owes = 0.0;
-    var demands = 0.0;
+    var owes = @ViewBag.TotalOwes;
+    var demands = @ViewBag.TotalDemands;
     string result = "0";
     if (Model != null && Model.Any())
     {
-        owes = Model.Sum(x => x.Owes);
-        demands = Model.Sum(x => x.Demands);
         var difference = (demands - owes);
         if (demands > owes)
         {
@@ -133,6 +131,12 @@
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                             </tr>
                         }
+                        <tr>
+                            <th>Вкупно:</th>
+                            <th colspan="">@result</th>
+                            <th>@demands МКД</th>
+                            <th>@owes МКД</th>
+                        </tr>
                     }
                     else
                     {

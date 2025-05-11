@@ -55,27 +55,24 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr>
-                        <th data-sorter="false">Налог</th>
-                        <th >Датум</th>
-                        <th data-sorter="false">Број</th>
-                        <th data-sorter="false">Опис</th>
-                        <th data-sorter="false">Вид док.</th>
-                        <th data-sorter="false">Побарува</th>
-                        <th data-sorter="false">Должи</th>
-                        <th data-sorter="false">Салдо</th>
-                    </tr>
+                <tr>
+                    <th data-sorter="false">Датум</th>
+                    <th data-sorter="false">Опис</th>
+                    <th data-sorter="false">Вид док.</th>
+                    <th data-sorter="false">Побарува</th>
+                    <th data-sorter="false">Должи</th>
+                    <th data-sorter="false">Салдо</th>
+                </tr>
                 </thead>
                 <tbody>
                     @if (Model != null && Model.CustomerData != null && Model.CustomerData.Any())
                     {
-                        @foreach (var invoice in Model.CustomerData)
+
+                        @foreach (var invoice in Model.CustomerData.OrderBy(x=>x.Date))
                         {
                             <tr role="row">
-                                <td>@Html.DisplayFor(modelItem => invoice.NumberNalog)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Date)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Number)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
+                                <td>@Truncate(invoice.Description, 50)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.DocumentTyp)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes)</td>
@@ -83,8 +80,6 @@
                             </tr>
                         }
                         <tr role="row">
-                            <td></td>
-                            <td></td>
                             <td></td>
                             <td></td>
                             <td><strong>Вкупно</strong></td>
@@ -107,28 +102,33 @@
                     }
                 </tbody>
                 <tfoot>
-                    <tr>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th></th>
-                        <th><strong>Вкупно</strong></th>
-                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
-                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
-                        <th>
-                            <strong>
-                                Салдо :
-                                @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
-                                @Model.Total
-                            </strong>
-                        </th>
-                    </tr>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th><strong>Вкупно</strong></th>
+                    <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
+                    <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+                    <th>
+                        <strong>
+                            Салдо :
+                            @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
+                            @Model.Total
+                        </strong>
+                    </th>
+
+                </tr>
                 </tfoot>
             </table>
         </div>
     </div>
 </div>
-
+@functions {
+    public string Truncate(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return input.Length > maxLength ? input.Substring(0, maxLength) + "..." : input;
+    }
+}
 <script>
     document.getElementById('customerSearch').addEventListener('input', function () {
         const selectedValue = this.value;

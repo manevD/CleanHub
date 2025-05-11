@@ -1,4 +1,5 @@
-﻿using CleanHub.Entities.Enums;
+﻿using AutoMapper.Configuration.Annotations;
+using CleanHub.Entities.Enums;
 
 namespace CleanHub.ViewModels
 {
@@ -16,5 +17,6 @@ namespace CleanHub.ViewModels
         public string FormattedDatumF => DatumF.ToString("yyyy/MM/dd");
         public int? Delay { get; set; }
         public int? NewTotal { get; set; }
+   
     }
 }

@@ -58,30 +58,31 @@
                                 <td>0</td>
                             </tr>
                         }
-                        <tr role="row">
-                            <td></td>
-                            <td>Уплата: @GetTotalPayedMoney(Model)</td>
-                            <td>Рез. фонд: @GetTotalReserveFund(Model)</td>
-                            <td>Трошок: @GetTotalCost(Model)</td>
-                            <td>Уплата-Р.Ф.: @GetPayedMinusReserve(Model)</td>
-                            <td>Салдо: @GetSaldo(Model)</td>
-                        </tr>
+                      
                     }
-                    else
+                    <tr>
+                        <td>Уплата: @GetTotalPayedMoney(Model)</td>
+                        <td>Рез. фонд: @GetTotalReserveFund(Model)</td>
+                        <td>Трошок: @GetTotalCost(Model)</td>
+                        <td>Уплата-Р.Ф.: @GetPayedMinusReserve(Model)</td>
+                        <td>Салдо: @GetSaldo(Model)</td>
+                        <td></td>
+                    </tr>
+                   @*  else
                     {
                         <tr>
                             <td colspan="6" class="text-center">Нема пронајдени податоци</td>
                         </tr>
-                    }
+                    } *@
                 </tbody>
                 <tfoot>
                 <tr>
-                    <th></th>
                     <th>Уплата: @GetTotalPayedMoney(Model)</th>
                     <th>Рез. фонд: @GetTotalReserveFund(Model)</th>
                     <th>Трошок: @GetTotalCost(Model)</th>
                     <th>Уплата-Р.Ф.: @GetPayedMinusReserve(Model)</th>
                     <th>Салдо: @GetSaldo(Model)</th>
+                    <th></th>
                 </tr>
                 </tfoot>
             </table>

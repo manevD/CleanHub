@@ -35,7 +35,6 @@ namespace CleanHub.Controllers
         private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? paymentStatusId)
         {
             var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
-
             
             return query.Select(bf => new BookFinancialInfoViewModel
             {
@@ -77,6 +76,8 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
+                    ViewBag.TotalDemands = results.Sum(x => x.Demands);
+                    ViewBag.TotalOwes = results.Sum(x => x.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     {

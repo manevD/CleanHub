@@ -65,7 +65,7 @@
                 <tbody>
                     @if (Model.CustomerFinanfical != null && Model.CustomerFinanfical.Any())
                     {
-                        @foreach (var invoice in Model.CustomerFinanfical)
+                        @foreach (var invoice in Model.CustomerFinanfical.OrderBy(x => x.DatumF))
                         {
                             <tr role="row">
                                 <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
