@@ -322,7 +322,20 @@ namespace CleanHub.Controllers
 
             if (filteredProducts != null && filteredProducts.Any())
             {
-                if (documentViewModel.Building != null) documentViewModel.Building.BuildingProducts = filteredProducts;
+                if (documentViewModel.Building != null)
+                    foreach (var product in filteredProducts)
+                    {
+                        var notes = product.ArticleNotes?.ToLower();
+
+                        if (notes != null &&
+                            (notes.Contains("лифт") || notes.Contains("електр") || notes.Contains("осветлување")))
+                        {
+                            product.Total = product.Price;
+                            product.Price = 0;
+                        }
+                    }
+                documentViewModel.Building.BuildingProducts = filteredProducts;
+
             }
             else
             {
@@ -613,7 +626,7 @@ namespace CleanHub.Controllers
             documentCustomer.TotalInput = 0;
             var calculator = new PriceCalculator(building.Customers.Count(x => x.Inactive != null && !x.Inactive.Value), building.Customers.Count(x => x.Garage));
 
-            var tempBuildingProducts = document.Building?.BuildingProducts.Where(x=>!x.Hide).ToList();
+            var tempBuildingProducts = document.Building?.BuildingProducts.Where(x => !x.Hide).ToList();
             if (!customer.Garage)
             {
                 if (tempBuildingProducts != null)
