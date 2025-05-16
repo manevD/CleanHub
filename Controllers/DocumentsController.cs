@@ -419,26 +419,26 @@ namespace CleanHub.Controllers
                         document.Building?.BuildingProducts.Remove(buildingProduct);
                     }
                 }
-                var buildingProductsFromReserve =
-                    document.Building?.BuildingProducts.Where(x => x.GetFromReserve).ToList();
-                if (buildingProductsFromReserve != null && buildingProductsFromReserve.Any())
-                {
-                    foreach (var invoice in buildingProductsFromReserve)
-                    {
-                        var bookFinancial = new BookFinancialViewModel
-                        {
-                            DatumF = document.Date,
-                            InvoiceId = (int)InvoiceTyp.Reserve,
-                            Demands = 0,
-                            Owes = (double)invoice.Total,
-                            CustomerId = document.Building?.Id,
-                            DocumentTypId = 5,
-                            Description = invoice.ArticleNotes,
-                            Status = PaymentStatus.Неплатено
-                        };
-                        _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
-                    }
-                }
+                //var buildingProductsFromReserve =
+                //    document.Building?.BuildingProducts.Where(x => x.GetFromReserve).ToList();
+                //if (buildingProductsFromReserve != null && buildingProductsFromReserve.Any())
+                //{
+                //    foreach (var invoice in buildingProductsFromReserve)
+                //    {
+                //        var bookFinancial = new BookFinancialViewModel
+                //        {
+                //            DatumF = document.Date,
+                //            InvoiceId = (int)InvoiceTyp.Reserve,
+                //            Demands = 0,
+                //            Owes = (double)invoice.Total,
+                //            CustomerId = document.Building?.Id,
+                //            DocumentTypId = 5,
+                //            Description = invoice.ArticleNotes,
+                //            Status = PaymentStatus.Неплатено
+                //        };
+                //        _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
+                //    }
+                //}
 
                 if (buildingProductsFromBuilding != null && buildingProductsFromBuilding.Any())
                 {
@@ -596,7 +596,6 @@ namespace CleanHub.Controllers
                 DocId = docEntity.Id,
                 Output = 1,
                 Input = 0,
-                Hide = book.Hide,
                 Quantity = book.Quantity,
                 PriceWithTax = (float)PriceHelper.CalculatePriceWithTax(Convert.ToDouble(book.Price), book.Tax),
                 Tax = book.Tax,
@@ -626,7 +625,7 @@ namespace CleanHub.Controllers
             documentCustomer.TotalInput = 0;
             var calculator = new PriceCalculator(building.Customers.Count(x => x.Inactive != null && !x.Inactive.Value), building.Customers.Count(x => x.Garage));
 
-            var tempBuildingProducts = document.Building?.BuildingProducts.Where(x => !x.Hide).ToList();
+            var tempBuildingProducts = document.Building?.BuildingProducts.ToList();
             if (!customer.Garage)
             {
                 if (tempBuildingProducts != null)
@@ -722,7 +721,7 @@ namespace CleanHub.Controllers
             }
 
             var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
-                .Include(x => x.Books.Where(x => !x.Hide))
+                .Include(x => x.Books)
                 .Include(d => d.Customer));
 
             if (documentEntity == null)
@@ -853,20 +852,7 @@ namespace CleanHub.Controllers
                 document.TotalBuildingOwes = owes;
                 document.Company = _config.Value;
                 document.IsForPdf = true;
-                if (document.Books != null && document.Books.Any(x => x.Hide))
-                {
-                    foreach (var book in document.Books.Where(x => x.Hide))
-                    {
-                        var sb = new StringBuilder();
-                        if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
-                            sb.AppendLine(document.Company.InvoiceNotice);
-
-                        if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
-                            sb.AppendLine(book.ArticleNotes);
-                    }
-
-                    document.Books = document.Books.Where(x => !x.Hide).ToList();
-                }
+                
                 string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                 var request = _httpContextAccessor?.HttpContext?.Request;
@@ -908,26 +894,6 @@ namespace CleanHub.Controllers
                     document.TotalBuildingOwes = owes;
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
-                    if (document.Books != null && document.Books.Any(x => x.Hide))
-                    {
-                        var sb = new StringBuilder();
-                        if (!string.IsNullOrWhiteSpace(document.Company?.InvoiceNotice))
-                            sb.AppendLine(document.Company.InvoiceNotice);
-
-                        foreach (var book in document.Books.Where(x => x.Hide))
-                        {
-                            if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
-                                sb.AppendLine($"<b style='color: red;'> за {document.ToDocument} трошок за {book.ArticleNotes} имате {book.Total} мкд </b><br/>");
-                        }
-                        document.Company.InvoiceNotice = sb.ToString();
-
-                        if (send)
-                        {
-                            await CreateAndSend(App.FullMapper.Map<DocumentViewModel>(document));
-                        }
-
-                        document.Books = document.Books.Where(x => !x.Hide).ToList();
-                    }
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                     var request = _httpContextAccessor?.HttpContext?.Request;
@@ -949,7 +915,6 @@ namespace CleanHub.Controllers
                         $"{building?.Name}_{dateOnly.Value.Month}_{dateOnly.Value.Year}.pdf";
                 return fileResult;
             }
-
             return null;
         }
     }

@@ -171,20 +171,13 @@
                                                                            value="@(Model.Building.BuildingProducts[i].PriceWithTaxTotal?.ToString("0.00", new System.Globalization.CultureInfo("mk-MK")) ?? "0.00")"
                                                                            readonly />
                                                                 </td>
-                                                                <td class="text-center tax">
+                                                               @*  <td class="text-center tax">
                                                                     <div class="n-chk">
                                                                         <div class="form-check form-check-primary form-check-inline me-0 mb-0">
                                                                             <input class="form-check-input" type="checkbox" value="true" asp-for="@Model.Building.BuildingProducts[i].GetFromReserve" />
                                                                         </div>
                                                                     </div>
-                                                                </td>
-                                                                <td class="text-center tax">
-                                                                    <div class="n-chk">
-                                                                        <div class="form-check form-check-primary form-check-inline me-0 mb-0">
-                                                                            <input class="form-check-input" type="checkbox" value="true" asp-for="@Model.Building.BuildingProducts[i].Hide" />
-                                                                        </div>
-                                                                    </div>
-                                                                </td>
+                                                                </td> *@
                                                             </tr>
                                                         }
                                                     }

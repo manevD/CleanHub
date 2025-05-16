@@ -126,7 +126,7 @@
                         {
                             <tr role="row">
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
+                                <td>@Truncate(invoice.Description, 40)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                             </tr>
@@ -157,7 +157,13 @@
         </div>
     </div>
 </div>
-
+@functions {
+    public string Truncate(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return input.Length > maxLength ? input.Substring(0, maxLength) + "..." : input;
+    }
+}
 <script>
     document.getElementById('buildingSearch').addEventListener('input', function () {
         const selectedValue = this.value;
