@@ -26,6 +26,7 @@ namespace CleanHub.Controllers
     public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor) : Controller
     {
         public List<Building> Buildings { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
+
         private async Task<string> RenderPartialViewToStringAsync(string viewPath, object model)
         {
             ViewData.Model = model;
@@ -162,7 +163,7 @@ namespace CleanHub.Controllers
             {
                 throw new Exception("No buildings found in the database.");
             }
-
+  
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                 .Cast<PaymentStatus>()
                 .Select(e => new SelectListItem
@@ -709,7 +710,7 @@ namespace CleanHub.Controllers
                 }
                 throw;
             }
-
+         
             return RedirectToAction(nameof(Index));
         }
         // GET: Invoices/Edit/5

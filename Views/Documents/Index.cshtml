@@ -159,13 +159,15 @@
                                                     <div class="modal-body">
                                                         <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
                                                             @Html.AntiForgeryToken()
-
+                                                            <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)" />
                                                             <div class="form-group">
                                                                 <label for="paymentType">Тип на плаќање</label>
-                                                                <select id="paymentType" name="PaymentTypee" class="form-control form-control-sm">
+                                                                <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
                                                                     @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
                                                                     {
-                                                                        <option value="@paymentType">@paymentType.GetEnumDescription()</option>
+                                                                        <option value="@( (int)paymentType )" selected="@(paymentType == invoice.PaymentType)">
+                                                                            @paymentType.GetEnumDescription()
+                                                                        </option>
                                                                     }
                                                                 </select>
                                                             </div>
@@ -184,7 +186,6 @@
                                                                 <label for="description">Опис</label>
                                                                 <input type="text" id="description" name="Description" class="form-control form-control-sm" />
                                                             </div>
-                                                            <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)" />
 
                                                             <div class="modal-footer">
                                                                 <button type="submit" class="btn btn-primary">Плати</button>
@@ -268,5 +269,21 @@
                 document.getElementById('buildingId').value = selectedId || '';
             });
         });
+         document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+            button.addEventListener('click', function () {
+                const dateFrom = document.getElementById('dateFrom').value;
+                const dateTo = document.getElementById('dateTo').value;
+
+                const modalId = button.getAttribute('data-bs-target');
+                const modal = document.querySelector(modalId);
+
+                if (modal) {
+                    modal.querySelector('.modal-date-from').value = dateFrom;
+                    modal.querySelector('.modal-date-to').value = dateTo;
+                }
+            });
+        });
+    });
     </script>
 }
