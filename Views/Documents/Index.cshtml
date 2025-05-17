@@ -5,6 +5,7 @@
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var unpayed = Model != null && Model.Any() && Model.All(x => x.PaymentStatus == PaymentStatus.Неплатено);
 }
 
 <hr />
@@ -83,30 +84,36 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                    <tr>
-                        <th>Станар</th>
-                        <th>Опис</th>
-                        <th>Вкупно</th>
-                        <th>Сметка</th>
-                        <th>Статус</th>
-                        <th>Дата на плаќање</th>
-                        <th>Платено на</th>
-                        <th>Тип на плаќање</th>
-                        <th>Број на плаќање</th>
-                        <th>Задоцнување</th>
-                        <th>Камата</th>
-                        <th>Нова вредност</th>
-                        <th>Функции</th>
-                    </tr>
+                <tr>
+                    <th data-sorter="false">Бр.</th>
+                    <th data-sorter="false">Станар</th>
+                    <th data-sorter="false">Вкупно</th>
+                    <th data-sorter="false">Сметка</th>
+                    <th data-sorter="false">Статус</th>
+                    <th data-sorter="false">Дата на плаќање</th>
+                    <th data-sorter="false">Платено на</th>
+                    <th data-sorter="false">Тип на плаќање</th>
+                    <th data-sorter="false">Број на плаќање</th>
+                    <th data-sorter="false">Задоцнување</>
+                    <th data-sorter="false">Камата</th>
+                    @if (@unpayed)
+                    {
+                        <th data-sorter="false">Нова вредност</th>
+                    }
+                    <th data-sorter="false">Функции</th>
+                </tr>
                 </thead>
                 <tbody>
                     @if (Model != null && Model.Any())
                     {
-                        foreach (var invoice in Model)
+                        var counter = 0;
+                        var sortedInvoices = Model.OrderBy(x => x.Date);
+                        foreach (var invoice in sortedInvoices)
                         {
+                            counter++;
                             <tr>
+                                <td>@counter</td>
                                 <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
-                                <td>@invoice.Description</td>
                                 <td>@invoice.TotalOutput МКД</td>
                                 <td>@(invoice.ToDocument ?? "")</td>
                                 <td>
@@ -137,7 +144,10 @@
                                 <td>@(invoice.PaymentNumber ?? "—")</td>
                                 <td>@(invoice.Delay ?? 0) дена</td>
                                 <td>@(invoice.ChargesInPercent ?? 0) %</td>
-                                <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
+                                @if (@unpayed)
+                                {
+                                    <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
+                                }
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
                                     {
@@ -159,13 +169,13 @@
                                                     <div class="modal-body">
                                                         <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
                                                             @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)" />
+                                                            <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)"/>
                                                             <div class="form-group">
                                                                 <label for="paymentType">Тип на плаќање</label>
                                                                 <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
                                                                     @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
                                                                     {
-                                                                        <option value="@( (int)paymentType )" selected="@(paymentType == invoice.PaymentType)">
+                                                                        <option value="@((int)paymentType)" selected="@(paymentType == invoice.PaymentType)">
                                                                             @paymentType.GetEnumDescription()
                                                                         </option>
                                                                     }
@@ -174,17 +184,17 @@
 
                                                             <div class="form-group">
                                                                 <label for="paymentDate">Дата на плаќање</label>
-                                                                <input type="datetime-local" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                                                                <input type="datetime-local" id="paymentDate" name="PaymentDate" class="form-control form-control-sm"/>
                                                             </div>
 
                                                             <div class="form-group">
                                                                 <label for="paymentNumber">Број на плаќање</label>
-                                                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
+                                                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm"/>
                                                             </div>
-                                                            
+
                                                             <div class="form-group">
                                                                 <label for="description">Опис</label>
-                                                                <input type="text" id="description" name="Description" class="form-control form-control-sm" />
+                                                                <input type="text" id="description" name="Description" class="form-control form-control-sm"/>
                                                             </div>
 
                                                             <div class="modal-footer">
