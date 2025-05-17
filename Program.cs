@@ -42,13 +42,6 @@ namespace CleanHub
             builder.Services.AddScoped<IBookFinancialsRepository, BookFinancialRepository>();
             builder.Services.AddScoped<IBookRepository, BookRepository>();
             builder.Services.AddScoped<ISpecialInvoiceRepository, SpecialInvoiceRepository>();
-            var cultures = new[]
-            {
-                new CultureInfo("en-US"),
-                new CultureInfo("de"),
-            };
-
-            
             builder.Services.AddSession(options =>
             {
                 options.IdleTimeout = TimeSpan.FromMinutes(30); // Session Timeout nach 30 Minuten
@@ -91,11 +84,15 @@ namespace CleanHub
 
             builder.Services.AddSingleton(mapper);
             var app = builder.Build();
+            var culture = new CultureInfo("mk-MK");
+            CultureInfo.DefaultThreadCurrentCulture = culture;
+            CultureInfo.DefaultThreadCurrentUICulture = culture;
+
             app.UseRequestLocalization(new RequestLocalizationOptions
             {
-                DefaultRequestCulture = new RequestCulture("de-DE"),
-                SupportedCultures = cultures,
-                SupportedUICultures = cultures
+                DefaultRequestCulture = new RequestCulture("mk-MK"),
+                SupportedCultures = new[] { culture },
+                SupportedUICultures = new[] { culture }
             });
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())

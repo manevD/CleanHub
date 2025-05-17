@@ -56,8 +56,8 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
+                <th data-sorter="false">Бр.</th>
                 <th data-sorter="false">Опис</th>
-                <th data-sorter="false">Сметка</th>
                 <th data-sorter="false">Побарува</th>
                 <th data-sorter="false">Должи</th>
                 <th data-sorter="false">Дата на издавање</th>
@@ -65,11 +65,13 @@
                 <tbody>
                     @if (Model.BuildingFinancial != null && Model.BuildingFinancial.Any())
                     {
-                        @foreach (var invoice in Model.BuildingFinancial)
+                        var counter = 0;
+                        @foreach (var invoice in Model.BuildingFinancial.OrderBy(x => x.DatumF))
                         {
+                            counter++;
                             <tr role="row">
-                                <td>@Html.DisplayFor(modelItem => invoice.Description)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.InvoiceId.Value)</td>
+                                <td>@counter</td>
+                                <td>@Truncate(invoice.Description,40)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
@@ -117,7 +119,13 @@
         </div>
     </div>
 </div>
-
+@functions {
+    public string Truncate(string input, int maxLength)
+    {
+        if (string.IsNullOrEmpty(input)) return "";
+        return input.Length > maxLength ? input.Substring(0, maxLength) + "..." : input;
+    }
+}
 <script>
     document.getElementById('buildingSearch').addEventListener('input', function () {
         const selectedValue = this.value;

@@ -55,22 +55,25 @@
         <div class="widget-content widget-content-area">
             <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                <tr>
-                    <th data-sorter="false">Датум</th>
-                    <th data-sorter="false">Опис</th>
-                    <th data-sorter="false">Вид док.</th>
-                    <th data-sorter="false">Побарува</th>
-                    <th data-sorter="false">Должи</th>
-                    <th data-sorter="false">Салдо</th>
-                </tr>
+                    <tr>
+                        <th data-sorter="false">Бр.</th>
+                        <th data-sorter="false">Датум</th>
+                        <th data-sorter="false">Опис</th>
+                        <th data-sorter="false">Вид док.</th>
+                        <th data-sorter="false">Побарува</th>
+                        <th data-sorter="false">Должи</th>
+                        <th data-sorter="false">Салдо</th>
+                    </tr>
                 </thead>
                 <tbody>
                     @if (Model != null && Model.CustomerData != null && Model.CustomerData.Any())
                     {
-
-                        @foreach (var invoice in Model.CustomerData.OrderBy(x=>x.Date))
+                        var counter = 0;
+                        @foreach (var invoice in Model.CustomerData.OrderBy(x => x.Date))
                         {
+                            counter++;
                             <tr role="row">
+                                <td>@counter</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Date)</td>
                                 <td>@Truncate(invoice.Description, 50)</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.DocumentTyp)</td>
@@ -79,20 +82,6 @@
                                 <td></td>
                             </tr>
                         }
-                        <tr role="row">
-                            <td></td>
-                            <td></td>
-                            <td><strong>Вкупно</strong></td>
-                            <td><strong>Побарува : @Model.CustomerDemandsTotal</strong></td>
-                            <td><strong>Должи : @Model.CustomerOwesTotal</strong></td>
-                            <td>
-                                <strong>
-                                    Салдо :
-                                    @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
-                                    @Model.Total
-                                </strong>
-                            </td>
-                        </tr>
                     }
                     else
                     {
@@ -100,23 +89,39 @@
                             <td colspan="8" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
+                    <tr role="row">
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th><strong>Вкупно</strong></th>
+                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
+                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+                        <th>
+                            <strong>
+                                Салдо :
+                                @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
+                                @Model.Total
+                            </strong>
+                        </th>
+                    </tr>
                 </tbody>
                 <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th><strong>Вкупно</strong></th>
-                    <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
-                    <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
-                    <th>
-                        <strong>
-                            Салдо :
-                            @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
-                            @Model.Total
-                        </strong>
-                    </th>
+                    <tr>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th><strong>Вкупно</strong></th>
+                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
+                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+                        <th>
+                            <strong>
+                                Салдо :
+                                @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
+                                @Model.Total
+                            </strong>
+                        </th>
 
-                </tr>
+                    </tr>
                 </tfoot>
             </table>
         </div>
