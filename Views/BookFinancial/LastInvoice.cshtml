@@ -1,0 +1,207 @@
+﻿@model IEnumerable<CleanHub.ViewModels.BookFinancialInfoViewModel>
+@{
+    ViewData["Title"] = "Книжења";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var owes = @ViewBag.TotalOwes;
+    var demands = @ViewBag.TotalDemands;
+    string result = "0";
+    if (Model != null && Model.Any())
+    {
+        var difference = (demands - owes);
+        if (demands > owes)
+        {
+            result = difference.ToString();
+        }
+        else
+        {
+            result = (-difference).ToString();
+        }
+    }
+}
+<style>
+    th.no-sort::after {
+        display: none !important;
+    }
+</style>
+<hr />
+<form asp-action="LastInvoice" asp-controller="BookFinancial" method="post">
+    <div class="row">
+        @if (ViewBag.Buildings != null)
+        {
+            <div class="col-lg-2 col-md-3">
+                <div class="form-group mb-0">
+                    <label for="buildingSearch">Објект</label>
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
+                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
+                    <datalist id="buildingOptions">
+                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                        {
+                            <option value="@building.Text" data-id="@building.Value"></option>
+                        }
+                    </datalist>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-lg-2 col-md-3">
+                <p>Нема пронајдено објекти!</p>
+            </div>
+        }
+
+        <div class="col-lg-2 col-md-3">
+            <div class="form-group mb-0">
+                <label for="dateFrom">Од</label>
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateFrom" />
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="form-group mb-0">
+                <label for="dateTo">До</label>
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateTo" />
+            </div>
+        </div>
+    </div>
+    </br>
+    <div class="col-lg-2 col-md-3">
+        <div class="form-group mb-0">
+            <button type="submit" class="btn btn-primary w-100">Пребарувај</button>
+        </div>
+    </div>
+</form>
+
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                <tr>
+                    <th class="no-sort">Бр</th>
+                    <th class="no-sort">Опис</th>
+                    <th class="no-sort">1</th>
+                    <th class="no-sort">2</th>
+                    <th class="no-sort">3</th>
+                    <th class="no-sort">4</th>
+                    <th class="no-sort">5</th>
+                    <th class="no-sort">6</th>
+                    <th class="no-sort">7</th>
+                    <th class="no-sort">8</th>
+                    <th class="no-sort">9</th>
+                    <th class="no-sort">10</th>
+                    <th class="no-sort">11</th>
+                    <th class="no-sort">12</th>
+                    <th class="no-sort">Вкупно</th>
+                </tr>
+                </thead>
+              <tbody>
+    @if (Model != null && Model.Any())
+    {
+        var counter = 1; 
+
+        <!-- Влез ред -->
+        <tr>
+            <td>@counter</td>
+            <td><b>Влез:</b></td>
+            @for (int month = 1; month <= 12; month++)
+            {
+                var monthSum = Model.Where(x => x.DatumF.Month == month).Sum(x => x.Demands);
+                <td>@monthSum</td>
+            }
+            <td><b>@Model.Sum(x => x.Demands)</b></td>
+        </tr>
+
+        <!-- Поединечни фактури -->
+        foreach (var invoice in Model.Where(x => x.Owes != 0))
+        {
+            <tr>
+                <td>@(++counter)</td>
+               
+                        @if (@invoice.Description.Length >= 30)
+                        {
+                            <td><small>@invoice.Description</small></td>
+                        }
+                        else
+                        {
+                            <td>@invoice.Description</td>
+                        }
+               
+                @for (int month = 1; month <= 12; month++)
+                {
+                    if (invoice.DatumF.Month == month)
+                    {
+                        <td>@invoice.Owes</td>
+                    }
+                    else
+                    {
+                        <td></td>
+                    }
+                }
+                <td></td>
+            </tr>
+        }
+
+        <!-- Вкупни трошоци по месец -->
+        <tr class="no-sort">
+            <td>@(++counter)</td>
+            <td><b>Вкупни трошоци по месец:</b></td>
+            @for (int month = 1; month <= 12; month++)
+            {
+                var monthSum = Model.Where(x => x.DatumF.Month == month).Sum(x => x.Owes);
+                <td>@monthSum</td>
+            }
+            <td><b>@Model.Sum(x => x.Owes)</b></td>
+        </tr>
+
+        <!-- Финален вкупен резултат -->
+        <tr class="no-sort">
+            <td>@(++counter)</td>
+            <td><b>Вкупно побарува - должи:</b></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td>@demands МКД</td>
+            <td>@owes МКД</td>
+            <td>@result</td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+        </tr>
+    }
+    else
+    {
+        <tr>
+            <td colspan="14" class="text-center">Нема пронајдени податоци</td>
+        </tr>
+    }
+</tbody>
+
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('buildingSearch').addEventListener('input', function () {
+        const selectedValue = this.value;
+        const options = document.querySelectorAll('#buildingOptions option');
+        let selectedId = '';
+
+        // Find the matching option and get its data-id
+        options.forEach(option => {
+            if (option.value === selectedValue) {
+                selectedId = option.getAttribute('data-id');
+            }
+        });
+
+        // Set the hidden input's value
+        document.getElementById('buildingId').value = selectedId || '';
+    });
+</script>
+

@@ -49,6 +49,53 @@ namespace CleanHub.Controllers
                 .ToList();
         }
 
+        [Route("Завршна")]
+        [HttpGet]
+        public async Task<IActionResult> LastInvoice()
+        {
+            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
+            return View();
+        }
+
+        [Route("Завршна")]
+        [HttpPost]
+        public async Task<IActionResult> LastInvoice(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
+        {
+            try
+            {
+                List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+                var building = new Building();
+                if (!buildingId.HasValue)
+                {
+                    ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                    return RedirectToAction(nameof(LastInvoice));
+                }
+
+                building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+                if (building != null)
+                {
+                    results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
+                    ViewBag.TotalDemands = results.Sum(x => x.Demands);
+                    ViewBag.TotalOwes = results.Sum(x => x.Owes);
+                    FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+                    if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
+                    {
+                        CalculateOverdueStatus(results);
+                    }
+                }
+                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+                ViewBag.SelectedBuildingName = building.Name;
+                ViewBag.BuildingId = building.Id;
+                return View( results.OrderBy(x => x.DatumF));
+            }
+            catch (Exception e)
+            {
+                throw e;
+            }
+        }
+
         public IActionResult Index()
         {
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
