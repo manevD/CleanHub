@@ -3,13 +3,13 @@
 BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Buildings ON;
+    SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings ON;
 
-    INSERT INTO [2021MartiHigienaNew].dbo.Buildings(Id,Name,BankAccount)
+    INSERT INTO [2025MartiTest].dbo.Buildings(Id,Name,BankAccount)
     SELECT OddelID,Oddel,OddelBanka
-    FROM [2021MartiHigiena122024].dbo.Partneri_Oddeli
+    FROM [2025MartiHigiena].dbo.Partneri_Oddeli
     COMMIT TRANSACTION;
-	    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Buildings Off;
+	    SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings Off;
 
     PRINT 'Data inserted successfully.';
 END TRY

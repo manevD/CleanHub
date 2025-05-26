@@ -37,6 +37,23 @@ SELECT
 FROM [2019MartiHigiena].dbo.Kniga
 WHERE KnigaID NOT IN (SELECT KnigaID FROM Kniga);
 
+-- Insert from 2020MartiHigiena
+INSERT INTO Kniga (
+    KnigaID, Dokid, ArtikalID, Vlez, Izlez, Kolicina, Cenav, Cenai, Cena, Cena2,
+    Rabat, Danok, Kutii, Marza, ArtikalRepro, Vkupno, PrenosID, VratenaRoba, ArtikalZabeleska,
+    NaimID, CenaNab, PomosnaID, DokIDP, Kolicina2, Kolicina3, Kolicina4, DatumRok,
+    Serija, EdmK, SN, Hidden, PrenosKnGUID, SmetkaID, RezervacijaKol,
+    Sync_GUID, SyncID_GUID, tmp, Rabat1, Rabat2, Rabat3, Da_Ne
+)
+SELECT 
+    KnigaID, Dokid, ArtikalID, Vlez, Izlez, Kolicina, Cenav, Cenai, Cena, Cena2,
+    Rabat, Danok, Kutii, Marza, ArtikalRepro, Vkupno, PrenosID, VratenaRoba, ArtikalZabeleska,
+    NaimID, CenaNab, PomosnaID, DokIDP, Kolicina2, Kolicina3, Kolicina4, DatumRok,
+    Serija, EdmK, SN, Hidden, PrenosKnGUID, SmetkaID, RezervacijaKol,
+    Sync_GUID, SyncID_GUID, tmp, Rabat1, Rabat2, Rabat3, Da_Ne
+FROM [2020MartiHigiena].dbo.Kniga
+WHERE KnigaID NOT IN (SELECT KnigaID FROM Kniga);
+
 -- Insert from 2021MartiHigiena
 INSERT INTO Kniga (
     KnigaID, Dokid, ArtikalID, Vlez, Izlez, Kolicina, Cenav, Cenai, Cena, Cena2,
@@ -67,6 +84,12 @@ SELECT DejnostID, Dejnost
 FROM [2019MartiHigiena].dbo.Partneri_Dejnosti
 WHERE DejnostID NOT IN (SELECT DejnostID FROM Partneri_Dejnosti);
 
+-- Insert from 2020MartiHigiena
+INSERT INTO Partneri_Dejnosti (DejnostID, Dejnost)
+SELECT DejnostID, Dejnost
+FROM [2020MartiHigiena].dbo.Partneri_Dejnosti
+WHERE DejnostID NOT IN (SELECT DejnostID FROM Partneri_Dejnosti);
+
 -- Insert from 2021MartiHigiena
 INSERT INTO Partneri_Dejnosti (DejnostID, Dejnost)
 SELECT DejnostID, Dejnost
@@ -82,6 +105,13 @@ SET IDENTITY_INSERT Banki ON;
 INSERT INTO Banki (BankaID, Banka)
 SELECT BankaID, Banka
 FROM [2019MartiHigiena].dbo.Banki
+WHERE BankaID NOT IN (SELECT BankaID FROM Banki);
+
+
+-- Insert from 2020MartiHigiena
+INSERT INTO Banki (BankaID, Banka)
+SELECT BankaID, Banka
+FROM [2020MartiHigiena].dbo.Banki
 WHERE BankaID NOT IN (SELECT BankaID FROM Banki);
 
 -- Insert from 2021MartiHigiena
@@ -111,6 +141,23 @@ SELECT
 FROM [2019MartiHigiena].dbo.KnigaF
 WHERE KnigaFID NOT IN (SELECT KnigaFID FROM KnigaF);
 
+
+-- Insert from 2020MartiHigiena
+INSERT INTO KnigaF (
+    KnigaFID, Nalog, SmetkaID, PartnerID, VidID, Broj, Opis, DatumF, Dolzi, Pobaruva,
+    DolziDev, PobaruvaDev, Dokid, ValutaID, Kurs, SemaSubID, Datum, Valuta, ObjektID, 
+    Rasknizeno, GUID, VidID_komp, Vreme, VremePromena, TranzitPartnerID, KP_KI_Broj, 
+    tmp, VidID_Dok, VkupnoDok, LinkDok
+)
+SELECT 
+    KnigaFID, Nalog, SmetkaID, PartnerID, VidID, Broj, Opis, DatumF, Dolzi, Pobaruva,
+    DolziDev, PobaruvaDev, Dokid, ValutaID, Kurs, SemaSubID, Datum, Valuta, ObjektID, 
+    Rasknizeno, GUID, VidID_komp, Vreme, VremePromena, TranzitPartnerID, KP_KI_Broj, 
+    tmp, VidID_Dok, VkupnoDok, LinkDok
+FROM [2020MartiHigiena].dbo.KnigaF
+WHERE KnigaFID NOT IN (SELECT KnigaFID FROM KnigaF);
+
+
 -- Insert from 2021MartiHigiena
 INSERT INTO KnigaF (
     KnigaFID, Nalog, SmetkaID, PartnerID, VidID, Broj, Opis, DatumF, Dolzi, Pobaruva,
@@ -129,11 +176,6 @@ WHERE KnigaFID NOT IN (SELECT KnigaFID FROM KnigaF);
 SET IDENTITY_INSERT KnigaF OFF;
 
 
-SELECT COLUMN_NAME
-FROM INFORMATION_SCHEMA.COLUMNS
-WHERE TABLE_NAME = 'Partneri'
-ORDER BY ORDINAL_POSITION;
-
 SET IDENTITY_INSERT Partneri ON;
 
 -- Insert from 2019MartiHigiena
@@ -151,6 +193,24 @@ SELECT
     LK, LK_MVR, PotrosenaVoda, Komunalii, Kanalizacija, OpstinaID, PartnerBroj, DrzavaID, OldID,
     Pausalno, EMB, KarticaVid, KarticaKod, KarticaValidnaOd, KarticaValidnaDo
 FROM [2019MartiHigiena].dbo.Partneri
+WHERE PartnerID NOT IN (SELECT PartnerID FROM Partneri);
+
+
+-- Insert from 2020MartiHigiena
+INSERT INTO Partneri (
+    PartnerID, Partner, parAdresa, parMestoID, parNaselbaID, parTel, parKontakt, parEmail, 
+    parWeb, DB, parRabat, parDena, parVidCenaID, PartnerOpis, parNeaktiven, parNeaktivenDatum,
+    OddelID, LimitDena, LimitIznos, LimitDospean, DejnostID, PartnerLatin, FizickoLice, MB,
+    LK, LK_MVR, PotrosenaVoda, Komunalii, Kanalizacija, OpstinaID, PartnerBroj, DrzavaID, OldID,
+    Pausalno, EMB, KarticaVid, KarticaKod, KarticaValidnaOd, KarticaValidnaDo
+)
+SELECT 
+    PartnerID, Partner, parAdresa, parMestoID, parNaselbaID, parTel, parKontakt, parEmail, 
+    parWeb, DB, parRabat, parDena, parVidCenaID, PartnerOpis, parNeaktiven, parNeaktivenDatum,
+    OddelID, LimitDena, LimitIznos, LimitDospean, DejnostID, PartnerLatin, FizickoLice, MB,
+    LK, LK_MVR, PotrosenaVoda, Komunalii, Kanalizacija, OpstinaID, PartnerBroj, DrzavaID, OldID,
+    Pausalno, EMB, KarticaVid, KarticaKod, KarticaValidnaOd, KarticaValidnaDo
+FROM [2020MartiHigiena].dbo.Partneri
 WHERE PartnerID NOT IN (SELECT PartnerID FROM Partneri);
 
 -- Insert from 2021MartiHigiena
@@ -181,6 +241,12 @@ SELECT VidID, VidDokument, IndeksID, Skr
 FROM [2019MartiHigiena].dbo.VidDokumenti
 WHERE VidID NOT IN (SELECT VidID FROM VidDokumenti);
 
+-- Insert from 2020MartiHigiena
+INSERT INTO VidDokumenti (VidID, VidDokument, IndeksID, Skr)
+SELECT VidID, VidDokument, IndeksID, Skr
+FROM [2020MartiHigiena].dbo.VidDokumenti
+WHERE VidID NOT IN (SELECT VidID FROM VidDokumenti);
+
 -- Insert from 2021MartiHigiena
 INSERT INTO VidDokumenti (VidID, VidDokument, IndeksID, Skr)
 SELECT VidID, VidDokument, IndeksID, Skr
@@ -195,6 +261,12 @@ SET IDENTITY_INSERT VidDokumenti OFF;
 INSERT INTO Smetki (SmetkaID, Smetka, KarticaPar, Dev, IsNab, IsTrosok, SmetkaID_old, VonBilans, ParObjekt)
 SELECT SmetkaID, Smetka, KarticaPar, Dev, IsNab, IsTrosok, SmetkaID_old, VonBilans, ParObjekt
 FROM [2019MartiHigiena].dbo.Smetki
+WHERE SmetkaID NOT IN (SELECT SmetkaID FROM Smetki);
+
+-- Insert from 2019MartiHigiena
+INSERT INTO Smetki (SmetkaID, Smetka, KarticaPar, Dev, IsNab, IsTrosok, SmetkaID_old, VonBilans, ParObjekt)
+SELECT SmetkaID, Smetka, KarticaPar, Dev, IsNab, IsTrosok, SmetkaID_old, VonBilans, ParObjekt
+FROM [2020MartiHigiena].dbo.Smetki
 WHERE SmetkaID NOT IN (SELECT SmetkaID FROM Smetki);
 
 -- Insert from 2021MartiHigiena
@@ -232,6 +304,34 @@ SELECT
     Vreme_1, Vreme_2, SyncID_GUID, KodPlakanje, bHideMat
 FROM [2019MartiHigiena].dbo.Dokumenti
 WHERE Dokid NOT IN (SELECT Dokid FROM Dokumenti);
+
+-- Insert from 2019MartiHigiena
+INSERT INTO Dokumenti (
+    Dokid, Broj, Datum, PartnerID, IndeksID, ObjektID, ObjektPrenosID, PoDokument, 
+    OpisDok, RabatDok, ValutaID, Kurs, Valuta, KorisnikId, SmenaID, VkupnoVl, VkupnoIz, 
+    Plateno, Kompjuter, TMP, Tranzit, Fis, DokidP, PrenosID, VidCenaID, 
+    Vreme, Kasa, VratenaRoba_Dok, BezArtikli, IntIspPriCeniZakluceni, VkupnoFaktura, 
+    VkupnoValuta, DDV_Uvoz, DDV_Doma, Prevoz, Carina, ZavisniTroskovi, VidPlakane, 
+    Carinarnica, Spedicija, Transport, PrenosGUID, SmetkaID, BezDanok, VremePromena, 
+    DatumFis, AutoLock, RabatNavremeno, Rati, BrRati, Naracka, strTrasport, Uslovi, bCekanje, 
+    bZavrsen, bJaveno, bPodignato, Avans, bSopstvenServis, PartnerObjektID, PrenosDokID, 
+    bNaturalenRabat, DistributerID, VoziloID, VozacID, LotBr, IzrabotilID, bStorno, Sync_GUID, 
+    Vreme_1, Vreme_2, SyncID_GUID, KodPlakanje, bHideMat
+)
+SELECT 
+    Dokid, Broj, Datum, PartnerID, IndeksID, ObjektID, ObjektPrenosID, PoDokument, 
+    OpisDok, RabatDok, ValutaID, Kurs, Valuta, KorisnikId, SmenaID, VkupnoVl, VkupnoIz, 
+    Plateno, Kompjuter, TMP, Tranzit, Fis, DokidP, PrenosID, VidCenaID, 
+    Vreme, Kasa, VratenaRoba_Dok, BezArtikli, IntIspPriCeniZakluceni, VkupnoFaktura, 
+    VkupnoValuta, DDV_Uvoz, DDV_Doma, Prevoz, Carina, ZavisniTroskovi, VidPlakane, 
+    Carinarnica, Spedicija, Transport, PrenosGUID, SmetkaID, BezDanok, VremePromena, 
+    DatumFis, AutoLock, RabatNavremeno, Rati, BrRati, Naracka, strTrasport, Uslovi, bCekanje, 
+    bZavrsen, bJaveno, bPodignato, Avans, bSopstvenServis, PartnerObjektID, PrenosDokID, 
+    bNaturalenRabat, DistributerID, VoziloID, VozacID, LotBr, IzrabotilID, bStorno, Sync_GUID, 
+    Vreme_1, Vreme_2, SyncID_GUID, KodPlakanje, bHideMat
+FROM [2020MartiHigiena].dbo.Dokumenti
+WHERE Dokid NOT IN (SELECT Dokid FROM Dokumenti);
+
 
 -- Insert from 2021MartiHigiena
 INSERT INTO Dokumenti (
@@ -275,6 +375,15 @@ SELECT
 FROM [2019MartiHigiena].dbo.KnigaF_sub
 WHERE KnigaF_subID NOT IN (SELECT KnigaF_subID FROM KnigaF_sub);
 
+-- Insert from 2019MartiHigiena
+INSERT INTO KnigaF_sub (
+    KnigaF_subID, KnigaFID, DatumSub, DolziSub, PobaruvaSub
+)
+SELECT 
+    KnigaF_subID, KnigaFID, DatumSub, DolziSub, PobaruvaSub
+FROM [2020MartiHigiena].dbo.KnigaF_sub
+WHERE KnigaF_subID NOT IN (SELECT KnigaF_subID FROM KnigaF_sub);
+
 -- Insert from 2021MartiHigiena
 INSERT INTO KnigaF_sub (
     KnigaF_subID, KnigaFID, DatumSub, DolziSub, PobaruvaSub
@@ -296,6 +405,17 @@ SELECT
 FROM [2019MartiHigiena].dbo.Artikli_Vidovi
 WHERE VidArtID NOT IN (SELECT VidArtID FROM Artikli_Vidovi);
 
+
+-- Insert from 2020MartiHigiena
+INSERT INTO Artikli_Vidovi (
+    VidArtID, VidArtikal, PresmNab, Skr
+)
+SELECT 
+    VidArtID, VidArtikal, PresmNab, Skr
+FROM [2020MartiHigiena].dbo.Artikli_Vidovi
+WHERE VidArtID NOT IN (SELECT VidArtID FROM Artikli_Vidovi);
+
+
 -- Insert from 2021MartiHigiena
 INSERT INTO Artikli_Vidovi (
     VidArtID, VidArtikal, PresmNab, Skr
@@ -315,6 +435,15 @@ INSERT INTO Partneri_Oddeli (
 SELECT 
     OddelID, Oddel, OddelBanka, OddelPartnerID
 FROM [2019MartiHigiena].dbo.Partneri_Oddeli
+WHERE OddelID NOT IN (SELECT OddelID FROM Partneri_Oddeli);
+
+-- Insert from 2019MartiHigiena
+INSERT INTO Partneri_Oddeli (
+    OddelID, Oddel, OddelBanka, OddelPartnerID
+)
+SELECT 
+    OddelID, Oddel, OddelBanka, OddelPartnerID
+FROM [2020MartiHigiena].dbo.Partneri_Oddeli
 WHERE OddelID NOT IN (SELECT OddelID FROM Partneri_Oddeli);
 
 -- Insert from 2021MartiHigiena

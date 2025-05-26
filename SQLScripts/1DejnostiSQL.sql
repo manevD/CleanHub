@@ -1,14 +1,14 @@
 BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Activity ON;
+    SET IDENTITY_INSERT [2025MartiTest].dbo.Activity ON;
 
-    INSERT INTO [2021MartiHigienaNew].dbo.Activity (Id,Name)
+    INSERT INTO [2025MartiTest].dbo.Activity (Id,Name)
     SELECT DejnostID,Dejnost
-    FROM [2021MartiHigienaOriginal].dbo.Partneri_Dejnosti;
+    FROM [2025MartiHigiena].dbo.Partneri_Dejnosti;
 
     COMMIT TRANSACTION;
-	    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.Activity Off;
+	    SET IDENTITY_INSERT [2025MartiTest].dbo.Activity Off;
 
     PRINT 'Data inserted successfully.';
 END TRY

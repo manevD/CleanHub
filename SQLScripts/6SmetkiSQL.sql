@@ -1,13 +1,16 @@
+
 BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2021MartiHigienaNew].dbo.DocumentTyp ON;
+    SET IDENTITY_INSERT [2025MartiTest].dbo.Invoice ON;
 
-    INSERT INTO [2021MartiHigienaNew].dbo.DocumentTyp( Id,VidDokument)
-    SELECT VidID,VidDokument
-    FROM [2021MartiHigienaOriginal].dbo.VidDokumenti ;
+    INSERT INTO [2025MartiTest].dbo.Invoice( Id,Description,KarticaPar)
+    SELECT SmetkaId,Smetka,KarticaPar
+    FROM [2025MartiHigiena].dbo.Smetki ;
 
     COMMIT TRANSACTION;
+	    SET IDENTITY_INSERT [2025MartiTest].dbo.Invoice Off;
+
     PRINT 'Data inserted successfully.';
 END TRY
 BEGIN CATCH

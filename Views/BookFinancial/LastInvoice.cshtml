@@ -113,7 +113,6 @@
             <td><b>@Model.Sum(x => x.Demands)</b></td>
         </tr>
 
-        <!-- Поединечни фактури -->
         foreach (var invoice in Model.Where(x => x.Owes != 0))
         {
             <tr>

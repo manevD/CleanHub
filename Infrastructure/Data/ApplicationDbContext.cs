@@ -137,6 +137,6 @@ namespace CleanHub.Infrastructure.Data
         //"Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=2021MartiHigienaNew122024;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Server=localhost\\SQLEXPRESS;Database=2025MartiTest;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }
