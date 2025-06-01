@@ -18,7 +18,7 @@ public partial class Document
     public string? ToDocument { get; set; }
 
     public string? Description { get; set; }
-
+    public string? PaymentDescription { get; set; }
     public DateOnly? DateReceived { get; set; }
     public int? NewTotal { get; set; }
     public string? PaymentNumber { get; set; }

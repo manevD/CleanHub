@@ -90,6 +90,7 @@
                     <th data-sorter="false">Вкупно</th>
                     <th data-sorter="false">Сметка</th>
                     <th data-sorter="false">Статус</th>
+                    <th data-sorter="false">Опис на плаќање</th>
                     <th data-sorter="false">Дата на плаќање</th>
                     <th data-sorter="false">Платено на</th>
                     <th data-sorter="false">Тип на плаќање</th>
@@ -134,10 +135,10 @@
                                             break;
                                         default:
                                             <span>Неопределен статус</span>
-                                            ;
                                             break;
                                     }
                                 </td>
+                                <td>@(invoice.PaymentDescription ?? "")</td>
                                 <td>@(invoice.DateReceived?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@invoice.PaymentType.GetEnumDescription()</td>

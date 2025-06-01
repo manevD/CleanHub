@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
@@ -56,11 +57,14 @@ namespace CleanHub.Infrastructure.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
+
             base.OnModelCreating(modelBuilder);
             // modelBuilder.UseEncryption(this._provider);
             // modelBuilder.Entity<CompanyConfig>().HasNoKey();
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
+            modelBuilder.Entity<Activity>().ToTable("Activity", t => t.ExcludeFromMigrations());
+
             //  modelBuilder.Entity<Customer>()
             //   .Property(e => e.CustomerInfo)
             //   .HasConversion(
@@ -137,6 +141,6 @@ namespace CleanHub.Infrastructure.Data
         //"Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=localhost\\SQLEXPRESS;Database=2025MartiTest;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Server=.\\SQLEXPRESS;Database=2025MartiTestMai;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

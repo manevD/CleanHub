@@ -193,7 +193,7 @@ namespace CleanHub.Controllers
                 }
             }
 
-            return View("Index", documents);
+            return View("Index", documents.OrderBy(x => x.Date.HasValue ? x.Date.Value : DateOnly.MinValue).ToList());
         }
 
 

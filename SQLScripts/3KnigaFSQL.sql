@@ -1,9 +1,9 @@
 ﻿BEGIN TRANSACTION;
 
 BEGIN TRY
-    INSERT INTO [2021MartiHigienaNew].dbo.BookFinancials(CustomerId,DocumentTypId,Description,DatumF,Owes,Demands,Time,DateTimeChanges)
+    INSERT INTO [2025MartiTest].dbo.BookFinancials(CustomerId,DocumentTypId,Description,DatumF,Owes,Demands,Time,DateTimeChanges)
     SELECT PartnerID,VidId ,Opis,DatumF,Dolzi,Pobaruva,Vreme,VremePromena
-    FROM [2021MartiHigienaOriginal].dbo.KnigaF;
+    FROM [2025MartiHigiena].dbo.KnigaF;
 
     COMMIT TRANSACTION;
     PRINT 'Data inserted successfully.';

@@ -16,6 +16,7 @@ namespace CleanHub.ViewModels
         public CompanyConfig? Company { get; set; }  
         public string? ToDocument { get; set; }
         public string? Description { get; set; }
+        public string? PaymentDescription { get; set; }
         [Ignore]
         public int? Delay { get; set; }
         public int? NewTotal { get; set; }
