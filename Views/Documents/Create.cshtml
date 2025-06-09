@@ -140,24 +140,24 @@
                                                                     <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement"  />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity"  />
+                                                                    <input type="number" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i"
+                                                                    <input type="number" class="form-control form-control-sm" id="Price_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].Price" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                                    <input type="number" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i"
+                                                                    <input type="number" class="form-control form-control-sm" id="PriceWithTax_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTax"
                                                                            readonly />
                                                                 </td>
                                                                 @if (routeId == 2)
                                                                 {
                                                                     <td class="rate">
-                                                                        <input type="text"
+                                                                        <input type="number"
                                                                                class="form-control form-control-sm"
                                                                                id="Total_@i"
                                                                                asp-for="@Model.Building.BuildingProducts[i].Total"  readonly/>
@@ -166,7 +166,7 @@
                                                                 else
                                                                 {
                                                                     <td class="rate">
-                                                                        <input type="text"
+                                                                        <input type="number"
                                                                                class="form-control form-control-sm"
                                                                                id="Total_@i"
                                                                                asp-for="@Model.Building.BuildingProducts[i].Total" />
@@ -175,7 +175,7 @@
                                                             
                                                              
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
+                                                                    <input type="number" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTaxTotal"
                                                                            readonly />
                                                                 </td>
@@ -327,12 +327,12 @@
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+                  document.addEventListener('DOMContentLoaded', function () {
             // Get all rows in the tbody
             var rows = document.querySelectorAll('tbody tr');
 
             // Get the number of customers
-           var customerCount = @(Model?.Building?.Customers?.Count ?? 0);
+            var customerCount = @(Model?.Building?.Customers?.Count ?? 0);
 
             // Function to calculate and update values
             function calculatePrice(row) {
@@ -343,10 +343,11 @@
                 var totalInput = row.querySelector('input[id^="Total_"]');
                 var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]'); // This should match PriceWithTaxInput
 
-                // Parse total value
-                var total = parseFloat(totalInput.value) || 0;
+                // Parse total value (ensure it uses dot as decimal separator)
+                var total = parseFloat(totalInput.value.replace(',', '.') || 0);
+
                 // If total is provided, calculate price per customer
-              if (total > 0) {
+                if (total > 0) {
                     var pricePerCustomer = 0;
 
                     if (customerCount > 0) {
@@ -355,13 +356,12 @@
                         pricePerCustomer = total;
                     }
 
-                    priceInput.value = (Math.round(pricePerCustomer * 100) / 100).toFixed(2);
-                    priceWithTaxTotal = (Math.round(pricePerCustomer * 100) / 100).toFixed(2);
+                    priceInput.value = pricePerCustomer.toFixed(2); // Keep decimal precision with a dot
                 }
 
                 // Recalculate PriceWithTax based on the new Price
-                var price = parseFloat(priceInput.value) || 0; // Price without VAT
-                var tax = parseFloat(taxInput.value) || 0; // VAT
+                var price = parseFloat(priceInput.value.replace(',', '.')) || 0; // Price without VAT
+                var tax = parseFloat(taxInput.value.replace(',', '.')) || 0; // VAT
 
                 // Calculate PriceWithTax
                 var priceWithTax;
@@ -374,11 +374,12 @@
                     priceWithTax = price + taxAmount; // Price without VAT + VAT = Total Price
                 }
 
-                // Round PriceWithTax to two decimal places
-                priceWithTaxInput.value = (Math.round(priceWithTax * 100) / 100).toFixed(2);
+                // Format PriceWithTax to 2 decimal places with a dot
+                priceWithTaxInput.value = priceWithTax.toFixed(2);
 
-                // Ensure priceWithTaxTotal matches priceWithTaxInput
-                priceWithTaxTotal.value = priceWithTaxInput.value;
+                // Ensure priceWithTaxTotal is rounded to the nearest whole number, but keep decimal for display
+                var priceWithTaxTotalValue = Math.round(priceWithTax); // Round for calculation purposes
+                priceWithTaxTotal.value = priceWithTax.toFixed(2); // Display as decimal
 
                 // Update the total PriceWithTax sum
                 updatePriceWithTaxTotal();
@@ -391,15 +392,15 @@
                 // Loop through all rows and sum the PriceWithTaxTotal values
                 rows.forEach(function (row) {
                     var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]');
-                    var priceWithTax = parseFloat(priceWithTaxTotal.value) || 0;
+                    var priceWithTax = parseFloat(priceWithTaxTotal.value.replace(',', '.')) || 0;
                     totalSum += priceWithTax;
                 });
 
-                // Round the total sum: round up if the decimal value >= 5, else round down
-              var roundedSum = Number.isInteger(totalSum)
-                  ? totalSum
-                  : Math.round(totalSum);
-                document.querySelector('#totalPriceWithTax').innerText = roundedSum;
+                // Round the total sum: round up if the decimal value >= 0.5, else round down
+                var roundedSum = totalSum % 1 === 0 ? totalSum : Math.round(totalSum);
+
+                // Display total sum with dot as decimal separator
+                document.querySelector('#totalPriceWithTax').innerText = roundedSum.toFixed(2);
             }
 
             // For each row, add input event listeners

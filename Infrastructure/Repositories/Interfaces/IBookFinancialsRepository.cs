@@ -9,5 +9,7 @@ namespace CleanHub.Infrastructure.Repositories.Interfaces
         List<BookFinancial> GetBuldingReserve(int buildingId, int? invoiceId);
         (int owes, int demands) GetBuildingReserve(int buildingId, int? invoiceId, int? status);
         void SetOwesAndDemandsToDocument(int buildingId, int? invoiceId, int? status, DocumentViewModel document);
+        double GetOwes(int buildingId);
+        double GetDemands(int buildingId);
     }
 }

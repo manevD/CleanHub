@@ -16,3 +16,15 @@ BEGIN CATCH
 END CATCH;
 
 BEGIN TRANSACTION;
+
+
+
+UPDATE BookFinancials
+SET Status = 0
+WHERE CustomerId IN (
+    SELECT c.Id
+    FROM Customers c
+    WHERE c.ActivityId = 3
+)
+AND Description = ''
+AND YEAR(DatumF) IN (2019, 2020, 2021, 2022, 2023);

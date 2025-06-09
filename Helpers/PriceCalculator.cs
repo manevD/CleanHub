@@ -7,35 +7,36 @@ namespace CleanHub.Helpers
     {
         public void CalculatePrices(List<BuildingProductViewModel> buildingProducts, Customer customer)
         {
-
             foreach (var product in buildingProducts)
             {
                 // Step 1: Calculate price per customer if total is provided
-                if (product.Total > 0)
+                if (product.Total.HasValue && product.Total.Value > 0) // Null check for Total
                 {
                     float pricePerCustomer = product.Total.Value / customerCount;
 
-                    if (product.ArticleNotes.Contains("гаража"))
+                    if (product.ArticleNotes != null && product.ArticleNotes.Contains("гаража")) // Null check for ArticleNotes
                     {
                         pricePerCustomer = product.Total.Value / customerGarage;
                     }
-                    product.Price = (float)Math.Round(pricePerCustomer, 2); // Round to 2 decimal places
+
+                    product.Price = pricePerCustomer; // Direct assignment without rounding
                 }
 
                 // Step 2: Calculate PriceWithTax based on the new Price and Tax
-                if (product.Tax == 0)
-                {
-                    // If tax is 0, set PriceWithTax to Price
-                    product.PriceWithTax = product.Price;
-                }
-                else
+                if (product.Tax.HasValue && product.Tax.Value > 0) // Null check for Tax
                 {
                     // Calculate tax amount and add it to the price
                     float taxAmount = (product.Price * product.Tax.Value) / 100;
-                    product.PriceWithTax = (float)Math.Round(product.Price + taxAmount, 2); // Price + VAT, rounded
+                    product.PriceWithTax = product.Price + taxAmount; // Direct calculation without rounding
+                }
+                else
+                {
+                    // If no tax, set PriceWithTax equal to Price
+                    product.PriceWithTax = product.Price;
                 }
             }
         }
+
         static double CalculatePriceWithTaxDouble(double price, int taxRate)
         {
             // Calculate the tax amount

@@ -2,6 +2,7 @@
 using CleanHub.Infrastructure.Data;
 using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.ViewModels;
+using Microsoft.EntityFrameworkCore;
 
 namespace CleanHub.Infrastructure.Repositories
 {
@@ -14,7 +15,7 @@ namespace CleanHub.Infrastructure.Repositories
             var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
             if (invoiceId.HasValue)
             {
-                query = context.BookFinancials
+                query = context.BookFinancials.Include(x=>x.Customer)
                     .Where(bf => bf.CustomerId != null
                                  && invoiceId.HasValue
                                  && (
@@ -74,6 +75,28 @@ namespace CleanHub.Infrastructure.Repositories
             // Zuweisung der Werte zu Document
             document.TotalBuildingOwes = owes;
             document.TotalBuildingDemands = demands;
+        }
+        public double GetDemands(int buildingId)
+        {
+            var customers = context.Customers.Where(x => x.BuildingId == buildingId);
+            if (customers != null && customers.Any())
+            {
+                return context.BookFinancials
+                    .Where(x => customers.Any(cus => cus.Id == x.CustomerId) && x.InvoiceId == (int)InvoiceTyp.Reserve)
+                    .Sum(su => su.Demands);
+            }
+
+            return 0;
+        }
+        public double GetOwes(int buildingId)
+        {
+            var customerRefId = context.Buildings.FirstOrDefault(x => x.Id == buildingId).CustomerRefId;
+            if (customerRefId.HasValue)
+            {
+                return context.BookFinancials.Where(x => x.CustomerId == customerRefId.Value).Sum(su => su.Owes);
+            }
+
+            return 0;
         }
     }
 }

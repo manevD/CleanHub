@@ -631,9 +631,9 @@ namespace CleanHub.Controllers
                 Output = 1,
                 Input = 0,
                 Quantity = book.Quantity,
-                PriceWithTax = (float)PriceHelper.CalculatePriceWithTax(Convert.ToDouble(book.Price), book.Tax),
+                PriceWithTax = book.PriceWithTaxTotal,
                 Tax = book.Tax,
-                Total = (float)PriceHelper.CalculatePriceWithTax(Convert.ToDouble(book.Price), book.Tax),
+                Total = book.PriceWithTaxTotal,
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
             };

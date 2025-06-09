@@ -32,7 +32,7 @@ namespace CleanHub.Controllers
                     Value = ((int)(object)e).ToString(),
                 }).ToList();
 
-        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId, int? customerRefId, int? paymentStatusId)
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId)
         {
             var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
             
@@ -44,7 +44,7 @@ namespace CleanHub.Controllers
                 Description = bf.Description ?? "",
                 DatumF = bf.DatumF ?? DateOnly.MinValue,
                 Owes = bf.Owes,
-                Demands = bf.Demands
+                Demands = bf.Demands,
             })
                 .ToList();
         }
@@ -75,7 +75,7 @@ namespace CleanHub.Controllers
                 building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
                 if (building != null)
                 {
-                    results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
+                    results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
                     ViewBag.TotalDemands = results.Sum(x => x.Demands);
                     ViewBag.TotalOwes = results.Sum(x => x.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
@@ -122,9 +122,9 @@ namespace CleanHub.Controllers
                 building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
                 if (building != null)
                 {
-                    results = GetFilteredBookFinancials(invoiceId, buildingId.Value, building.CustomerRefId ?? 0, paymentStatusId ?? 0).ToList();
-                    ViewBag.TotalDemands = results.Sum(x => x.Demands);
-                    ViewBag.TotalOwes = results.Sum(x => x.Owes);
+                    results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
+                    ViewBag.TotalDemands = _unitOfWork.BookFinancials.GetDemands(buildingId.Value);
+                    ViewBag.TotalOwes = _unitOfWork.BookFinancials.GetOwes(buildingId.Value);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     {

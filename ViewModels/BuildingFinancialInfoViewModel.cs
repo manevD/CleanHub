@@ -1,13 +1,10 @@
-﻿using AutoMapper.Configuration.Annotations;
-using CleanHub.Entities.Enums;
+﻿using CleanHub.Entities.Enums;
 
 namespace CleanHub.ViewModels
 {
     public class BookFinancialInfoViewModel
     {
         public int Id { get; set; }
-        public string BuildingName { get; set; }
-        public string CustomerInfo { get; set; }
         public PaymentStatus Status { get; set; }
         public int InvoiceId { get; set; }
         public string Description { get; set; }

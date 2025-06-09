@@ -65,3 +65,4 @@ SET d.PaymentStatus =
 FROM Documents d;
 
 
+Update Documents set PaymentStatus = 0 where PaymentStatus = 1 and YEAR(Date) IN (2019, 2020, 2021, 2022, 2023)
