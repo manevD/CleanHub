@@ -82,20 +82,28 @@ namespace CleanHub.Infrastructure.Repositories
             if (customers != null && customers.Any())
             {
                 return context.BookFinancials
-                    .Where(x => customers.Any(cus => cus.Id == x.CustomerId) && x.InvoiceId == (int)InvoiceTyp.Reserve)
+                    .Where(x =>
+                        customers.Any(cus => cus.Id == x.CustomerId) &&
+                        x.InvoiceId == (int)InvoiceTyp.Reserve &&
+                        (x.Description == null || !x.Description.Contains("салдо"))
+                    )
                     .Sum(su => su.Demands);
             }
-
             return 0;
         }
+
         public double GetOwes(int buildingId)
         {
             var customerRefId = context.Buildings.FirstOrDefault(x => x.Id == buildingId).CustomerRefId;
             if (customerRefId.HasValue)
             {
-                return context.BookFinancials.Where(x => x.CustomerId == customerRefId.Value).Sum(su => su.Owes);
+                return context.BookFinancials
+                    .Where(x =>
+                        x.CustomerId == customerRefId.Value &&
+                        (x.Description == null || !x.Description.Contains("салдо"))
+                    )
+                    .Sum(su => su.Owes);
             }
-
             return 0;
         }
     }
