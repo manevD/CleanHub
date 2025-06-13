@@ -34,8 +34,8 @@ namespace CleanHub.ViewModels
         public List<BuildingViewModel>? Buildings { get; set; }
         public int? BuildingId { get; set; }
         public BuildingViewModel? Building { get; set; } = new BuildingViewModel();
-        public int TotalBuildingDemands { get; set; }
-        public int TotalBuildingOwes { get; set; }
+        public double TotalBuildingDemands { get; set; }
+        public double TotalBuildingOwes { get; set; }
 
         public PaymentType PaymentType { get; set; }
         public DateOnly? PaymentDate { get; set; }

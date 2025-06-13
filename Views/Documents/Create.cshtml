@@ -13,13 +13,13 @@
     // Format the previous month date
     string formattedPreviousMonth = previousMonthDate.ToString("MM/yyyy");
 
-    int summ = 0;
-    int summDemands = 0;
+    double summ = 0;
+    double summDemands = 0;
     string result = "0";
 
     summ = Model.TotalBuildingOwes;
     summDemands = Model.TotalBuildingDemands;
-    int difference = summ - summDemands;
+    double difference = (summ - summDemands);
     var message = "Вашата состојба на резервен фонд: ";
     if (summDemands == 0)
     {

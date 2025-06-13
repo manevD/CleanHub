@@ -70,11 +70,9 @@ namespace CleanHub.Infrastructure.Repositories
 
         public void SetOwesAndDemandsToDocument(int buildingId, int? invoiceId, int? status, DocumentViewModel document)
         {
-            var (owes, demands) = GetBuildingReserve(buildingId, invoiceId, status);
-
             // Zuweisung der Werte zu Document
-            document.TotalBuildingOwes = owes;
-            document.TotalBuildingDemands = demands;
+            document.TotalBuildingOwes = GetOwes(buildingId);
+            document.TotalBuildingDemands = GetDemands(buildingId);
         }
         public double GetDemands(int buildingId)
         {

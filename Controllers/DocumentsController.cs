@@ -859,9 +859,8 @@ namespace CleanHub.Controllers
                 startDate = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 endDate = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
             }
-            var owes = 0;
-            var demands = 0;
-            (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingId.Value, invoiceId: (int)InvoiceTyp.Reserve, status: null);
+            var owes = _unitOfWork.BookFinancials.GetOwes(buildingId.Value);
+            var demands = _unitOfWork.BookFinancials.GetDemands(buildingId.Value);
 
             PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
             MemoryStream pdfStream = new MemoryStream();
@@ -882,8 +881,8 @@ namespace CleanHub.Controllers
                 {
                     continue;
                 }
-                document.TotalBuildingDemands = demands;
-                document.TotalBuildingOwes = owes;
+                document.TotalBuildingDemands = (int)demands;
+                document.TotalBuildingOwes = (int)owes;
                 document.Company = _config.Value;
                 document.IsForPdf = true;
 
@@ -910,9 +909,8 @@ namespace CleanHub.Controllers
         {
             if (documents != null && documents.Any())
             {
-                var owes = 0;
-                var demands = 0;
-                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(building.Id, invoiceId: (int)InvoiceTyp.Reserve, status: null);
+                var owes = _unitOfWork.BookFinancials.GetOwes(building.Id);
+                var demands = _unitOfWork.BookFinancials.GetDemands(building.Id);
                 var total = owes - demands;
                 PdfDocument endDoc = new PdfDocument();
                 MemoryStream pdfStream = new MemoryStream();
@@ -924,8 +922,8 @@ namespace CleanHub.Controllers
                     {
                         continue;
                     }
-                    document.TotalBuildingDemands = demands;
-                    document.TotalBuildingOwes = owes;
+                    document.TotalBuildingDemands = (int)demands;
+                    document.TotalBuildingOwes = (int)owes;
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);

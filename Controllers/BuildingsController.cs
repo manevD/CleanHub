@@ -74,10 +74,9 @@ namespace CleanHub.Controllers
 
             if (buildingViewModel != null &&  buildingViewModel.Customers.Any())
             {
-                var owes = 0;
-                var demands = 0;
-                (owes, demands) = _unitOfWork.BookFinancials.GetBuildingReserve(buildingViewModel.Id, invoiceId: (int)InvoiceTyp.Reserve, status: null);
-                buildingViewModel.ReserveTotal = demands - owes;
+                var owes = _unitOfWork.BookFinancials.GetOwes(buildingViewModel.Id);
+                var demands = _unitOfWork.BookFinancials.GetDemands(buildingViewModel.Id);
+                buildingViewModel.ReserveTotal = (demands - owes);
             }
 
             ViewBag.Month = _month;
