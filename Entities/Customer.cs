@@ -17,13 +17,12 @@ public partial class Customer
     [EmailAddress]
     public string? Email { get; set; }
     public string? PartnerOpis { get; set; }
-
     public bool Hide { get; set; }
     public string? Web { get; set; }
 
     public bool? Inactive { get; set; }
     public bool Garage { get; set; }
-
+    public int Balance { get; set; }
     public DateOnly? InactiveDatum { get; set; }
 
     [ForeignKey(nameof(Building))]
@@ -36,4 +35,5 @@ public partial class Customer
     public int? Subscription { get; set; }
     public List<BookFinancial>? BookFinancials { get; set; } = null!;
     public List<Document>? Documents { get; set; }
+
 }

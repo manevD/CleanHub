@@ -4,9 +4,9 @@ BEGIN TRY
     SET IDENTITY_INSERT [2025MartiTest].dbo.Books ON;
 
     INSERT INTO [2025MartiTest].dbo.Books 
-        (Id,DocId,ArticleId,Input,Output,PriceWithTax,Tax,Quantity,Total,ArticleNotes,UnitOfMeasurement)
+        (Id,DocId,ArticleId,Input,Output,PriceWithTax,Price,Tax,Quantity,Total,ArticleNotes,UnitOfMeasurement)
     SELECT 
-       KnigaID,Dokid,ArtikalID,Vlez,Izlez,Cenai,Danok,Kutii,Vkupno,ArtikalZabeleska,EdmK
+       KnigaID,Dokid,ArtikalID,Vlez,Izlez,Cenai,Cena,Danok,Kutii,Vkupno,ArtikalZabeleska,EdmK
     FROM [2025MartiHigiena].dbo.Kniga
     -- Turn off IDENTITY_INSERT after the insertion
     SET IDENTITY_INSERT [2025MartiTest].dbo.Books OFF;

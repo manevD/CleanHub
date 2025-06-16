@@ -14,6 +14,11 @@ namespace CleanHub.Infrastructure.Repositories
             _context = context; 
         }
 
+        public int GetBalance(int customerId)
+        {
+            return (int)_context.BookFinancials.Where(x => x.CustomerId == customerId && x.Owes > 0).Sum(x=>x.Owes);
+        }
+
         public async Task<List<Customer>> GetCustomersByBuildingIdAsync(int buildingId)
         {
                 return await _context.Set<Building>()

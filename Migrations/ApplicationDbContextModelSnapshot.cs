@@ -61,7 +61,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Article");
+                    b.ToTable("Article", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Bank", b =>
@@ -77,7 +77,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Banks");
+                    b.ToTable("Banks", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Book", b =>
@@ -127,7 +127,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("DocId");
 
-                    b.ToTable("Books");
+                    b.ToTable("Books", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.BookFinancial", b =>
@@ -193,7 +193,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("BookFinancials");
+                    b.ToTable("BookFinancials", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Building", b =>
@@ -218,7 +218,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Buildings");
+                    b.ToTable("Buildings", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.BuildingProduct", b =>
@@ -263,7 +263,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("BuildingId");
 
-                    b.ToTable("BuildingProducts");
+                    b.ToTable("BuildingProducts", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Customer", b =>
@@ -326,7 +326,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("BuildingId");
 
-                    b.ToTable("Customers");
+                    b.ToTable("Customers", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Document", b =>
@@ -389,7 +389,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("CustomerId");
 
-                    b.ToTable("Documents");
+                    b.ToTable("Documents", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.DocumentTyp", b =>
@@ -405,7 +405,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("DocumentTyp");
+                    b.ToTable("DocumentTyp", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Invoice", b =>
@@ -427,7 +427,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Invoice");
+                    b.ToTable("Invoice", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Product", b =>
@@ -467,7 +467,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Products");
+                    b.ToTable("Products", (string)null);
                 });
 
             modelBuilder.Entity("CleanHub.Entities.SpecialInvoice", b =>
@@ -499,7 +499,7 @@ namespace CleanHub.Migrations
 
                     b.HasIndex("InvoiceId");
 
-                    b.ToTable("SpecialInvoices");
+                    b.ToTable("SpecialInvoices", (string)null);
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRole", b =>

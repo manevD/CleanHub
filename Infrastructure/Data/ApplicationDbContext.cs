@@ -2,7 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using System.Security.Cryptography;
 using System.Text;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
@@ -136,11 +135,11 @@ namespace CleanHub.Infrastructure.Data
             }
         }
 
+     //   protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+     //    => optionsBuilder.UseSqlServer(
+     //"Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-         => optionsBuilder.UseSqlServer(
-     "Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        //    => optionsBuilder.UseSqlServer(
-        //"Server=.\\SQLEXPRESS;Database=2025MartiTestMai;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+            => optionsBuilder.UseSqlServer(
+        "Server=.\\SQLEXPRESS;Database=2025MartiTestMai;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

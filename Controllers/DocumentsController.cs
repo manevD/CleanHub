@@ -632,6 +632,7 @@ namespace CleanHub.Controllers
                 Input = 0,
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTaxTotal,
+                Price = book.Price,
                 Tax = book.Tax,
                 Total = book.PriceWithTaxTotal,
                 ArticleNotes = book.ArticleNotes,
