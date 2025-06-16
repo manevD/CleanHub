@@ -35,7 +35,7 @@ namespace CleanHub.Controllers
         private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId)
         {
             var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
-            
+
             return query.Select(bf => new BookFinancialInfoViewModel
             {
                 Id = bf.Id,
@@ -77,9 +77,10 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = results.Sum(x => x.Demands);
-                    ViewBag.TotalOwes = results.Sum(x => x.Owes);
+                    ViewBag.TotalDemands = GetDemandsLastInvoice( dateTo, results);
+                    ViewBag.TotalOwes = GetOwesLastInvoice( dateTo, results);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+
                     if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     {
                         CalculateOverdueStatus(results);
@@ -88,13 +89,56 @@ namespace CleanHub.Controllers
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
                 ViewBag.SelectedBuildingName = building.Name;
+                if (!string.IsNullOrWhiteSpace(dateFrom))
+                {
+                    if (DateOnly.TryParseExact(dateFrom, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedFrom))
+                    {
+                        ViewBag.DateFrom = parsedFrom;
+                    }
+                }
+
+                if (!string.IsNullOrWhiteSpace(dateTo))
+                {
+                    if (DateOnly.TryParseExact(dateTo, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedTo))
+                    {
+                        ViewBag.DateTo = parsedTo;
+                    }
+                }
                 ViewBag.BuildingId = building.Id;
-                return View( results.OrderBy(x => x.DatumF));
+                return View(results.OrderBy(x => x.DatumF));
             }
             catch (Exception e)
             {
                 throw e;
             }
+        }
+
+        private double GetOwesLastInvoice (string? dateTo, List<BookFinancialInfoViewModel> results)
+        {
+            DateOnly? DateTo = null;
+            if (!string.IsNullOrEmpty(dateTo))
+            {
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                return results
+                    .Where(x =>
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
+                        x.DocumentTypId != 11).Sum(su => su.Demands);
+            }
+            return 0;
+        }
+
+        private double GetDemandsLastInvoice(string? dateTo, List<BookFinancialInfoViewModel> results)
+        {
+            DateOnly? DateTo = null;
+            if (!string.IsNullOrEmpty(dateTo))
+            {
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                return results
+                    .Where(x =>
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
+                        x.DocumentTypId != 11).Sum(su => su.Owes);
+            }
+            return 0;
         }
 
         public IActionResult Index()
@@ -124,8 +168,8 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = results.Where(x=>x.Description !="салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
-                    ViewBag.TotalOwes = results.Where(x => x.Description !="салдо" && x.DocumentTypId != 11).Sum(su => su.Owes);
+                    ViewBag.TotalDemands = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
+                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Owes);
                     //ViewBag.TotalDemands = _unitOfWork.BookFinancials.GetDemands(buildingId.Value);
                     //ViewBag.TotalOwes = _unitOfWork.BookFinancials.GetOwes(buildingId.Value);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
@@ -138,8 +182,8 @@ namespace CleanHub.Controllers
                 ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
                 ViewBag.SelectedBuildingName = building.Name;
-                ViewBag.BuildingId = building.Id; 
-                return View("Index", results.OrderBy(x=>x.DatumF));
+                ViewBag.BuildingId = building.Id;
+                return View("Index", results.OrderBy(x => x.DatumF));
             }
             catch (Exception e)
             {
@@ -180,7 +224,7 @@ namespace CleanHub.Controllers
                         (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
                     .ToList();
             }
-          
+
         }
 
         private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
