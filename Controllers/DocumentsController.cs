@@ -184,41 +184,41 @@ namespace CleanHub.Controllers
             var documentEntities = await GetDocuments(buildingId, paymentStatusId, dateFrom, dateTo);
 
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
-            foreach (var doc in documents.Where(x => x.PaymentStatus != (int)PaymentStatus.Платено))
-            {
-                doc.Delay = CalculateOverdueDays(doc.DateReceived);
-                if (doc.Delay != 0)
-                {
-                    doc.NewTotal = (int?)(doc.TotalOutput + CalculateNewTotal(doc));
-                }
-            }
+            //foreach (var doc in documents.Where(x => x.PaymentStatus != (int)PaymentStatus.Платено))
+            //{
+            //    doc.Delay = CalculateOverdueDays(doc.DateReceived);
+            //    if (doc.Delay != 0)
+            //    {
+            //        doc.NewTotal = (int?)(doc.TotalOutput + CalculateNewTotal(doc));
+            //    }
+            //}
 
             return View("Index", documents.OrderBy(x => x.Date.HasValue ? x.Date.Value : DateOnly.MinValue).ToList());
         }
 
 
-        private int CalculateOverdueDays(DateOnly? dateReceived)
-        {
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            if (dateReceived != null)
-            {
-                if (dateReceived >= today)
-                {
-                    return 0;
-                }
-                return today.DayNumber - dateReceived.Value.DayNumber;
-            }
+        //private int CalculateOverdueDays(DateOnly? dateReceived)
+        //{
+        //    var today = DateOnly.FromDateTime(DateTime.Now);
+        //    if (dateReceived != null)
+        //    {
+        //        if (dateReceived >= today)
+        //        {
+        //            return 0;
+        //        }
+        //        return today.DayNumber - dateReceived.Value.DayNumber;
+        //    }
 
-            return 0;
-        }
+        //    return 0;
+        //}
 
-        private int CalculateNewTotal(DocumentViewModel doc)
-        {
-            doc.ChargesInPercent = GetOverdueFeePercentage(doc.Delay.Value);
-            if (doc.TotalOutput != null)
-                return (int)Math.Round(doc.TotalOutput.Value * (doc.ChargesInPercent.Value / 100f), MidpointRounding.AwayFromZero);
-            return 0;
-        }
+        //private int CalculateNewTotal(DocumentViewModel doc)
+        //{
+        //    doc.ChargesInPercent = GetOverdueFeePercentage(doc.Delay.Value);
+        //    if (doc.TotalOutput != null)
+        //        return (int)Math.Round(doc.TotalOutput.Value * (doc.ChargesInPercent.Value / 100f), MidpointRounding.AwayFromZero);
+        //    return 0;
+        //}
 
         private async Task<List<Document>> GetDocuments(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
@@ -257,15 +257,15 @@ namespace CleanHub.Controllers
             if (documentViewModel.Customer != null)
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId,
                     invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
-            documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
-            if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
-            {
-                documentViewModel.NewTotal = (int?)documentViewModel.TotalOutput;
-            }
-            else
-            {
-                documentViewModel.NewTotal = (int?)(documentViewModel.TotalOutput + CalculateNewTotal(documentViewModel));
-            }
+            //documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
+            //if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
+            //{
+            //    documentViewModel.NewTotal = (int?)documentViewModel.TotalOutput;
+            //}
+            //else
+            //{
+            //    documentViewModel.NewTotal = (int?)(documentViewModel.TotalOutput + CalculateNewTotal(documentViewModel));
+            //}
             documentViewModel.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
             if (documentViewModel.Books != null && documentViewModel.Books.Any(x => x.Hide))
             {
@@ -709,10 +709,10 @@ namespace CleanHub.Controllers
                 {
                     return NotFound();
                 }
-                if (model.NewTotal.HasValue && model.NewTotal != 0)
-                {
-                    documentToUpdate.NewTotal = model.NewTotal.Value;
-                }
+                //if (model.NewTotal.HasValue && model.NewTotal != 0)
+                //{
+                //    documentToUpdate.NewTotal = model.NewTotal.Value;
+                //}
                 documentToUpdate.PaymentStatus = PaymentStatus.Платено;
                 documentToUpdate.PaymentDate = model.PaymentDate;
                 documentToUpdate.PaymentType = model.PaymentType;

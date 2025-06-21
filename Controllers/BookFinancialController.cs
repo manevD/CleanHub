@@ -227,30 +227,30 @@ namespace CleanHub.Controllers
 
         }
 
-        private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
-        {
-            var today = DateOnly.FromDateTime(DateTime.Now);
-            var resultFiltered =
-                results.Where(x => x.Status == PaymentStatus.Неплатено || x.Status == PaymentStatus.Задоцнето);
-            foreach (var doc in resultFiltered)
-            {
-                doc.Delay = today.DayNumber - doc.DatumF.DayNumber;
-                doc.Status = doc.Delay > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
+        //private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
+        //{
+        //    var today = DateOnly.FromDateTime(DateTime.Now);
+        //    var resultFiltered =
+        //        results.Where(x => x.Status == PaymentStatus.Неплатено || x.Status == PaymentStatus.Задоцнето);
+        //    foreach (var doc in resultFiltered)
+        //    {
+        //        doc.Delay = today.DayNumber - doc.DatumF.DayNumber;
+        //        doc.Status = doc.Delay > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
 
-                double percentage = doc.Delay switch
-                {
-                    < 0 => 0,
-                    < 30 => 0.02,
-                    <= 60 => 0.04,
-                    <= 90 => 0.06,
-                    <= 180 => 0.08,
-                    <= 360 => 0.10,
-                    <= 730 => 0.13,
-                    _ => 0.16
-                };
-                doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
-            }
-        }
+        //        double percentage = doc.Delay switch
+        //        {
+        //            < 0 => 0,
+        //            < 30 => 0.02,
+        //            <= 60 => 0.04,
+        //            <= 90 => 0.06,
+        //            <= 180 => 0.08,
+        //            <= 360 => 0.10,
+        //            <= 730 => 0.13,
+        //            _ => 0.16
+        //        };
+        //        doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
+        //    }
+        //}
 
         [HttpPost]
         [ValidateAntiForgeryToken]

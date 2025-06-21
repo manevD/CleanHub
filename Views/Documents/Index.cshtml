@@ -95,12 +95,12 @@
                     <th data-sorter="false">Платено на</th>
                     <th data-sorter="false">Тип на плаќање</th>
                     <th data-sorter="false">Број на плаќање</th>
-                    <th data-sorter="false">Задоцнување</>
+               @*      <th data-sorter="false">Задоцнување</>
                     <th data-sorter="false">Камата</th>
                     @if (@unpayed)
                     {
                         <th data-sorter="false">Нова вредност</th>
-                    }
+                    } *@
                     <th data-sorter="false">Функции</th>
                 </tr>
                 </thead>
@@ -143,12 +143,12 @@
                                 <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@invoice.PaymentType.GetEnumDescription()</td>
                                 <td>@(invoice.PaymentNumber ?? "—")</td>
-                                <td>@(invoice.Delay ?? 0) дена</td>
+                                @*<td>@(invoice.Delay ?? 0) дена</td>
                                 <td>@(invoice.ChargesInPercent ?? 0) %</td>
                                 @if (@unpayed)
                                 {
                                     <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
-                                }
+                                } *@
                                 <td>
                                     @if (invoice.PaymentStatus != PaymentStatus.Платено)
                                     {
@@ -170,7 +170,7 @@
                                                     <div class="modal-body">
                                                         <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
                                                             @Html.AntiForgeryToken()
-                                                            <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)"/>
+                                                           @*  <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)"/> *@
                                                             <div class="form-group">
                                                                 <label for="paymentType">Тип на плаќање</label>
                                                                 <select id="paymentType" name="PaymentType" class="form-control form-control-sm">

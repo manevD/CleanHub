@@ -133,7 +133,7 @@
                                             }
                                             <tr>
                                                 <td colspan="4"></td>
-                                                <td class="text-end">за наплата: @(Model?.NewTotal ?? Model?.TotalOutput)</td>
+                                                <td class="text-end">за наплата: @Model?.TotalOutput</td>
                                             </tr>
                                         </tbody>
                                     </table>
@@ -142,7 +142,7 @@
                                     @Html.Raw(Model?.Company?.InvoiceNotice ?? "")
                                   <br/>
                                     <strong>@result</strong>
-                                    @if (@Model.Customer.Subscription.HasValue && @Model.Customer.Subscription > 0)
+                                    @if (@Model!.Customer.Subscription.HasValue && @Model!.Customer.Subscription > 0)
                                     {
                                         <br />
                                         <strong>Вие сте во претплате : @Model.Customer.Subscription МКД</strong>

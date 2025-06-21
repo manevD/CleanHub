@@ -110,38 +110,38 @@ namespace CleanHub.Controllers
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntity);
             var today = DateOnly.FromDateTime(DateTime.Now);
 
-            foreach (var doc in documents.Where(x =>
-                         x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
-            {
-                // Null-Check für DueDate
-                if (!doc.DateReceived.HasValue)
-                {
-                    continue; // Überspringe dieses Dokument, wenn kein Fälligkeitsdatum vorhanden ist
-                }
+            //foreach (var doc in documents.Where(x =>
+            //             x.PaymentStatus == PaymentStatus.Неплатено || x.PaymentStatus == PaymentStatus.Задоцнето))
+            //{
+            //    // Null-Check für DueDate
+            //    if (!doc.DateReceived.HasValue)
+            //    {
+            //        continue; // Überspringe dieses Dokument, wenn kein Fälligkeitsdatum vorhanden ist
+            //    }
 
-                int overdueDays = today.DayNumber - doc.DateReceived.Value.DayNumber; // Berechne überfällige Tage
-                doc.Delay = overdueDays;
+            //    int overdueDays = today.DayNumber - doc.DateReceived.Value.DayNumber; // Berechne überfällige Tage
+            //    doc.Delay = overdueDays;
 
-                // Zahlungsstatus aktualisieren
-                doc.PaymentStatus = overdueDays > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
+            //    // Zahlungsstatus aktualisieren
+            //    doc.PaymentStatus = overdueDays > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
 
-                // Prozentsatz basierend auf überfälligen Tagen bestimmen
-                double percentage = overdueDays switch
-                {
-                    < 0 => 0, // Noch nicht fällig
-                    < 30 => 0.02, // 2%
-                    >= 30 and <= 60 => 0.04, // 4%
-                    >= 61 and <= 90 => 0.06, // 6%
-                    >= 91 and <= 180 => 0.08, // 8%
-                    >= 181 and <= 360 => 0.10, // 10%
-                    >= 361 and <= 730 => 0.13, // 13%
-                    _ => 0.16 // 16% für 730+ Tage
-                };
+            //    // Prozentsatz basierend auf überfälligen Tagen bestimmen
+            //    double percentage = overdueDays switch
+            //    {
+            //        < 0 => 0, // Noch nicht fällig
+            //        < 30 => 0.02, // 2%
+            //        >= 30 and <= 60 => 0.04, // 4%
+            //        >= 61 and <= 90 => 0.06, // 6%
+            //        >= 91 and <= 180 => 0.08, // 8%
+            //        >= 181 and <= 360 => 0.10, // 10%
+            //        >= 361 and <= 730 => 0.13, // 13%
+            //        _ => 0.16 // 16% für 730+ Tage
+            //    };
 
-                // Null-Check für TotalOutput
-                double totalOutput = doc.TotalOutput ?? 0;
-                doc.NewTotal = (int)Math.Round(totalOutput * (1 + percentage), MidpointRounding.AwayFromZero);
-            }
+            //    // Null-Check für TotalOutput
+            //    double totalOutput = doc.TotalOutput ?? 0;
+            //    doc.NewTotal = (int)Math.Round(totalOutput * (1 + percentage), MidpointRounding.AwayFromZero);
+            //}
 
             return View("Index", documents);
         }

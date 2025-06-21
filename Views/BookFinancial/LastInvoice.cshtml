@@ -187,6 +187,7 @@
 </div>
 
 <script>
+
     document.getElementById('buildingSearch').addEventListener('input', function () {
         const selectedValue = this.value;
         const options = document.querySelectorAll('#buildingOptions option');
@@ -201,6 +202,26 @@
 
         // Set the hidden input's value
         document.getElementById('buildingId').value = selectedId || '';
+    });
+       $(document).ready(function () {
+
+        var table = $('#html5-extension').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'print',
+                    title: 'Rechnungsübersicht',
+                    messageTop: function () {
+                        const buildingName = document.getElementById('buildingId')?.value || '';
+                        return 'Gebäude: ' + buildingName;
+                    },
+                    exportOptions: {
+                        columns: ':visible'
+                    }
+                }
+            ],
+            // Andere Optionen hier ...
+        });
     });
 </script>
 
