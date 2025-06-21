@@ -14,8 +14,6 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
-using System.Drawing;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -50,6 +48,32 @@ namespace CleanHub.Controllers
 
                 await viewResult.View.RenderAsync(viewContext);
                 return writer.GetStringBuilder().ToString();
+            }
+        }
+        private async void SendNotificationMail(Customer customer, string description)
+        {
+            using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
+            {
+                smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
+                smtpClient.EnableSsl = true;
+                string emailBody =
+                    @$"Почитувани,
+                            Сакаме да ве известиме дека за сметката {description} немате доволно средства да се покрие од вашата претплата.
+                            Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
+                            Со почит,
+                            {_config.Value.Name}
+                            {_config.Value.PhoneNumber}
+                            {_config.Value.Email}
+                            {_config.Value.Address}";
+                // create email message
+                MailMessage message = new MailMessage();
+                message.From = new MailAddress(_smtpConfig.Value.Email);
+                message.To.Add(customer.Email);
+                message.Subject = "Известување Марти Хигиена";
+                message.Body = emailBody;
+                smtpClient.UseDefaultCredentials = false;
+                // send email
+                await smtpClient.SendMailAsync(message);
             }
         }
 
@@ -676,22 +700,33 @@ namespace CleanHub.Controllers
                 float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
                 documentCustomer.TotalOutput = totalPriceWithTax;
             }
+            
+            var docEntity = App.FullMapper.Map<Document>(documentCustomer);
+
+            _unitOfWork.Documents.Add(docEntity);
+
+            await _unitOfWork.SaveChangesAsync();
             if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
             {
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
-                documentCustomer.PaymentStatus = PaymentStatus.Платено;
+                docEntity.PaymentStatus = PaymentStatus.Платено;
+                document.PaymentType = PaymentType.Subscription;
+                document.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                document.Id = docEntity.Id;
+                await SetStatusPayment(document);
                 _unitOfWork.Customers.Update(customer);
+            }
+            else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < documentCustomer.TotalOutput && !string.IsNullOrEmpty(customer.Email))
+            {
+                SendNotificationMail(customer, document.ToDocument);
             }
             else
             {
                 documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
             }
-            var docEntity = App.FullMapper.Map<Document>(documentCustomer);
-
-            _unitOfWork.Documents.Add(docEntity);
-            await _unitOfWork.SaveChangesAsync();
             return docEntity;
         }
+
 
         [HttpPost]
         [ValidateAntiForgeryToken]

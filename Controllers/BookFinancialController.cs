@@ -81,10 +81,10 @@ namespace CleanHub.Controllers
                     ViewBag.TotalOwes = GetOwesLastInvoice( dateTo, results);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
 
-                    if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
-                    {
-                        CalculateOverdueStatus(results);
-                    }
+                    //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
+                    //{
+                    //    CalculateOverdueStatus(results);
+                    //}
                 }
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
@@ -170,13 +170,11 @@ namespace CleanHub.Controllers
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     ViewBag.TotalDemands = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Owes);
-                    //ViewBag.TotalDemands = _unitOfWork.BookFinancials.GetDemands(buildingId.Value);
-                    //ViewBag.TotalOwes = _unitOfWork.BookFinancials.GetOwes(buildingId.Value);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
-                    if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
-                    {
-                        CalculateOverdueStatus(results);
-                    }
+                    //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
+                    //{
+                    //    CalculateOverdueStatus(results);
+                    //}
                 }
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();

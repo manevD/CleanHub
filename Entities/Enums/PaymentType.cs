@@ -11,6 +11,8 @@ namespace CleanHub.Entities.Enums
         [Description("Фактура")]
         Invoice,
         [Description("Веб")]
-        Web
+        Web,
+        [Description("Претплата")]
+        Subscription
     }
 }
