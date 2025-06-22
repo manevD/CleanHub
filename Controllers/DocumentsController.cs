@@ -561,7 +561,18 @@ namespace CleanHub.Controllers
                                     throw;
                                 }
                             }
+                        var docViewModel = App.FullMapper.Map<DocumentViewModel>(docEntity);
+
+                        if (docEntity.PaymentStatus == PaymentStatus.Платено)
+                        {
+                           await SetStatusPayment(docViewModel);
+                        }
+                        else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
+                        {
+                            SendNotificationMail(customer, docViewModel.ToDocument);
+                        }
                         CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+
                         documents.Add(docEntity);
                     }
                 }
@@ -608,20 +619,42 @@ namespace CleanHub.Controllers
 
         private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType paymentType, string? paymentNumber)
         {
-            var bookFinancialViewModel = new BookFinancialViewModel
-            {
-                InvoiceId = Constants.Recieve,
-                DocumentId = docEntity.Id,
-                Demands = 0,
-                Owes = docEntity!.TotalOutput!.Value!,
-                DocumentTypId = 4,
-                CustomerId = customerId,
-                Time = DateTime.Now,
-                Status = PaymentStatus.Неплатено,
-                DatumF = docEntity.DateReceived,
-                Description = string.Empty,
-            };
+            var bookFinancialViewModel = new BookFinancialViewModel();
 
+            if (docEntity.PaymentStatus == PaymentStatus.Платено)
+            {
+                bookFinancialViewModel = new BookFinancialViewModel
+                {
+                    InvoiceId = Constants.Recieve,
+                    DocumentId = docEntity.Id,
+                    Demands = docEntity!.TotalOutput!.Value!,
+                    Owes = 0,
+                    DocumentTypId = 4,
+                    CustomerId = customerId,
+                    Time = DateTime.Now,
+                    Status = PaymentStatus.Платено,
+                    DatumF = docEntity.DateReceived,
+                    PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    PaymentType = docEntity.PaymentType,
+                    Description = docEntity.PaymentType.GetEnumDescription(),
+                };
+            }
+            else
+            {
+                bookFinancialViewModel = new BookFinancialViewModel
+                {
+                    InvoiceId = Constants.Recieve,
+                    DocumentId = docEntity.Id,
+                    Demands = 0,
+                    Owes = docEntity!.TotalOutput!.Value!,
+                    DocumentTypId = 4,
+                    CustomerId = customerId,
+                    Time = DateTime.Now,
+                    Status = PaymentStatus.Неплатено,
+                    DatumF = docEntity.DateReceived,
+                    Description = string.Empty,
+                };
+            } 
             CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber);
             var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
             _unitOfWork.BookFinancials.Add(bookFinancial);
@@ -630,20 +663,42 @@ namespace CleanHub.Controllers
         public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate,
             PaymentType paymentType, string? paymentNumber)
         {
-            var bookFinancialViewModelReserve = new BookFinancialViewModel
+            var bookFinancialViewModelReserve = new BookFinancialViewModel();
+
+            if (docEntity.PaymentStatus == PaymentStatus.Платено)
             {
-                InvoiceId = Constants.Reserve,
-                DocumentId = docEntity.Id,
-                Demands = 0,
-                DocumentTypId = 4,
-                Owes = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
-                DatumF = docEntity.DateReceived,
-                CustomerId = customerId,
-                Status = PaymentStatus.Неплатено,
-                Time = DateTime.Now,
-                Description = string.Empty,
-            };
-            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+                bookFinancialViewModelReserve = new BookFinancialViewModel()
+                {
+                    InvoiceId = Constants.Reserve,
+                    DocumentId = docEntity.Id,
+                    Demands = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
+                    DocumentTypId = 4,
+                    Owes = 0,
+                    DatumF = docEntity.DateReceived,
+                    CustomerId = customerId,
+                    Status = docEntity.PaymentStatus,
+                    Time = DateTime.Now,
+                    Description = docEntity.PaymentType.GetEnumDescription(),
+                };
+            }
+            else
+            {
+                bookFinancialViewModelReserve = new BookFinancialViewModel()
+                {
+                    InvoiceId = Constants.Reserve,
+                    DocumentId = docEntity.Id,
+                    Demands = 0,
+                    DocumentTypId = 4,
+                    Owes = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
+                    DatumF = docEntity.DateReceived,
+                    CustomerId = customerId,
+                    Status = PaymentStatus.Неплатено,
+                    Time = DateTime.Now,
+                    Description = string.Empty,
+                };
+            }
+
+                var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
             _unitOfWork.BookFinancials.Add(bookFinancialReserve);
         }
 
@@ -710,23 +765,17 @@ namespace CleanHub.Controllers
             {
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
                 docEntity.PaymentStatus = PaymentStatus.Платено;
-                document.PaymentType = PaymentType.Subscription;
-                document.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
-                document.Id = docEntity.Id;
-                await SetStatusPayment(document);
+                docEntity.PaymentType = PaymentType.Subscription;
+                docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 _unitOfWork.Customers.Update(customer);
             }
-            else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < documentCustomer.TotalOutput && !string.IsNullOrEmpty(customer.Email))
-            {
-                SendNotificationMail(customer, document.ToDocument);
-            }
+            
             else
             {
-                documentCustomer.PaymentStatus = PaymentStatus.Неплатено;
+                docEntity.PaymentStatus = PaymentStatus.Неплатено;
             }
             return docEntity;
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]

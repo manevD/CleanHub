@@ -1,7 +1,7 @@
 ﻿@model CleanHub.ViewModels.DocumentViewModel
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var invoiceNotice = @Model.Company?.InvoiceNotice; // Safe navigation to handle null
+    var invoiceNotice = @Model.Company?.InvoiceNotice; 
     var plainTextNotice = string.IsNullOrEmpty(invoiceNotice)
         ? string.Empty
         : System.Text.RegularExpressions.Regex.Replace(invoiceNotice, "<.*?>", string.Empty);
@@ -172,7 +172,6 @@
                                                                                asp-for="@Model.Building.BuildingProducts[i].Total" />
                                                                     </td>
                                                                 }
-                                                            
                                                              
                                                                 <td class="rate">
                                                                     <input type="number" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"

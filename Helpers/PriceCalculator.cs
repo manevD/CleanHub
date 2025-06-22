@@ -58,7 +58,7 @@ namespace CleanHub.Helpers
         public float CalculateTotalPriceWithTaxSum(List<BuildingProductViewModel> buildingProducts)
         {
             // Sum all PriceWithTax values and round up/down if needed
-            float totalSum = buildingProducts.Sum(product => product.PriceWithTax.Value);
+            float totalSum = buildingProducts.Sum(product => product.PriceWithTaxTotal.Value);
 
             // Round the sum to an integer (up if >= .5, down otherwise)
             return (float)Math.Round(totalSum);
