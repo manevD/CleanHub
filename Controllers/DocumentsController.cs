@@ -405,6 +405,18 @@ namespace CleanHub.Controllers
 
                 documentViewModel.Building.BuildingProducts = new List<BuildingProductViewModel>();
             }
+
+            foreach (var product in documentViewModel.Building?.BuildingProducts)
+            {
+                if (product.PriceWithTax == null)
+                {
+                    product.PriceWithTax = 0;
+                }
+                if (product.Total == null)
+                {
+                    product.Total = 0;
+                }
+            }
             for (int i = 0; i < 3; i++)
             {
                 documentViewModel.Building?.BuildingProducts.Add(new BuildingProductViewModel
@@ -415,8 +427,7 @@ namespace CleanHub.Controllers
                     Price = 0,
                     Tax = 0,
                     PriceWithTax = 0,
-                    Total = 0,
-                    GetFromReserve = true
+                    Total = 0
                 });
             }
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
