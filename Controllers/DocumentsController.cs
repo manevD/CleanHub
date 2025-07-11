@@ -1022,6 +1022,10 @@ namespace CleanHub.Controllers
                     document.TotalBuildingOwes = (int)owes;
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
+                    if (send)
+                    {
+                       await CreateAndSend(document);
+                    }
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                     var request = _httpContextAccessor?.HttpContext?.Request;
