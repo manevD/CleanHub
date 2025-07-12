@@ -145,6 +145,11 @@
                                         <br />
                                         <strong>Вие сте во претплате : @Model.Customer.Subscription МКД</strong>
                                     }
+                                    @if (!string.IsNullOrEmpty(@Model.Debt))
+                                    {                                       
+                                        <br />
+                                        <strong>Заостанат долг: @Model.Debt</strong>
+                                    }
                                 </div>
                                 <div class="inv--note">
                                     <div class="row mt-4">

@@ -36,7 +36,7 @@ namespace CleanHub.ViewModels
         public BuildingViewModel? Building { get; set; } = new BuildingViewModel();
         public double TotalBuildingDemands { get; set; }
         public double TotalBuildingOwes { get; set; }
-
+        public string? Debt { get; set; }
         public PaymentType PaymentType { get; set; }
         public DateOnly? PaymentDate { get; set; }
     }

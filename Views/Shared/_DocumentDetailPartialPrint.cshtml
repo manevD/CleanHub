@@ -176,10 +176,16 @@
                                         <br/>
                                         <strong>@result</strong>
                                         @if (@Model.Customer.Subscription.HasValue && @Model.Customer.Subscription > 0)
-                                        {                                       
+                                        {
                                             <br />
                                             <strong>Вие сте во претплате : @Model.Customer.Subscription МКД</strong>
                                         }
+                                        @if (!string.IsNullOrEmpty(@Model.Debt))
+                                        {                                       
+                                            <br />
+                                            <strong>Заостанат долг:  @Model.Debt</strong>
+                                        }
+                                       
                                     </div>
 
                                     <div class="inv--note">

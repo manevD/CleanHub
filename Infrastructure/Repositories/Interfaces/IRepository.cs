@@ -12,7 +12,7 @@ namespace CleanHub.Infrastructure.Repositories.Interfaces
         IEnumerable<T> GetAllNoTrakcing(Func<IQueryable<T>, IQueryable<T>>? include = null);
 
         IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>>? include = null);
-
+         void AddRange(List<T> entities);
         void Add(T entity);
         void Update(T entity);
         void UpdateRange(IEnumerable<T> entities);

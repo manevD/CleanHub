@@ -306,6 +306,11 @@ namespace CleanHub.Controllers
 
                 documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
             }
+            var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
+            if (debt != null && debt.Any())
+            {
+                documentViewModel.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+            }
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
 
@@ -339,7 +344,7 @@ namespace CleanHub.Controllers
                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
                 documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive.Value).ToList();
-               
+
                 var filteredProducts = (id == 0)
                     ? documentViewModel.Building?.BuildingProducts
                     : documentViewModel.Building?.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
@@ -384,13 +389,13 @@ namespace CleanHub.Controllers
 
             if (id == 2)
             {
-                 buildings = (List<Building>)await _unitOfWork.Buildings.GetAllAsync(query => query.Include(x => x.BuildingProducts)
-                     .Select(b => new Building()
-                     {
-                         Id = b.Id,
-                         Name = b.Name,
-                     }));
-                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
+                buildings = (List<Building>)await _unitOfWork.Buildings.GetAllAsync(query => query.Include(x => x.BuildingProducts)
+                    .Select(b => new Building()
+                    {
+                        Id = b.Id,
+                        Name = b.Name,
+                    }));
+                documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
             }
             ViewBag.Buildings = new SelectList(buildings, "Id", "Name", buildingId.HasValue ? buildingId.Value : 1);
             var selectedBuildingName = buildings?.FirstOrDefault(x => x.Id == (buildingId ?? 1))?.Name;
@@ -463,30 +468,30 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DocumentViewModel document, bool send,bool cost)
+        public async Task<IActionResult> Create(DocumentViewModel document, bool send, bool cost)
         {
             if (ModelState.IsValid)
             {
-                if (document.BuildingId == null || document.BuildingId == 0 )
+                if (document.BuildingId == null || document.BuildingId == 0)
                 {
                     document.BuildingId = 1;
                 }
                 var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.BuildingId,
                     inc => inc.Include(x => x.Customers));
-                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name",  building.Id );
+                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", building.Id);
                 var selectedBuildingName = Buildings?.FirstOrDefault(x => x.Id == building.Id)?.Name;
                 if (selectedBuildingName != null)
                     ViewBag.SelectedBuildingName = selectedBuildingName;
                 if (cost)
                 {
-                    foreach (var product in document.Building.BuildingProducts.Where(x=>!string.IsNullOrEmpty(x.ArticleNotes)))
+                    foreach (var product in document.Building.BuildingProducts.Where(x => !string.IsNullOrEmpty(x.ArticleNotes)))
                     {
                         var bookFinancial = new BookFinancialViewModel
                         {
                             DatumF = document.Date,
                             InvoiceId = (int)InvoiceTyp.Reserve,
                             Demands = 0,
-                            Owes = PriceHelper.CalculatePriceWithTax(product.Price,product.Tax),
+                            Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
                             CustomerId = building.CustomerRefId ?? building.Id,
                             DocumentTypId = 5,
                             Description = product.ArticleNotes,
@@ -494,7 +499,7 @@ namespace CleanHub.Controllers
                         };
                         _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
                     }
-                      await _unitOfWork.SaveChangesAsync();
+                    await _unitOfWork.SaveChangesAsync();
                     return View(document);
 
                 }
@@ -576,7 +581,7 @@ namespace CleanHub.Controllers
 
                         if (docEntity.PaymentStatus == PaymentStatus.Платено)
                         {
-                           await SetStatusPayment(docViewModel);
+                            await SetStatusPayment(docViewModel);
                         }
                         else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
                         {
@@ -665,7 +670,7 @@ namespace CleanHub.Controllers
                     DatumF = docEntity.DateReceived,
                     Description = string.Empty,
                 };
-            } 
+            }
             CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber);
             var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
             _unitOfWork.BookFinancials.Add(bookFinancial);
@@ -709,7 +714,7 @@ namespace CleanHub.Controllers
                 };
             }
 
-                var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
             _unitOfWork.BookFinancials.Add(bookFinancialReserve);
         }
 
@@ -766,7 +771,7 @@ namespace CleanHub.Controllers
                 float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
                 documentCustomer.TotalOutput = totalPriceWithTax;
             }
-            
+
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
 
             _unitOfWork.Documents.Add(docEntity);
@@ -780,7 +785,7 @@ namespace CleanHub.Controllers
                 docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 _unitOfWork.Customers.Update(customer);
             }
-            
+
             else
             {
                 docEntity.PaymentStatus = PaymentStatus.Неплатено;
@@ -799,7 +804,7 @@ namespace CleanHub.Controllers
             var bookfinancialToUpdate = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
             try
             {
-                var documentToUpdate = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id);
+                var documentToUpdate = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id, include: inc => inc.Include(cu => cu.Customer).ThenInclude(bu => bu.Building));
                 if (documentToUpdate == null)
                 {
                     return NotFound();
@@ -810,23 +815,65 @@ namespace CleanHub.Controllers
                 //}
                 documentToUpdate.PaymentStatus = PaymentStatus.Платено;
                 documentToUpdate.PaymentDate = model.PaymentDate;
+                documentToUpdate.PaymentDescription = model.PaymentDescription;
                 documentToUpdate.PaymentType = model.PaymentType;
                 documentToUpdate.PaymentNumber = model.PaymentNumber;
                 // Update related BookFinancials
-                if (bookfinancialToUpdate == null) throw new ArgumentNullException(nameof(bookfinancialToUpdate));
-                if (bookfinancialToUpdate.Any())
+                if (bookfinancialToUpdate != null && bookfinancialToUpdate.Any())
                 {
                     foreach (var item in bookfinancialToUpdate)
                     {
                         if (model.PaymentDate != null) item.PaymentDate = model.PaymentDate.Value;
                         item.PaymentType = model.PaymentType;
                         item.PaymentNumber = model.PaymentNumber;
-                        item.Description = model.Description;
+                        item.Description = model.PaymentDescription;
                         item.Demands = item.Owes;
+                        item.PaymentDate = model.PaymentDate;
+                        item.DateTimeChanges = DateTime.UtcNow;
                         item.Owes = 0;
                         item.Status = PaymentStatus.Платено;
                     }
                     _unitOfWork.BookFinancials.UpdateRange(bookfinancialToUpdate);
+                }
+                else
+                {
+                    var listToAdd = new List<BookFinancial>
+                    {
+                        new ()
+                        {
+                            InvoiceId = Constants.Recieve,
+                            PaymentType = model.PaymentType,
+                            PaymentNumber = model.PaymentNumber,
+                            Description = model.PaymentDescription,
+                            Demands = documentToUpdate.TotalOutput.GetValueOrDefault(),
+                            Owes = 0,
+                            DatumF = model.DateReceived,
+                            PaymentDate = model.PaymentDate,
+                            DateTimeChanges = DateTime.UtcNow,
+                            DocumentTypId = 4,
+                            CustomerId = documentToUpdate.Customer.Id,
+                            DocumentId = documentToUpdate.Id,
+                            Status = PaymentStatus.Платено
+                        },
+                        new()
+                        {
+                            InvoiceId = Constants.Reserve,
+                            PaymentType = model.PaymentType,
+                            PaymentNumber = model.PaymentNumber,
+                            DateTimeChanges = DateTime.UtcNow,
+                            PaymentDate = model.PaymentDate,
+                            Description = model.PaymentDescription,
+                            DocumentId = documentToUpdate.Id,
+                            Demands = documentToUpdate.Customer.Building.ReserveFund.GetValueOrDefault(),
+                            Owes = 0,
+                            CustomerId = documentToUpdate.Customer.Id,
+                            DocumentTypId = 4,
+                            DatumF = model.DateReceived,
+                            Status = PaymentStatus.Платено
+                        }
+                    };
+
+                    _unitOfWork.BookFinancials.AddRange(listToAdd);
                 }
                 _unitOfWork.Documents.Update(documentToUpdate);
                 await _unitOfWork.SaveChangesAsync();
@@ -861,7 +908,11 @@ namespace CleanHub.Controllers
 
             var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
             document.Company = _config.Value;
-
+            var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+            if (debt != null && debt.Any())
+            {
+                document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+            }
             ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
         }
@@ -979,6 +1030,11 @@ namespace CleanHub.Controllers
                 }
                 document.TotalBuildingDemands = (int)demands;
                 document.TotalBuildingOwes = (int)owes;
+                var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+                if (debt != null && debt.Any())
+                {
+                    document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                }
                 document.Company = _config.Value;
                 document.IsForPdf = true;
 
@@ -1020,11 +1076,16 @@ namespace CleanHub.Controllers
                     }
                     document.TotalBuildingDemands = (int)demands;
                     document.TotalBuildingOwes = (int)owes;
+                    var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == item.CustomerId && x.PaymentStatus != 0);
+                    if (debt != null && debt.Any())
+                    {
+                        document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                    }
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
                     if (send)
                     {
-                       await CreateAndSend(document);
+                        await CreateAndSend(document);
                     }
                     string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 

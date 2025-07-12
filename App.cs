@@ -28,7 +28,7 @@ public class App : Profile
         {
             cfg.CreateMap<Document, DocumentViewModel>()
                 .ForMember(dest => dest.TotalBuildingOwes, opts => opts.Ignore())
-
+                .ForMember(dest => dest.Debt, opts => opts.Ignore())
                 .ForMember(dest => dest.TotalBuildingDemands, opts => opts.Ignore())
                 .ForMember(dest => dest.BuildingId, opts => opts.Ignore())
                 .ForMember(dest => dest.CreatedTime, opts => opts.Ignore()) // Liste von Buildings
@@ -121,6 +121,7 @@ public class App : Profile
             cfg.CreateMap<Document, DocumentViewModel>()
 
                 .ForMember(dest => dest.TotalBuildingOwes, opts => opts.Ignore())
+                .ForMember(dest => dest.Debt, opts => opts.Ignore())
                 .ForMember(dest => dest.TotalBuildingDemands, opts => opts.Ignore())
                       .ForMember(dest => dest.Company, opt => opt.Ignore()) // Ignore CompanyConfig in DocumentViewModel
                       .ForMember(dest => dest.IsForPdf, opt => opt.MapFrom(src => false)) // Set IsForPdf to false by default

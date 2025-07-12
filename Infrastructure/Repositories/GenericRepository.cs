@@ -53,7 +53,7 @@ namespace CleanHub.Infrastructure.Repositories
                 query = include(query); // Apply the include filter if provided
             }
 
-            return  query.AsNoTracking();
+            return query.AsNoTracking();
         }
 
 
@@ -66,7 +66,7 @@ namespace CleanHub.Infrastructure.Repositories
                 query = include(query); // Apply the include filter if provided
             }
 
-            return  query;
+            return query;
         }
 
         public async Task<T?> GetByIdAsync(Expression<Func<T, bool>> predicate, Func<IQueryable<T>, IQueryable<T>>? include = null)
@@ -122,6 +122,11 @@ namespace CleanHub.Infrastructure.Repositories
         public async Task<int?> GetMaxAsync(Expression<Func<T, int?>> selector)
         {
             return await _context.Set<T>().MaxAsync(selector);
+        }
+
+        public void AddRange(List<T> entities)
+        {
+            _dbSet.AddRange(entities);
         }
     }
 }
