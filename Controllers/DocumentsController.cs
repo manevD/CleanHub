@@ -309,7 +309,20 @@ namespace CleanHub.Controllers
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
             if (debt != null && debt.Any())
             {
-                documentViewModel.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                var allParts = debt.OrderBy(x=>x.Id)
+                    .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    .ToList();
+
+                var distinctExceptLast = allParts
+                    .Reverse<string>()                    // Umkehren
+                    .Skip(1)                              // Letztes Element ignorieren
+                    .Reverse()                            // Wieder umkehren
+                    .Distinct()
+                    .ToList();
+
+                documentViewModel.Debt = string.Join(",", distinctExceptLast)
+                                         + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+
             }
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
@@ -911,7 +924,19 @@ namespace CleanHub.Controllers
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
             if (debt != null && debt.Any())
             {
-                document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                var allParts = debt.OrderBy(x => x.Id)
+                    .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                    .ToList();
+
+                var distinctExceptLast = allParts
+                    .Reverse<string>()                    // Umkehren
+                    .Skip(1)                              // Letztes Element ignorieren
+                    .Reverse()                            // Wieder umkehren
+                    .Distinct()
+                    .ToList();
+
+                document.Debt = string.Join(",", distinctExceptLast)
+                                         + " : " + debt.Sum(x => x.TotalOutput ?? 0);
             }
             ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
@@ -1033,7 +1058,19 @@ namespace CleanHub.Controllers
                 var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
                 if (debt != null && debt.Any())
                 {
-                    document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                    var allParts = debt.OrderBy(x => x.Id)
+                        .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                        .ToList();
+
+                    var distinctExceptLast = allParts
+                        .Reverse<string>()                    // Umkehren
+                        .Skip(1)                              // Letztes Element ignorieren
+                        .Reverse()                            // Wieder umkehren
+                        .Distinct()
+                        .ToList();
+
+                    document.Debt = string.Join(",", distinctExceptLast)
+                                             + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
                 document.Company = _config.Value;
                 document.IsForPdf = true;
@@ -1079,7 +1116,19 @@ namespace CleanHub.Controllers
                     var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == item.CustomerId && x.PaymentStatus != 0);
                     if (debt != null && debt.Any())
                     {
-                        document.Debt = string.Join(",", debt.SelectMany(x => x.ToDocument.Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries))) + "  :" + debt.Sum(x => x.TotalOutput.Value);
+                        var allParts = debt.OrderBy(x => x.Id)
+                            .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                            .ToList();
+
+                        var distinctExceptLast = allParts
+                            .Reverse<string>()                    // Umkehren
+                            .Skip(1)                              // Letztes Element ignorieren
+                            .Reverse()                            // Wieder umkehren
+                            .Distinct()
+                            .ToList();
+
+                        document.Debt = string.Join(",", distinctExceptLast)
+                                                 + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                     }
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
