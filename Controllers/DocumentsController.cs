@@ -79,6 +79,7 @@ namespace CleanHub.Controllers
 
         public async Task CreateAndSend(DocumentViewModel document)
         {
+           
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
             {
                 smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
@@ -741,7 +742,9 @@ namespace CleanHub.Controllers
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTaxTotal,
                 Price = book.Price,
-                Tax = book.Tax,
+                Tax  = (book.ArticleNotes != null && book.ArticleNotes.Contains("енер"))
+                    ? 18
+                    : book.Tax,
                 Total = book.PriceWithTaxTotal,
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
@@ -798,7 +801,6 @@ namespace CleanHub.Controllers
                 docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 _unitOfWork.Customers.Update(customer);
             }
-
             else
             {
                 docEntity.PaymentStatus = PaymentStatus.Неплатено;
@@ -1132,7 +1134,7 @@ namespace CleanHub.Controllers
                     }
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
-                    if (send)
+                    if (send && !string.IsNullOrEmpty(document?.Customer?.Email))
                     {
                         await CreateAndSend(document);
                     }
