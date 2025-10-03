@@ -598,7 +598,7 @@ namespace CleanHub.Controllers
 
                         if (docEntity.PaymentStatus == PaymentStatus.Платено)
                         {
-                            await SetStatusPayment(docViewModel);
+                             SetStatusPayment(docViewModel);
                         }
                         else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
                         {
@@ -614,30 +614,56 @@ namespace CleanHub.Controllers
                 await _unitOfWork.SaveChangesAsync();
                 if (documents != null && documents.Any())
                 {
-                    List<DokumentiTest> mappedDocuments = documents
-                .Select(d => new DokumentiTest
-                {
-                    Dokid = d.Id.ToString(),
-                    Datum = d.Date.Value.ToString("yyyy-MM-dd"),
-                    Broj = d.Number.ToString(),
-                    PartnerID = d.CustomerId.ToString(),
-                    Godina = d.Date.Value.Year.ToString(),
-                    VkupnoIz = d.TotalOutput.ToString()
-                }).ToList();
+                    List<DokumentiTest> mappedDocuments = documents.Select(d => new DokumentiTest
+                    {
+                        Dokid = d.Id.ToString(),
+                        Datum = d.Date.Value.ToString("yyyy-MM-dd"),
+                        Broj = d.Number.ToString(),
+                        PartnerID = d.CustomerId.ToString(),
+                        Godina = d.Date.Value.Year.ToString(),
+                        VkupnoIz = d.TotalOutput.ToString()
+                    }).ToList();
 
                     _context.DokumentiTest.AddRange(mappedDocuments);
                     _context.SaveChanges();
                 }
-                
+
                 HttpContext.Session.Remove("Documents");
 
                 return await PrintDocuments(documents, building, send);
             }
 
             return View(document);
-            //ViewData["ResidentId"] = new SelectList(_context.Customers, "Id", "CustomerInfo", document.CustomerId);
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult SetMultiplePayments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        {
+            if (SelectedInvoiceIds == null || !SelectedInvoiceIds.Any())
+            {
+                TempData["Error"] = "Изберете најмалку една фактура.";
+                return RedirectToAction("Index");
+            }
+            var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
 
+            var documents = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
+            if (documents != null && documents.Any())
+            {
+                foreach (var document in documents)
+                {
+                    document.PaymentStatus = PaymentStatus.Платено;
+                    document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
+                    document.PaymentDescription = PaymentDescription;
+                    document.PaymentType = PaymentType;
+                    document.PaymentNumber = PaymentNumber;
+                    SetStatusPayment(App.FullMapper.Map<DocumentViewModel>(document));
+                }
+                _unitOfWork.SaveChangesAsync();
+            }
+
+            TempData["Success"] = $"{ids.Count} фактури се успешно платени.";
+            return RedirectToAction("Index");
+        }
         private void CreateSpecialInvoice(DocumentViewModel document)
         {
             int sum = 0;
@@ -828,22 +854,13 @@ namespace CleanHub.Controllers
             return docEntity;
         }
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetStatusPayment(DocumentViewModel model)
+        public void SetStatusPayment(DocumentViewModel model)
         {
-            if (model.Id == 0)
-            {
-                return NotFound();
-            }
-            var bookfinancialToUpdate = await _unitOfWork.BookFinancials.GetAllAsync(wh => wh.Where(x => x.DocumentId == model.Id));
+            var bookfinancialToUpdate = _unitOfWork.BookFinancials.GetAll(wh => wh.Where(x => x.DocumentId == model.Id));
             try
             {
-                var documentToUpdate = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id, include: inc => inc.Include(cu => cu.Customer).ThenInclude(bu => bu.Building));
-                if (documentToUpdate == null)
-                {
-                    return NotFound();
-                }
+                var documentToUpdate = _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id, include: inc => inc.Include(cu => cu.Customer).ThenInclude(bu => bu.Building)).Result;
+
                 //if (model.NewTotal.HasValue && model.NewTotal != 0)
                 //{
                 //    documentToUpdate.NewTotal = model.NewTotal.Value;
@@ -911,18 +928,10 @@ namespace CleanHub.Controllers
                     _unitOfWork.BookFinancials.AddRange(listToAdd);
                 }
                 _unitOfWork.Documents.Update(documentToUpdate);
-                await _unitOfWork.SaveChangesAsync();
             }
-            catch (DbUpdateConcurrencyException)
+            catch (DbUpdateConcurrencyException e)
             {
-                if (_unitOfWork.Documents.GetAllAsync().Result.All(x => x.Id != model.Id))
-                {
-                    return NotFound();
-                }
-                throw;
             }
-
-            return RedirectToAction(nameof(Index));
         }
         // GET: Invoices/Edit/5
         public async Task<IActionResult> Edit(int? id)

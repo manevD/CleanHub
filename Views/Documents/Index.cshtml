@@ -5,9 +5,7 @@
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var unpayed = Model != null && Model.Any() && Model.All(x => x.PaymentStatus == PaymentStatus.Неплатено);
 }
-
 <hr />
 
 <form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
@@ -82,28 +80,28 @@
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
-               <table id="style-2" class="table style-2 dt-table-hover">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
                 <thead>
-                <tr>
-                    <th class="checkbox-column dt-no-sorting"></th>
-                    <th data-sorter="false">Бр.</th>
-                    <th data-sorter="false">Станар</th>
-                    <th data-sorter="false">Вкупно</th>
-                    <th data-sorter="false">Сметка</th>
-                    <th data-sorter="false">Статус</th>
-                    <th data-sorter="false">Опис на плаќање</th>
-                    <th data-sorter="false">Дата на плаќање</th>
-                    <th data-sorter="false">Платено на</th>
-                    <th data-sorter="false">Тип на плаќање</th>
-                    <th data-sorter="false">Број на плаќање</th>
-               @*      <th data-sorter="false">Задоцнување</>
+                    <tr>
+                        <th class="checkbox-column dt-no-sorting"></th>
+                        <th data-sorter="false">Бр.</th>
+                        <th data-sorter="false">Станар</th>
+                        <th data-sorter="false">Вкупно</th>
+                        <th data-sorter="false">Сметка</th>
+                        <th data-sorter="false">Статус</th>
+                        <th data-sorter="false">Опис на плаќање</th>
+                        <th data-sorter="false">Дата на плаќање</th>
+                        <th data-sorter="false">Платено на</th>
+                        <th data-sorter="false">Тип на плаќање</th>
+                        <th data-sorter="false">Број на плаќање</th>
+                        @*      <th data-sorter="false">Задоцнување</>
                     <th data-sorter="false">Камата</th>
                     @if (@unpayed)
                     {
                         <th data-sorter="false">Нова вредност</th>
                     } *@
-                    <th data-sorter="false">Функции</th>
-                </tr>
+                        <th data-sorter="false">Функции</th>
+                    </tr>
                 </thead>
                 <tbody>
                     @if (Model != null && Model.Any())
@@ -114,7 +112,9 @@
                         {
                             counter++;
                             <tr>
-                                                                                <td class="checkbox-column">  </td>
+                                <td>
+                                    <input type="checkbox" class="invoice-check" value="@invoice.Id" />
+                                </td>
                                 <td>@counter</td>
                                 <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
                                 <td>@invoice.TotalOutput МКД</td>
@@ -145,79 +145,16 @@
                                 <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
                                 <td>@invoice.PaymentType.GetEnumDescription()</td>
                                 <td>@(invoice.PaymentNumber ?? "—")</td>
-                                @*<td>@(invoice.Delay ?? 0) дена</td>
-                                <td>@(invoice.ChargesInPercent ?? 0) %</td>
-                                @if (@unpayed)
-                                {
-                                    <td>@((invoice.NewTotal ?? invoice.TotalOutput) + " МКД")</td>
-                                } *@
                                 <td>
-                                    @if (invoice.PaymentStatus != PaymentStatus.Платено)
-                                    {
-                                        <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id" class="badge badge-light-primary text-start me-2 action-edit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </a>
-
-                                        <button type="button" class="btn btn-dark mb-2 me-4" data-bs-toggle="modal" data-bs-target="#inputFormModal-@invoice.Id">Плати</button>
-
-                                        <div class="modal fade inputForm-modal" id="inputFormModal-@invoice.Id" tabindex="-1" role="dialog" aria-labelledby="inputFormModalLabel" aria-hidden="true">
-                                            <div class="modal-dialog modal-dialog-centered" role="document">
-                                                <div class="modal-content">
-                                                    <div class="modal-header">
-                                                        <h5 class="modal-title">Внесете податоци</h5>
-                                                    </div>
-                                                    <div class="modal-body">
-                                                        <form asp-action="SetStatusPayment" asp-controller="Documents" asp-route-id="@invoice.Id" method="post">
-                                                            @Html.AntiForgeryToken()
-                                                           @*  <input type="hidden" name="NewTotal" value="@(invoice.NewTotal)"/> *@
-                                                            <div class="form-group">
-                                                                <label for="paymentType">Тип на плаќање</label>
-                                                                <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
-                                                                    @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
-                                                                    {
-                                                                        <option value="@((int)paymentType)" selected="@(paymentType == invoice.PaymentType)">
-                                                                            @paymentType.GetEnumDescription()
-                                                                        </option>
-                                                                    }
-                                                                </select>
-                                                            </div>
-
-                                                            <div class="form-group">
-                                                                <label for="paymentDate">Дата на плаќање</label>
-                                                                <input type="datetime-local" id="paymentDate" name="PaymentDate" class="form-control form-control-sm"/>
-                                                            </div>
-
-                                                            <div class="form-group">
-                                                                <label for="paymentNumber">Број на плаќање</label>
-                                                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm"/>
-                                                            </div>
-
-                                                            <div class="form-group">
-                                                                <label for="paymentDescription">Опис</label>
-                                                                <input type="text" id="paymentDescription" name="paymentDescription" class="form-control form-control-sm"/>
-                                                            </div>
-
-                                                            <div class="modal-footer">
-                                                                <button type="submit" class="btn btn-primary">Плати</button>
-                                                            </div>
-                                                        </form>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    }
-                                    else
-                                    {
-                                        <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id" class="badge badge-light-primary text-start me-2 action-edit">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                                <circle cx="12" cy="12" r="3"></circle>
-                                            </svg>
-                                        </a>
-                                    }
+                                    <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id"
+                                       class="badge badge-light-primary text-start me-2 action-edit">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                             stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
+                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                            <circle cx="12" cy="12" r="3"></circle>
+                                        </svg>
+                                    </a>
                                 </td>
                             </tr>
                         }
@@ -225,7 +162,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="13" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="12" class="text-center">Нема пронајдени податоци</td>
                         </tr>
                     }
                 </tbody>
@@ -234,71 +171,147 @@
     </div>
 </div>
 
+<form asp-action="SetMultiplePayments" asp-controller="Documents" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" name="SelectedInvoiceIds" id="selectedInvoices" />
+
+    <button type="button" class="btn btn-dark mt-3" data-bs-toggle="modal" data-bs-target="#multiPaymentModal">
+        Плати селектирани
+    </button>
+
+    <div class="modal fade" id="multiPaymentModal" tabindex="-1" role="dialog" aria-labelledby="multiPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Плати повеќе фактури</h5>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="paymentType">Тип на плаќање</label>
+                        <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
+                            @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                            {
+                                <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentDate">Дата на плаќање</label>
+                        <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentNumber">Број на плаќање</label>
+                        <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
+                    </div>
+                    <div class="form-group">
+                        <label for="paymentDescription">Опис</label>
+                        <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary">Плати селектирани</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
 @section Scripts {
     <script>
         document.addEventListener("DOMContentLoaded", function () {
+
+            // ==========================
+            // 1. Filterform / Navigation
+            // ==========================
             const form = document.getElementById("filterForm");
             const navigateButton = document.getElementById("navigateButton");
-            const searchButton = form.querySelector('button[type="submit"]');
-            const originalAction = form.action;
+            if (form && navigateButton) {
+                const searchButton = form.querySelector('button[type="submit"]');
+                const originalAction = form.action;
 
-            navigateButton.addEventListener("click", function () {
-                form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
-                form.submit();
-            });
-
-            searchButton.addEventListener("click", function () {
-                form.action = originalAction;
-            });
-
-            const dateFromInput = document.getElementById("dateFrom");
-            const dateToInput = document.getElementById("dateTo");
-
-            function isValidDate(dateString) {
-                return /^\d{2}\.\d{2}\.\d{4}$/.test(dateString);
-            }
-
-            function toggleButtonState() {
-                navigateButton.disabled = !(isValidDate(dateFromInput.value) && isValidDate(dateToInput.value));
-            }
-
-            toggleButtonState();
-            dateFromInput.addEventListener("input", toggleButtonState);
-            dateToInput.addEventListener("input", toggleButtonState);
-
-            document.getElementById('buildingSearch').addEventListener('input', function () {
-                const selectedValue = this.value;
-                const options = document.querySelectorAll('#buildingOptions option');
-                let selectedId = '';
-
-                // Find the matching option and get its data-id
-                options.forEach(option => {
-                    if (option.value === selectedValue) {
-                        selectedId = option.getAttribute('data-id');
-                    }
+                navigateButton.addEventListener("click", function () {
+                    form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
+                    form.submit();
                 });
 
-                // Set the hidden input's value
-                document.getElementById('buildingId').value = selectedId || '';
-            });
-        });
-         document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-            button.addEventListener('click', function () {
-                const dateFrom = document.getElementById('dateFrom').value;
-                const dateTo = document.getElementById('dateTo').value;
-
-                const modalId = button.getAttribute('data-bs-target');
-                const modal = document.querySelector(modalId);
-
-                if (modal) {
-                    modal.querySelector('.modal-date-from').value = dateFrom;
-                    modal.querySelector('.modal-date-to').value = dateTo;
+                if (searchButton) {
+                    searchButton.addEventListener("click", function () {
+                        form.action = originalAction;
+                    });
                 }
+
+                const dateFromInput = document.getElementById("dateFrom");
+                const dateToInput = document.getElementById("dateTo");
+
+                function isValidDate(dateString) {
+                    return /^\d{2}\.\d{2}\.\d{4}$/.test(dateString);
+                }
+
+                function toggleButtonState() {
+                    if (dateFromInput && dateToInput) {
+                        navigateButton.disabled = !(isValidDate(dateFromInput.value) && isValidDate(dateToInput.value));
+                    }
+                }
+
+                toggleButtonState();
+                if (dateFromInput) dateFromInput.addEventListener("input", toggleButtonState);
+                if (dateToInput) dateToInput.addEventListener("input", toggleButtonState);
+            }
+
+            // ==========================================
+            // 2. Building-Search Hidden Input Handling
+            // ==========================================
+            const buildingSearch = document.getElementById('buildingSearch');
+            if (buildingSearch) {
+                buildingSearch.addEventListener('input', function () {
+                    const selectedValue = this.value;
+                    const options = document.querySelectorAll('#buildingOptions option');
+                    let selectedId = '';
+
+                    options.forEach(option => {
+                        if (option.value === selectedValue) {
+                            selectedId = option.getAttribute('data-id');
+                        }
+                    });
+
+                    const buildingIdInput = document.getElementById('buildingId');
+                    if (buildingIdInput) buildingIdInput.value = selectedId || '';
+                });
+            }
+
+            // ==========================
+            // 3. Modal-Date Inputs
+            // ==========================
+            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
+                button.addEventListener('click', function () {
+                    const dateFrom = document.getElementById('dateFrom')?.value || '';
+                    const dateTo = document.getElementById('dateTo')?.value || '';
+
+                    const modalId = button.getAttribute('data-bs-target');
+                    const modal = document.querySelector(modalId);
+
+                    if (modal) {
+                        const inputFrom = modal.querySelector('.modal-date-from');
+                        const inputTo = modal.querySelector('.modal-date-to');
+                        if (inputFrom) inputFrom.value = dateFrom;
+                        if (inputTo) inputTo.value = dateTo;
+                    }
+                });
             });
+
+            // ====================================
+            // 4. Multi-Payment Modal: Checkbox IDs
+            // ====================================
+            const payButton = document.querySelector('[data-bs-target="#multiPaymentModal"]');
+            if (payButton) {
+                payButton.addEventListener('click', function () {
+                    const selected = [...document.querySelectorAll('.invoice-check:checked')].map(cb => cb.value);
+                    const hiddenInput = document.getElementById('selectedInvoices');
+                    if (hiddenInput) hiddenInput.value = selected.join(',');
+                });
+            }
+
         });
-    });
-
-
     </script>
+
 }
