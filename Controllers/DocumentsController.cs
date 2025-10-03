@@ -21,7 +21,7 @@ using System.Text;
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor) : Controller
+    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor, ApplicationDbMartiContext _context) : Controller
     {
         public List<Building> Buildings { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
 
@@ -79,7 +79,7 @@ namespace CleanHub.Controllers
 
         public async Task CreateAndSend(DocumentViewModel document)
         {
-           
+
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
             {
                 smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
@@ -152,25 +152,28 @@ namespace CleanHub.Controllers
 
 
         [Route("Сметки")]
-        public IActionResult Index()
+        public IActionResult Index(bool? fromPaymentStatus)
         {
-            // Populate dropdown for PaymentStatus and Buildings
-            ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
-                .Cast<PaymentStatus>()
-                .Select(e => new SelectListItem
-                {
-                    Text = e.GetEnumDescription(),
-                    Value = ((int)e).ToString()
-                })
-                .ToList();
-
-            if (!Buildings.Any())
+            if (!fromPaymentStatus.HasValue || !fromPaymentStatus.Value)
             {
-                throw new Exception("No buildings found in the database.");
-            }
+                // Populate dropdown for PaymentStatus and Buildings
+                ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
+                    .Cast<PaymentStatus>()
+                    .Select(e => new SelectListItem
+                    {
+                        Text = e.GetEnumDescription(),
+                        Value = ((int)e).ToString()
+                    })
+                    .ToList();
 
-            Buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
-            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name");
+                if (!Buildings.Any())
+                {
+                    throw new Exception("No buildings found in the database.");
+                }
+
+                Buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
+                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name");
+            }
 
             return View("Index");
         }
@@ -310,7 +313,7 @@ namespace CleanHub.Controllers
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
             if (debt != null && debt.Any())
             {
-                var allParts = debt.OrderBy(x=>x.Id)
+                var allParts = debt.OrderBy(x => x.Id)
                     .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
                     .ToList();
 
@@ -609,6 +612,23 @@ namespace CleanHub.Controllers
 
                 CreateSpecialInvoice(document);
                 await _unitOfWork.SaveChangesAsync();
+                if (documents != null && documents.Any())
+                {
+                    List<DokumentiTest> mappedDocuments = documents
+                .Select(d => new DokumentiTest
+                {
+                    Dokid = d.Id.ToString(),
+                    Datum = d.Date.Value.ToString("yyyy-MM-dd"),
+                    Broj = d.Number.ToString(),
+                    PartnerID = d.CustomerId.ToString(),
+                    Godina = d.Date.Value.Year.ToString(),
+                    VkupnoIz = d.TotalOutput.ToString()
+                }).ToList();
+
+                    _context.DokumentiTest.AddRange(mappedDocuments);
+                    _context.SaveChanges();
+                }
+                
                 HttpContext.Session.Remove("Documents");
 
                 return await PrintDocuments(documents, building, send);
@@ -742,7 +762,7 @@ namespace CleanHub.Controllers
                 Quantity = book.Quantity,
                 PriceWithTax = book.PriceWithTaxTotal,
                 Price = book.Price,
-                Tax  = (book.ArticleNotes != null && book.ArticleNotes.Contains("енер"))
+                Tax = (book.ArticleNotes != null && book.ArticleNotes.Contains("енер"))
                     ? 18
                     : book.Tax,
                 Total = book.PriceWithTaxTotal,

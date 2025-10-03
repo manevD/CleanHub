@@ -13,7 +13,7 @@ namespace CleanHub.Controllers
 {
     [RequireLogin]
 
-    public class CustomersController(IUnitOfWork _unitOfWork, IOptions<SMTPConfig> _smtpConfig) : Controller
+    public class CustomersController(IUnitOfWork _unitOfWork, IOptions<SMTPConfig> _smtpConfig, ApplicationDbMartiContext _context) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
@@ -27,7 +27,7 @@ namespace CleanHub.Controllers
             var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Where(x=>!x.Hide).Select(c => new Customer
+                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Where(x => !x.Hide).Select(c => new Customer
                 {
                     Id = c.Id,
                     CustomerInfo = c.CustomerInfo ?? string.Empty,
@@ -38,7 +38,6 @@ namespace CleanHub.Controllers
                     Adress = c.Adress
                 }));
             });
-
             return View(customers);
         }
 
@@ -139,6 +138,14 @@ namespace CleanHub.Controllers
                 customerEntity.Inactive = false;
                 _unitOfWork.Customers.Add(customerEntity);
                 await _unitOfWork.SaveChangesAsync();
+                var partner = new PartneriTest
+                {
+                    PartnerID = customerEntity.Id,
+                    parAdresa = customerEntity.Adress,
+                    Partner = customerEntity.CustomerInfo,
+                };
+                _context.PartneriTest.Add(partner);
+                _context.SaveChanges();
                 return RedirectToAction(nameof(Index));
             }
             PopulateViewData(customer.BuildingId, customer.ActivityId);
@@ -214,14 +221,21 @@ namespace CleanHub.Controllers
                     _unitOfWork.Customers.Update(existingCustomer);
                     //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
                     await _unitOfWork.SaveChangesAsync();
-
+                    var partner = _context.PartneriTest.FirstOrDefault(x => x.PartnerID == existingCustomer.Id);
+                    if (partner != null)
+                    {
+                        partner.Partner = existingCustomer.CustomerInfo;
+                        partner.parAdresa = existingCustomer.Adress;
+                        _context.PartneriTest.Update(partner);
+                        _context.SaveChanges();
+                    }   
                     if (navigateToCreate)
                     {
                         return RedirectToAction(nameof(CreateWithModel), new CustomerViewModel { BuildingId = customer.BuildingId });
                     }
                 }
 
-                return View(customer);
+                return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
             {
@@ -249,6 +263,12 @@ namespace CleanHub.Controllers
             {
                 _unitOfWork.Customers.Delete(customer);
                 await _unitOfWork.SaveChangesAsync();
+                var partnerToDelete = _context.PartneriTest.FirstOrDefault(x => x.PartnerID == id);
+                if (partnerToDelete != null)
+                {
+                    _context.PartneriTest.Remove(partnerToDelete);
+                    _context.SaveChanges();
+                }
             }
             catch (Exception ex)
             {

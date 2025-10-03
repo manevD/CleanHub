@@ -82,9 +82,10 @@
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
     <div class="statbox widget box box-shadow">
         <div class="widget-content widget-content-area">
-            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+               <table id="style-2" class="table style-2 dt-table-hover">
                 <thead>
                 <tr>
+                    <th class="checkbox-column dt-no-sorting"></th>
                     <th data-sorter="false">Бр.</th>
                     <th data-sorter="false">Станар</th>
                     <th data-sorter="false">Вкупно</th>
@@ -113,6 +114,7 @@
                         {
                             counter++;
                             <tr>
+                                                                                <td class="checkbox-column">  </td>
                                 <td>@counter</td>
                                 <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
                                 <td>@invoice.TotalOutput МКД</td>
@@ -296,5 +298,7 @@
             });
         });
     });
+
+
     </script>
 }

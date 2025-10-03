@@ -1,4 +1,3 @@
-using System.Globalization;
 using AutoMapper;
 using CleanHub.Config;
 using CleanHub.Extensions;
@@ -8,6 +7,8 @@ using CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using System.Configuration;
+using System.Globalization;
 
 namespace CleanHub
 {
@@ -26,9 +27,19 @@ namespace CleanHub
             config.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
             // Add services to the container.
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+            var connectionStringMarti = builder.Configuration.GetConnectionString("DefaultConnectionMarti") ?? throw new InvalidOperationException("Connection string 'DefaultConnectionMarti' not found.");
+
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString, options =>
                     options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+
+            builder.Services.AddDbContext<ApplicationDbMartiContext>(options =>
+                options.UseMySql(
+                    connectionStringMarti,
+                    ServerVersion.AutoDetect(connectionStringMarti), 
+                    mysqlOptions => mysqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                ));
+
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
             builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
