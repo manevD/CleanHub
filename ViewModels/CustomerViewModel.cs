@@ -23,7 +23,7 @@ namespace CleanHub.ViewModels
         public bool Garage { get; set; }
         public bool Hide { get; set; }
 
-        public bool? Inactive { get; set; }
+        public bool Inactive { get; set; }
 
         public DateOnly? InactiveDatum { get; set; }
 

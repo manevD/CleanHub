@@ -39,7 +39,7 @@
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
-                <form asp-action="Create" asp-controller="Documents" method="post" class="row" novalidate>
+                <form asp-action="Create" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
                     <input type="hidden" name="BuildingId" asp-for="@Model.BuildingId" />
                     <div class="col-xl-9">
                         <div class="invoice-content">
@@ -252,8 +252,9 @@
                                         <div class="row">
                                             <div class="col-12">
                                                 <div class="form-group mb-0">
-                                                    <input type="text" class="form-control form-control-sm" id="due" asp-for="@Model.Date" placeholder="None">
-                                                </div>
+                                     <input asp-for="Date" class="form-control form-control-sm" type="date" placeholder="None" />
+
+                                               </div>
                                             </div>
                                         </div>
                                     </div>
@@ -291,21 +292,36 @@
                                 <div class="invoice-actions-btn">
                                     <div class="invoice-action-btn">
                                         <div class="row">
-                                            <div class="col-xl-12 col-md-4">
+                                    <div class="col-xl-12 col-md-4">
                                                 @if (routeId == 2)
                                                 {
-                                                    <button type="submit" name="cost" value="true" asp-action="Create" asp-controller="Documents" class="btn btn-primary">
+                                                    <button type="submit"
+                                                            name="cost"
+                                                            value="true"
+                                                            asp-action="Create"
+                                                            asp-controller="Documents"
+                                                            class="btn btn-primary">
                                                         Зачувај
                                                     </button>
                                                 }
                                                 else
                                                 {
-                                                    <input type="submit" value="Зачувај и принтај" asp-action="Create" asp-controller="Documents" class="btn btn-primary" />
-                                                    <button type="submit" name="send" value="true" asp-action="Create" asp-controller="Documents" class="btn btn-primary">
+                                                    <input type="submit"
+                                                           value="Зачувај и принтај"
+                                                           asp-action="Create"
+                                                           asp-controller="Documents"
+                                                           class="btn btn-primary" />
+
+                                                    <button type="submit"
+                                                            name="send"
+                                                            value="true"
+                                                            asp-action="Create"
+                                                            asp-controller="Documents"
+                                                            class="btn btn-primary">
                                                         Зачувај, прати и принтај
                                                     </button>
                                                 }
-                                            </div>
+                                </div>
                                         </div>
                                     </div>
                                 </div>
@@ -452,6 +468,44 @@
                 window.location.href = url;
             }
         });
-
+  
     </script>
+
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+    // Alle Formulare beobachten
+    document.querySelectorAll("form").forEach(form => {
+        form.addEventListener("submit", () => {
+            // Alle Submit-Buttons in diesem Formular deaktivieren
+            const buttons = form.querySelectorAll('[type="submit"]');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                const originalText = btn.innerText || btn.value;
+                btn.dataset.originalText = originalText; // speichern
+
+                if (btn.tagName.toLowerCase() === "button") {
+                    btn.innerText = "⏳ Ве молиме почекајте...";
+                } else {
+                    btn.value = "⏳ Ве молиме почекајте...";
+                }
+                btn.classList.add("opacity-50");
+            });
+
+            // Nach 15 Sekunden wieder aktivieren
+            setTimeout(() => {
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    if (btn.tagName.toLowerCase() === "button") {
+                        btn.innerText = btn.dataset.originalText;
+                    } else {
+                        btn.value = btn.dataset.originalText;
+                    }
+                    btn.classList.remove("opacity-50");
+                });
+            }, 15000);
+        });
+    });
+});
+</script>
+   
 }

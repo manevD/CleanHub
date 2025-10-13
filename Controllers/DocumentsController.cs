@@ -5,6 +5,7 @@ using CleanHub.Entities.Enums;
 using CleanHub.Extensions;
 using CleanHub.Helpers;
 using CleanHub.Infrastructure.Data;
+using CleanHub.Migrations;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -17,6 +18,8 @@ using SelectPdf;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
+using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
 namespace CleanHub.Controllers
 {
@@ -174,7 +177,29 @@ namespace CleanHub.Controllers
                 Buildings.Insert(0, new Building { Name = "Сите", Id = 0 });
                 ViewBag.Buildings = new SelectList(Buildings, "Id", "Name");
             }
+            else
+            {
+                var selectedId = TempData["SelectedBuildingId"] as int?;
+                var selectedName = TempData["SelectedBuildingName"] as string;
 
+                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", selectedId);
+
+                {
+                    ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", selectedId);
+                    ViewBag.SelectedBuildingName = selectedName;
+                    ViewBag.BuildingId = selectedId;
+                }
+
+                ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
+              .Cast<PaymentStatus>()
+              .Select(e => new SelectListItem
+              {
+                  Text = e.GetEnumDescription(),
+                  Value = ((int)e).ToString(),
+                  Selected = (int)e == (int)Entities.Enums.PaymentStatus.Неплатено
+              })
+              .ToList();
+            }
             return View("Index");
         }
 
@@ -342,7 +367,13 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
-            documentViewModel.Date = DateOnly.FromDateTime(DateTime.UtcNow);
+            var now = DateTime.UtcNow;
+
+            // Move to the first day of the current month, then subtract one day
+            var lastDayOfLastMonth = new DateTime(now.Year, now.Month, 1).AddDays(-1);
+
+            // Convert to DateOnly
+            documentViewModel.Date = DateOnly.FromDateTime(lastDayOfLastMonth);
             documentViewModel.Company = _config.Value;
             var buildings = new List<Building>();
             if (id != 2)
@@ -360,7 +391,7 @@ namespace CleanHub.Controllers
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
-                documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive.Value).ToList();
+                documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive).ToList();
 
                 var filteredProducts = (id == 0)
                     ? documentViewModel.Building?.BuildingProducts
@@ -598,7 +629,7 @@ namespace CleanHub.Controllers
 
                         if (docEntity.PaymentStatus == PaymentStatus.Платено)
                         {
-                             SetStatusPayment(docViewModel);
+                            SetStatusPayment(docViewModel);
                         }
                         else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
                         {
@@ -637,7 +668,7 @@ namespace CleanHub.Controllers
         }
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult SetMultiplePayments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        public async Task<IActionResult> SetMultiplePayments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
         {
             if (SelectedInvoiceIds == null || !SelectedInvoiceIds.Any())
             {
@@ -658,11 +689,20 @@ namespace CleanHub.Controllers
                     document.PaymentNumber = PaymentNumber;
                     SetStatusPayment(App.FullMapper.Map<DocumentViewModel>(document));
                 }
-                _unitOfWork.SaveChangesAsync();
+                await _unitOfWork.SaveChangesAsync();
+                var customerId = documents?.FirstOrDefault()?.CustomerId;
+                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
+                var building = customer?.Building;
+                if (building != null)
+                {
+                    TempData["SelectedBuildingId"] = building.Id;
+                    TempData["SelectedBuildingName"] = building.Name;
+                }
             }
 
             TempData["Success"] = $"{ids.Count} фактури се успешно платени.";
-            return RedirectToAction("Index");
+
+            return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
         }
         private void CreateSpecialInvoice(DocumentViewModel document)
         {

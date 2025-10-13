@@ -90,10 +90,9 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-check">
-                                                        <input type="hidden" name="Inactive" value="false" />
                                                         <input type="checkbox" class="form-check-input" id="Inactive"
                                                                name="Inactive" value="true" @(Model.Inactive == true ? "checked" : "") />
-                                                        <label class="form-check-label">Неактивен</label>
+                                                        <label class="form-check-label" for="Inactive">Неактивен</label>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
@@ -106,7 +105,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label asp-for="InactiveDatum">Неактивен од</label>
-                                                        <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum"/>
+                                                        <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum" />
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
@@ -139,20 +138,16 @@
 
 @section Scripts {
     <script>
-
-
-        document.addEventListener('DOMContentLoaded', function () {
+              document.addEventListener('DOMContentLoaded', function () {
             var inactiveCheckbox = document.getElementById('Inactive');
             var inactiveDatumInput = document.getElementById('InactiveDatum');
 
             function toggleInactiveDatum() {
-                inactiveDatumInput.disabled = !inactiveCheckbox.checked;
+                inactiveDatumInput.readOnly = !inactiveCheckbox.checked;
+                inactiveDatumInput.classList.toggle('bg-light', !inactiveCheckbox.checked);
             }
 
-            // Initial toggle based on Initial state
-            toggleInactiveDatum();
-
-            // Add event listener to toggle state on checkbox change
+            toggleInactiveDatum(); // initial state
             inactiveCheckbox.addEventListener('change', toggleInactiveDatum);
         });
     </script>

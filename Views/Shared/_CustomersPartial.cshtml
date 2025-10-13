@@ -59,10 +59,7 @@
                             @Html.DisplayFor(modelItem => customer.Garage)
                         </td>
                         <td>
-                            @{
-                                bool inactiveValue = customer.Inactive.HasValue ? customer.Inactive.Value : false;
-                            }
-                            @Html.CheckBoxFor(modelItem => inactiveValue, new { @disabled = "disabled" })
+                                @Html.CheckBoxFor(modelItem => customer.Inactive, new { @disabled = "disabled" })
                         </td>
                         <td>
                             <a class="badge badge-light-primary text-start me-2 action-edit" asp-action="Details" asp-controller="Customers" asp-route-id="@customer.Id">

@@ -65,10 +65,7 @@
                                 }
                                 @Html.CheckBoxFor(modelItem => garageChecked)                            </td>
                             <td>
-                                @{
-                                    bool inactiveValue = item.Inactive.HasValue ? item.Inactive.Value : false;
-                                }
-                                @Html.CheckBoxFor(modelItem => inactiveValue, new { @disabled = "disabled" })
+                                @Html.CheckBoxFor(modelItem => item.Inactive, new { @disabled = "disabled" })
                             </td>
                            
                             <td>
