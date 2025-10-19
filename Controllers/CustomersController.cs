@@ -206,6 +206,7 @@ namespace CleanHub.Controllers
                     var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
                                            || (existingCustomer.Inactive == false && customer.Inactive == true);
 
+
                     // Aktualisiere NUR die Eigenschaften von existingCustomer
                     App.FullMapper.Map(customer, existingCustomer);
                     if (customer.BuildingId != null)

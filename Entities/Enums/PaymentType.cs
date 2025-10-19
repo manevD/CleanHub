@@ -13,6 +13,8 @@ namespace CleanHub.Entities.Enums
         [Description("Веб")]
         Web,
         [Description("Претплата")]
-        Subscription
+        Subscription,
+        [Description("Каса Прими")]
+        CashRegister
     }
 }

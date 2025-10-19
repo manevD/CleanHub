@@ -110,6 +110,12 @@
                                                 </div>
                                                 <div class="col-md-6">
                                                     <div class="form-group">
+                                                        <label asp-for="ActiveDatum">Aктивен од</label>
+                                                        <input asp-for="ActiveDatum" type="date" class="form-control mb-3" id="ActiveDatum" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
                                                         <label asp-for="Subscription">Во претплата</label>
                                                         <input asp-for="Subscription" type="number" class="form-control mb-3" id="Subscription" />
                                                     </div>
@@ -141,9 +147,10 @@
               document.addEventListener('DOMContentLoaded', function () {
             var inactiveCheckbox = document.getElementById('Inactive');
             var inactiveDatumInput = document.getElementById('InactiveDatum');
-
+            var activDatumInput = document.getElementById('ActiveDatum');   
             function toggleInactiveDatum() {
                 inactiveDatumInput.readOnly = !inactiveCheckbox.checked;
+                activDatumInput.readOnly = inactiveCheckbox.checked;
                 inactiveDatumInput.classList.toggle('bg-light', !inactiveCheckbox.checked);
             }
 

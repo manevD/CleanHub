@@ -391,7 +391,7 @@ namespace CleanHub.Controllers
                 _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
-                documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive).ToList();
+                documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive && x.ActiveDatum.HasValue && x.ActiveDatum <= documentViewModel.Date).ToList();
 
                 var filteredProducts = (id == 0)
                     ? documentViewModel.Building?.BuildingProducts
