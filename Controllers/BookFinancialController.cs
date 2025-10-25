@@ -77,14 +77,17 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = GetDemandsLastInvoice( dateTo, results);
-                    ViewBag.TotalOwes = GetOwesLastInvoice( dateTo, results);
+                    ViewBag.TotalDemands = GetDemandsLastInvoice(dateTo, results);
+                    ViewBag.TotalOwes = GetOwesLastInvoice(dateTo, results);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
-
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
                     //    CalculateOverdueStatus(results);
                     //}
+                }
+                else
+                {
+                    return RedirectToAction(nameof(LastInvoice));
                 }
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
@@ -109,11 +112,11 @@ namespace CleanHub.Controllers
             }
             catch (Exception e)
             {
-                throw e;
+                throw;
             }
         }
 
-        private double GetOwesLastInvoice (string? dateTo, List<BookFinancialInfoViewModel> results)
+        private double GetOwesLastInvoice(string? dateTo, List<BookFinancialInfoViewModel> results)
         {
             DateOnly? DateTo = null;
             if (!string.IsNullOrEmpty(dateTo))
@@ -122,7 +125,7 @@ namespace CleanHub.Controllers
                 return results
                     .Where(x =>
                         (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
-                        x.DocumentTypId != 11).Sum(su => su.Demands);
+                        x.DocumentTypId != 11 && !string.IsNullOrEmpty(x.Description)).Sum(su => su.Owes);
             }
             return 0;
         }
@@ -136,7 +139,7 @@ namespace CleanHub.Controllers
                 return results
                     .Where(x =>
                         (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
-                        x.DocumentTypId != 11).Sum(su => su.Owes);
+                        x.DocumentTypId != 11).Sum(su => su.Demands);
             }
             return 0;
         }
@@ -211,7 +214,7 @@ namespace CleanHub.Controllers
                 results = results
                     .Where(x =>
                         (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)).ToList();
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)&& !string.IsNullOrEmpty(x.Description)).ToList();
             }
             else
             {
