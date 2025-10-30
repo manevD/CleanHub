@@ -27,19 +27,25 @@ namespace CleanHub.Controllers
             var customers = await cache.GetOrCreateAsync("Customers", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
-                return App.ReaderMapper.Map<List<CustomerViewModel>>(_unitOfWork.Customers.GetAllNoTrakcing().Where(x => !x.Hide).Select(c => new Customer
-                {
-                    Id = c.Id,
-                    CustomerInfo = c.CustomerInfo ?? string.Empty,
-                    Email = c.Email,
-                    Subscription = c.Subscription ?? 0,
-                    PhoneNumber = c.PhoneNumber,
-                    Inactive = c.Inactive,
-                    Adress = c.Adress
-                }));
+
+                return  _unitOfWork.Customers
+                    .GetAllNoTrakcing()
+                    .Where(x => !x.Hide)
+                    .Select(c => new CustomerViewModel
+                    {
+                        Id = c.Id,
+                        CustomerInfo = c.CustomerInfo ?? string.Empty,
+                        Email = c.Email,
+                        Subscription = c.Subscription ?? 0,
+                        PhoneNumber = c.PhoneNumber,
+                        Inactive = c.Inactive ?? false,
+                        Adress = c.Adress
+                    }).ToList();
             });
+
             return View(customers);
         }
+
 
         public async Task<IActionResult> Details(int? id)
         {
