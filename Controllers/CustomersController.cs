@@ -28,7 +28,7 @@ namespace CleanHub.Controllers
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
-                return  _unitOfWork.Customers
+                return _unitOfWork.Customers
                     .GetAllNoTrakcing()
                     .Where(x => !x.Hide)
                     .Select(c => new CustomerViewModel
@@ -212,19 +212,14 @@ namespace CleanHub.Controllers
                     var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
                                            || (existingCustomer.Inactive == false && customer.Inactive == true);
 
-
                     // Aktualisiere NUR die Eigenschaften von existingCustomer
                     App.FullMapper.Map(customer, existingCustomer);
-                    if (customer.BuildingId != null)
-                    {
-                        existingCustomer.BuildingId = customer.BuildingId;
-                        existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
-                    }
-                    if (customer.ActivityId != null)
-                    {
-                        existingCustomer.ActivityId = customer.ActivityId;
-                        existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
-                    }
+
+                    existingCustomer.BuildingId = customer.BuildingId;
+                    existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
+
+                    existingCustomer.ActivityId = customer.ActivityId;
+                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
                     _unitOfWork.Customers.Update(existingCustomer);
                     //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
                     await _unitOfWork.SaveChangesAsync();
@@ -235,7 +230,7 @@ namespace CleanHub.Controllers
                         partner.parAdresa = existingCustomer.Adress;
                         _context.PartneriTest.Update(partner);
                         _context.SaveChanges();
-                    }   
+                    }
                     if (navigateToCreate)
                     {
                         return RedirectToAction(nameof(CreateWithModel), new CustomerViewModel { BuildingId = customer.BuildingId });
