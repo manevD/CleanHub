@@ -696,6 +696,15 @@ namespace CleanHub.Controllers
             {
                 _unitOfWork.Documents.DeleteRange(documentsToDelete);
                 await _unitOfWork.SaveChangesAsync();
+                var idsDoc = documentsToDelete.Select(d => d.Id.ToString()).ToList();
+
+                var documents = _context.DokumentiTest
+                    .Where(x => idsDoc.Contains(x.Dokid));
+                if (documents != null && documents.Any())
+                {
+                    _context.DokumentiTest.RemoveRange(documents);
+                    _context.SaveChanges();
+                }
                 var customerId = documentsToDelete?.FirstOrDefault()?.CustomerId;
                 var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
                 var building = customer?.Building;

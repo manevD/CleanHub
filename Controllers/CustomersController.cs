@@ -13,7 +13,7 @@ namespace CleanHub.Controllers
 {
     [RequireLogin]
 
-    public class CustomersController(IUnitOfWork _unitOfWork, IOptions<SMTPConfig> _smtpConfig, ApplicationDbMartiContext _context) : Controller
+    public class CustomersController(IUnitOfWork _unitOfWork, ApplicationDbMartiContext _context) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
