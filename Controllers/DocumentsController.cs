@@ -5,7 +5,6 @@ using CleanHub.Entities.Enums;
 using CleanHub.Extensions;
 using CleanHub.Helpers;
 using CleanHub.Infrastructure.Data;
-using CleanHub.Migrations;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -15,7 +14,6 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
-using System.Linq;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -667,6 +665,43 @@ namespace CleanHub.Controllers
 
             return View(document);
         }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePaymentMultipleDocuments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        {
+            if (SelectedInvoiceIds == null || !SelectedInvoiceIds.Any())
+            {
+                TempData["Error"] = "Изберете најмалку една фактура.";
+                return RedirectToAction(nameof(Index));
+            }
+            var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
+
+            var documents = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
+            if (documents != null && documents.Any())
+            {
+                foreach (var document in documents)
+                {
+                    document.PaymentDescription = PaymentDescription;
+                    document.PaymentType = PaymentType;
+                    SetStatusPayment(App.FullMapper.Map<DocumentViewModel>(document));
+                }
+                await _unitOfWork.SaveChangesAsync();
+                var customerId = documents?.FirstOrDefault()?.CustomerId;
+                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
+                var building = customer?.Building;
+                if (building != null)
+                {
+                    TempData["SelectedBuildingId"] = building.Id;
+                    TempData["SelectedBuildingName"] = building.Name;
+                }
+            }
+
+            TempData["Success"] = $"{ids.Count} фактури се успешно избришани.";
+
+            return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
+        }
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteMultipleDocuments(string SelectedInvoiceIds)
@@ -684,7 +719,7 @@ namespace CleanHub.Controllers
                 _unitOfWork.Books.DeleteRange(booksToDelete);
                 await _unitOfWork.SaveChangesAsync();
             }
-            var bookFinancialsToDelete = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId.HasValue &&  ids.Contains(x.DocumentId.Value)).ToList();
+            var bookFinancialsToDelete = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId.HasValue && ids.Contains(x.DocumentId.Value)).ToList();
             if (bookFinancialsToDelete != null && bookFinancialsToDelete.Any())
             {
                 _unitOfWork.BookFinancials.DeleteRange(bookFinancialsToDelete);

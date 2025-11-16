@@ -170,7 +170,7 @@
         </div>
     </div>
 </div>
-<div class="d-flex gap-2 mt-3">
+<div class="d-flex gap-3 mt-3 align-items-start">
 
     <form asp-action="SetMultiplePayments" asp-controller="Documents" method="post">
         @Html.AntiForgeryToken()
@@ -216,6 +216,7 @@
             </div>
         </div>
     </form>
+
     <!-- DELETE FORM -->
     <form id="deleteForm" asp-action="DeleteMultipleDocuments" asp-controller="Documents" method="post">
         @Html.AntiForgeryToken()
@@ -225,6 +226,53 @@
             Избриши селектирани
         </button>
     </form>
+    @if (Model?.FirstOrDefault()?.PaymentStatus == PaymentStatus.Платено)
+    {
+        <form asp-action="ChangePaymentMultipleDocuments" asp-controller="Documents" method="post" style="margin-left:125px;">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="SelectedInvoiceIds" id="selectedInvoicesMultipleChange" />
+
+            <button type="button" class="btn btn-dark mt-3" data-bs-toggle="modal" data-bs-target="#multiChangeModal">
+                Измени плаќање
+            </button>
+
+            <div class="modal fade" id="multiChangeModal" tabindex="-1" role="dialog" aria-labelledby="multiChangeModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-dialog-centered" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Плати повеќе фактури</h5>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label for="paymentType">Тип на плаќање</label>
+                                <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
+                                    @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                    {
+                                        <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentDate">Дата на плаќање</label>
+                                <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentNumber">Број на плаќање</label>
+                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
+                            </div>
+                            <div class="form-group">
+                                <label for="paymentDescription">Опис</label>
+                                <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="submit" class="btn btn-primary"> Измени плаќање</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    }
 </div>
 @section Scripts {
     <script>
@@ -321,6 +369,14 @@
                 });
             }
 
+            const changeButton = document.querySelector('[data-bs-target="#multiChangeModal"]');
+            if (changeButton) {
+                changeButton.addEventListener('click', function () {
+                    const selected = [...document.querySelectorAll('.invoice-check:checked')].map(cb => cb.value);
+                    const hiddenInput = document.getElementById('selectedInvoicesMultipleChange');
+                    if (hiddenInput) hiddenInput.value = selected.join(',');
+                });
+            }
 
            const deleteButton = document.querySelector('#deleteForm button[type="submit"]');
         if (deleteButton) {
