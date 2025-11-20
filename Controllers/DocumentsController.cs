@@ -682,9 +682,23 @@ namespace CleanHub.Controllers
             {
                 foreach (var document in documents)
                 {
-                    document.PaymentDescription = PaymentDescription;
-                    document.PaymentType = PaymentType;
-                    SetStatusPayment(App.FullMapper.Map<DocumentViewModel>(document));
+                    if (PaymentDate != DateTime.MinValue)
+                    {
+                        document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
+                    }
+                    if (PaymentType != PaymentType.Bank)
+                    {
+                        document.PaymentType = PaymentType;
+                    }
+                    if (!string.IsNullOrEmpty(PaymentNumber))
+                    {
+                        document.PaymentNumber = PaymentNumber;
+                    }
+                    if (!string.IsNullOrEmpty(PaymentDescription))
+                    {
+                        document.PaymentDescription = PaymentDescription;
+                    }
+                    _unitOfWork.Documents.Update(document);
                 }
                 await _unitOfWork.SaveChangesAsync();
                 var customerId = documents?.FirstOrDefault()?.CustomerId;
