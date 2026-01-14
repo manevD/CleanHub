@@ -14,36 +14,62 @@ namespace CleanHub
 {
     public class Program
     {
-        public  static void Main(string[] args)
+        public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
+            // ----------------------------------------------------
+            // Configuration
+            // ----------------------------------------------------
             var config = new ConfigurationBuilder()
-             .SetBasePath(Directory.GetCurrentDirectory())
-             .AddJsonFile($"appsettings.json")
-             .AddEnvironmentVariables()
-             .Build();
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddEnvironmentVariables()
+                .Build();
+
             config.AddConfiguration<CompanyConfig>(builder.Services, "Company");
             config.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
-            // Add services to the container.
-            var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-            var connectionStringMarti = builder.Configuration.GetConnectionString("DefaultConnectionMarti") ?? throw new InvalidOperationException("Connection string 'DefaultConnectionMarti' not found.");
 
+            var connectionString =
+                builder.Configuration.GetConnectionString("DefaultConnection")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
+            var connectionStringMarti =
+                builder.Configuration.GetConnectionString("DefaultConnectionMarti")
+                ?? throw new InvalidOperationException("Connection string 'DefaultConnectionMarti' not found.");
+
+            // ----------------------------------------------------
+            // DbContexts
+            // ----------------------------------------------------
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(connectionString, options =>
-                    options.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)));
+                options.UseSqlServer(
+                    connectionString,
+                    sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                ));
 
             builder.Services.AddDbContext<ApplicationDbMartiContext>(options =>
                 options.UseMySql(
                     connectionStringMarti,
-                    ServerVersion.AutoDetect(connectionStringMarti), 
-                    mysqlOptions => mysqlOptions.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                    new MySqlServerVersion(new Version(8, 0, 32)),
+                    mysql =>
+                    {
+                        mysql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        mysql.EnableRetryOnFailure(
+                            maxRetryCount: 3,
+                            maxRetryDelay: TimeSpan.FromSeconds(5),
+                            errorNumbersToAdd: null
+                        );
+                    }
                 ));
 
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
-            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
 
+            // ----------------------------------------------------
+            // Services
+            // ----------------------------------------------------
+            builder.Services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
             builder.Services.AddMemoryCache();
+
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<ICustomerRepository, CustomersRepository>();
             builder.Services.AddScoped<IDocumentsRepository, DocumentRepository>();
@@ -53,48 +79,71 @@ namespace CleanHub
             builder.Services.AddScoped<IBookFinancialsRepository, BookFinancialRepository>();
             builder.Services.AddScoped<IBookRepository, BookRepository>();
             builder.Services.AddScoped<ISpecialInvoiceRepository, SpecialInvoiceRepository>();
+
+            // ----------------------------------------------------
+            // Session
+            // ----------------------------------------------------
             builder.Services.AddSession(options =>
             {
-                options.IdleTimeout = TimeSpan.FromMinutes(30); // Session Timeout nach 30 Minuten
+                options.IdleTimeout = TimeSpan.FromMinutes(30);
                 options.Cookie.HttpOnly = true;
                 options.Cookie.IsEssential = true;
             });
-            builder.Services.AddControllersWithViews();
 
+            // ----------------------------------------------------
+            // Identity
+            // ----------------------------------------------------
             builder.Services.AddIdentity<IdentityUser, IdentityRole>()
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
 
-            builder.Services.AddDataProtection();
+            builder.Services.ConfigureApplicationCookie(options =>
+            {
+                options.LoginPath = "/Identity/Account/Login";
+                options.AccessDeniedPath = "/Identity/Account/AccessDenied";
+                options.ReturnUrlParameter = "returnUrl";
+                options.Events.OnRedirectToReturnUrl = context =>
+                {
+                    context.Response.Redirect(
+                        string.IsNullOrEmpty(context.Request.Query["returnUrl"])
+                            ? "/Buildings/Index"
+                            : context.RedirectUri
+                    );
+                    return Task.CompletedTask;
+                };
+            });
+
+            // ----------------------------------------------------
+            // MVC / Razor / AutoMapper
+            // ----------------------------------------------------
+            builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
-            var configuration = new MapperConfiguration(cfg =>
+            builder.Services.AddDataProtection();
+
+            var mapperConfig = new MapperConfiguration(cfg =>
             {
                 cfg.AddProfile(new App());
                 cfg.AddProfile<App>();
                 cfg.AddMaps(typeof(Profile));
             });
+            builder.Services.AddSingleton(mapperConfig.CreateMapper());
+
+            // ----------------------------------------------------
+            // Compression
+            // ----------------------------------------------------
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
             });
-            builder.Services.ConfigureApplicationCookie(options =>
-            {
-                options.LoginPath = "/Identity/Account/Login"; // Standard-Login-Pfad
-                options.AccessDeniedPath = "/Identity/Account/AccessDenied"; // Zugriff verweigert
-                options.ReturnUrlParameter = "returnUrl";
-                options.Events.OnRedirectToReturnUrl = context =>
-                {
-                    // Wenn kein ReturnUrl definiert ist, navigiere zu Buildings/Index
-                    context.Response.Redirect(string.IsNullOrEmpty(context.Request.Query["returnUrl"])
-                        ? "/Buildings/Index"
-                        : context.RedirectUri);
-                    return Task.CompletedTask;
-                };
-            });
-            IMapper mapper = configuration.CreateMapper();
 
-            builder.Services.AddSingleton(mapper);
+            // ----------------------------------------------------
+            // Build app
+            // ----------------------------------------------------
             var app = builder.Build();
+
+            // ----------------------------------------------------
+            // Culture
+            // ----------------------------------------------------
             var culture = new CultureInfo("mk-MK");
             CultureInfo.DefaultThreadCurrentCulture = culture;
             CultureInfo.DefaultThreadCurrentUICulture = culture;
@@ -105,7 +154,10 @@ namespace CleanHub
                 SupportedCultures = new[] { culture },
                 SupportedUICultures = new[] { culture }
             });
-            // Configure the HTTP request pipeline.
+
+            // ----------------------------------------------------
+            // Pipeline
+            // ----------------------------------------------------
             if (app.Environment.IsDevelopment())
             {
                 app.UseMigrationsEndPoint();
@@ -113,11 +165,11 @@ namespace CleanHub
             else
             {
                 app.UseExceptionHandler("/Home/Error");
-                // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
-       
+
             app.UseHttpsRedirection();
+
             app.UseStaticFiles(new StaticFileOptions
             {
                 OnPrepareResponse = ctx =>
@@ -125,29 +177,38 @@ namespace CleanHub
                     ctx.Context.Response.Headers.Append("Cache-Control", "public,max-age=31536000");
                 }
             });
+
             app.UseRouting();
 
-            app.UseAuthorization();
+            // 🔥 WICHTIGE REIHENFOLGE
             app.UseAuthentication();
+            app.UseAuthorization();
+
             app.UseSession();
             app.UseResponseCompression();
 
+            // ----------------------------------------------------
+            // Routes
+            // ----------------------------------------------------
             app.MapControllerRoute(
-                   name: "default",
-                   pattern: "{controller=Buildings}/{action=Index}");
+                name: "default",
+                pattern: "{controller=Buildings}/{action=Index}");
+
             app.MapControllerRoute(
-               name: "area",
-               pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");
-            app.MapAreaControllerRoute(
-                    "Identity",
-                    "Identity",
-                    "{controller = Home}/{action=Index}/{id?}");
+                name: "area",
+                pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");
+
             app.MapRazorPages();
-            using (var serviceProvider = builder.Services.BuildServiceProvider())
+
+            // ----------------------------------------------------
+            // Startup-Tasks (KORREKT)
+            // ----------------------------------------------------
+            using (var scope = app.Services.CreateScope())
             {
-                CreateStaticData.CreateUsers(serviceProvider).Wait();
-               // CreateStaticData.SetDocumentStatus();
+                var services = scope.ServiceProvider;
+                CreateStaticData.CreateUsers(services).Wait();
             }
+
             app.Run();
         }
     }
