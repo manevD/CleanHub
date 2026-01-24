@@ -1,5 +1,4 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
@@ -7,7 +6,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Options;
 
 namespace CleanHub.Controllers
 {
