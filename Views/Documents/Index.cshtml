@@ -86,6 +86,7 @@
                         <th class="checkbox-column dt-no-sorting"></th>
                         <th data-sorter="false">Бр.</th>
                         <th data-sorter="false">Станар</th>
+                        <th data-sorter="false">Претплата</th>
                         <th data-sorter="false">Вкупно</th>
                         <th data-sorter="false">Сметка</th>
                         <th data-sorter="false">Статус</th>
@@ -117,6 +118,7 @@
                                 </td>
                                 <td>@counter</td>
                                 <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
+                                <td>@(invoice.Customer?.Subscription)</td>
                                 <td>@invoice.TotalOutput МКД</td>
                                 <td>@(invoice.ToDocument ?? "")</td>
                                 <td>

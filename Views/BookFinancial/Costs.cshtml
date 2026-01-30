@@ -1,0 +1,173 @@
+﻿@model IEnumerable<CleanHub.ViewModels.BookFinancialInfoViewModel>
+@{
+    ViewData["Title"] = "Книжења";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<style>
+    th.no-sort::after {
+        display: none !important;
+    }
+</style>
+<hr />
+<form asp-action="Costs" asp-controller="BookFinancial" method="post">
+    <div class="row">
+        @if (ViewBag.Buildings != null)
+        {
+            <div class="col-lg-2 col-md-3">
+                <div class="form-group mb-0">
+                    <label for="buildingSearch">Објект</label>
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
+                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
+                    <datalist id="buildingOptions">
+                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                        {
+                            <option value="@building.Text" data-id="@building.Value"></option>
+                        }
+                    </datalist>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="col-lg-2 col-md-3">
+                <p>Нема пронајдено објекти!</p>
+            </div>
+        }
+
+        <div class="col-lg-2 col-md-3">
+            <div class="form-group mb-0">
+                <label for="dateFrom">Од</label>
+                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateFrom" />
+            </div>
+        </div>
+
+        <div class="col-lg-2 col-md-3">
+            <div class="form-group mb-0">
+                <label for="dateTo">До</label>
+                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateTo" />
+            </div>
+        </div>
+    </div>
+    </br>
+    <div class="col-lg-2 col-md-3">
+        <div class="form-group mb-0">
+            <button type="submit" class="btn btn-primary w-100">Пребарувај</button>
+        </div>
+    </div>
+</form>
+
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th class="no-sort">Дата на издавање</th>
+                        <th class="no-sort">Опис</th>
+                        <th class="no-sort">Износ</th>
+                        <th class="no-sort">Опции</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        var counter = 1;
+
+
+                        foreach (var invoice in Model.Where(x => x.Owes != 0))
+                        {
+                            <tr>
+                                <td>@invoice.FormattedDatumF</td>
+
+                                @if (@invoice.Description.Length >= 30)
+                                {
+                                    <td><small>@invoice.Description</small></td>
+                                }
+                                else
+                                {
+                                    <td>@invoice.Description</td>
+                                }
+                                <td>@invoice.Owes</td>
+                                <td>
+                                    <a href="javascript:void(0)"
+                                       class="badge badge-light-primary action-edit"
+                                       data-id="@invoice.Id">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                             class="feather feather-edit-3">
+                                            <path d="M12 20h9"></path>
+                                            <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                                        </svg>
+                                    </a>                                    <a class="badge badge-light-danger text-start action-delete" asp-action="DeleteCosts" asp-controller="BookFinancial" asp-route-id="@invoice.Id"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-trash"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg></a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="14" class="text-center">Нема пронајдени податоци</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="editCostModalContainer"></div>
+
+@section Scripts {
+
+    <!-- EDIT MODAL SCRIPT -->
+    <script>
+        $(document).on('click', '.action-edit', function () {
+            const id = $(this).data('id');
+
+            $.get('/BookFinancial/EditCosts', { id: id })
+                .done(function (html) {
+                    $('#editCostModalContainer').html(html);
+
+                    const modalEl = document.getElementById('editCostModal');
+                    const modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                });
+        });
+
+        $(document).on('submit', '#editCostForm', function (e) {
+            e.preventDefault();
+
+            $.post('/BookFinancial/EditCosts', $(this).serialize())
+                .done(function (response) {
+                    if (response.success) {
+                        const modalEl = document.getElementById('editCostModal');
+                        const modal = bootstrap.Modal.getInstance(modalEl);
+                        modal.hide();
+                        location.reload();
+                    } else {
+                        $('#editCostModalContainer').html(response);
+                    }
+                });
+        });
+    </script>
+
+    <!-- BUILDING SEARCH SCRIPT -->
+    <script>
+        document.getElementById('buildingSearch')?.addEventListener('input', function () {
+            const selectedValue = this.value;
+            const options = document.querySelectorAll('#buildingOptions option');
+            let selectedId = '';
+
+            options.forEach(option => {
+                if (option.value === selectedValue) {
+                    selectedId = option.getAttribute('data-id');
+                }
+            });
+
+            document.getElementById('buildingId').value = selectedId || '';
+        });
+    </script>
+
+}

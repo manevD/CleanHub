@@ -244,7 +244,6 @@ namespace CleanHub.Controllers
             //        doc.NewTotal = (int?)(doc.TotalOutput + CalculateNewTotal(doc));
             //    }
             //}
-
             return View("Index", documents.OrderBy(x => x.Date.HasValue ? x.Date.Value : DateOnly.MinValue).ToList());
         }
 

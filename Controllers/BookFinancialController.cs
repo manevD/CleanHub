@@ -1,11 +1,13 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.Infrastructure.Data;
 using CleanHub.Entities;
 using CleanHub.Extensions;
+using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 
 namespace CleanHub.Controllers
@@ -80,6 +82,7 @@ namespace CleanHub.Controllers
                     ViewBag.TotalDemands = GetDemandsLastInvoice(dateTo, results);
                     ViewBag.TotalOwes = GetOwesLastInvoice(dateTo, results);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+                    var test = results.Where(x => x.Owes != 0).ToList();
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
                     //    CalculateOverdueStatus(results);
@@ -252,6 +255,95 @@ namespace CleanHub.Controllers
         //        doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
         //    }
         //}
+
+        [Route("Trosoci")]
+        [HttpGet]
+        public async Task<IActionResult> Costs()
+        {
+            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
+            return View();
+        }
+
+        [Route("Trosoci")]
+        [HttpPost]
+        public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
+        {
+            List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+            var building = new Building();
+            if (!buildingId.HasValue)
+            {
+                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                return RedirectToAction(nameof(Costs));
+            }
+
+            building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+            if (building != null)
+            {
+                results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
+                FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+                results = results.Where(x => x.Owes != 0).ToList();
+            }
+            else
+            {
+                return RedirectToAction(nameof(Costs));
+            }
+            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+            ViewBag.SelectedBuildingName = building.Name;
+            if (!string.IsNullOrWhiteSpace(dateFrom))
+            {
+                if (DateOnly.TryParseExact(dateFrom, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedFrom))
+                {
+                    ViewBag.DateFrom = parsedFrom;
+                }
+            }
+
+            if (!string.IsNullOrWhiteSpace(dateTo))
+            {
+                if (DateOnly.TryParseExact(dateTo, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedTo))
+                {
+                    ViewBag.DateTo = parsedTo;
+                }
+            }
+            ViewBag.BuildingId = building.Id;
+            return View(results.OrderBy(x => x.DatumF));
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> EditCosts(int? id)
+        {
+            var cost = await _unitOfWork.BookFinancials
+        .GetByIdAsync(x => x.Id == id);
+
+            if (cost == null)
+                return NotFound();
+
+
+            return PartialView("_EditCostModal", cost);
+        }
+
+        // POST: customers/Edit/5
+        // To protect from overposting attacks, enable the specific properties you want to bind to.
+        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> EditCosts(BookFinancial model)
+        {
+            if (!ModelState.IsValid)
+                return PartialView("_EditCostModal", model);
+
+            var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == model.Id);
+            if (cost == null)
+                return NotFound();
+
+            cost.Description = model.Description;
+            cost.Owes = model.Owes;
+
+            await _unitOfWork.SaveChangesAsync();
+
+            return Json(new { success = true });
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
