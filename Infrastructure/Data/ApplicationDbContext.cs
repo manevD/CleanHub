@@ -2,8 +2,6 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Cryptography;
-using System.Text;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
 namespace CleanHub.Infrastructure.Data

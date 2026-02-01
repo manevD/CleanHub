@@ -120,7 +120,12 @@
                                                         <input asp-for="Subscription" type="number" class="form-control mb-3" id="Subscription" />
                                                     </div>
                                                 </div>
-
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="SubscriptionDate">Во претплата од : </label>
+                                                        <input asp-for="SubscriptionDate" type="date" class="form-control mb-3" id="SubscriptionDate" />
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-12 mt-1">
                                                     <div class="form-group text-end">
                                                         <input type="submit" value="Зачувај" class="btn btn-primary"/>
@@ -144,20 +149,57 @@
 
 @section Scripts {
     <script>
-              document.addEventListener('DOMContentLoaded', function () {
-            var inactiveCheckbox = document.getElementById('Inactive');
-            var inactiveDatumInput = document.getElementById('InactiveDatum');
-            var activDatumInput = document.getElementById('ActiveDatum');   
+        document.addEventListener('DOMContentLoaded', function () {
+
+            /* ==========================
+               INACTIVE / ACTIVE LOGIC
+               ========================== */
+            const inactiveCheckbox = document.getElementById('Inactive');
+            const inactiveDatumInput = document.getElementById('InactiveDatum');
+            const activDatumInput = document.getElementById('ActiveDatum');
+
             function toggleInactiveDatum() {
                 inactiveDatumInput.readOnly = !inactiveCheckbox.checked;
                 activDatumInput.readOnly = inactiveCheckbox.checked;
                 inactiveDatumInput.classList.toggle('bg-light', !inactiveCheckbox.checked);
+                activDatumInput.classList.toggle('bg-light', inactiveCheckbox.checked);
             }
 
-            toggleInactiveDatum(); // initial state
+            toggleInactiveDatum();
             inactiveCheckbox.addEventListener('change', toggleInactiveDatum);
+
+
+            /* ==========================
+               SUBSCRIPTION LOGIC
+               ========================== */
+            const subscriptionInput = document.getElementById('Subscription');
+            const subscriptionDateInput = document.getElementById('SubscriptionDate');
+
+            function toggleSubscriptionDate() {
+                const value = parseFloat(subscriptionInput.value);
+
+                if (!isNaN(value) && value > 0) {
+                    subscriptionDateInput.disabled = false;
+                    subscriptionDateInput.classList.remove('bg-light');
+
+                    // опционално: ако нема датум, постави денешен
+                    if (!subscriptionDateInput.value) {
+                        const today = new Date().toISOString().split('T')[0];
+                        subscriptionDateInput.value = today;
+                    }
+                } else {
+                    subscriptionDateInput.disabled = true;
+                    subscriptionDateInput.value = '';
+                    subscriptionDateInput.classList.add('bg-light');
+                }
+            }
+
+            toggleSubscriptionDate();
+            subscriptionInput.addEventListener('input', toggleSubscriptionDate);
+
         });
     </script>
+
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }

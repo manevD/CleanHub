@@ -25,6 +25,7 @@ public partial class Customer
     public int Balance { get; set; }
     public DateOnly? InactiveDatum { get; set; }
     public DateOnly? ActiveDatum { get; set; }
+    public DateOnly?  SubscriptionDate { get; set; }
 
     [ForeignKey(nameof(Building))]
     public int? BuildingId { get; set; }

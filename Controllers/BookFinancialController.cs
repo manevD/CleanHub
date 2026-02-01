@@ -330,7 +330,7 @@ namespace CleanHub.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> EditCosts(BookFinancial model)
         {
-            if (!ModelState.IsValid)
+            if (model.Id == null || model.Id == 0)
                 return PartialView("_EditCostModal", model);
 
             var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == model.Id);

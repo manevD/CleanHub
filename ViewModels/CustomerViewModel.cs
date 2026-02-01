@@ -27,6 +27,8 @@ namespace CleanHub.ViewModels
 
         public DateOnly? InactiveDatum { get; set; }
         public DateOnly? ActiveDatum { get; set; }
+        public DateOnly? SubscriptionDate { get; set; }
+
         public int BuildingId { get; set; }
 
         public BuildingViewModel? Building { get; set; }

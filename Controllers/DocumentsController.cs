@@ -514,7 +514,7 @@ namespace CleanHub.Controllers
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DocumentViewModel document, bool send, bool cost)
+        public async Task<IActionResult> Create(DocumentViewModel document, bool send, bool submitCost)
         {
             if (ModelState.IsValid)
             {
@@ -528,7 +528,7 @@ namespace CleanHub.Controllers
                 var selectedBuildingName = Buildings?.FirstOrDefault(x => x.Id == building.Id)?.Name;
                 if (selectedBuildingName != null)
                     ViewBag.SelectedBuildingName = selectedBuildingName;
-                if (cost)
+                if (submitCost)
                 {
                     foreach (var product in document.Building.BuildingProducts.Where(x => !string.IsNullOrEmpty(x.ArticleNotes)))
                     {
@@ -546,6 +546,7 @@ namespace CleanHub.Controllers
                         _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
                     }
                     await _unitOfWork.SaveChangesAsync();
+                    ViewBag.RouteId = 2;
                     return View(document);
 
                 }
