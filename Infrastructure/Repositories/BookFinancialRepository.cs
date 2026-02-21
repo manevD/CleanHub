@@ -11,29 +11,33 @@ namespace CleanHub.Infrastructure.Repositories
     {
         public List<BookFinancial> GetBuldingReserve(int buildingId, int? invoiceId)
         {
-            var query = new List<BookFinancial>();
-            var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
-            if (invoiceId.HasValue)
-            {
-                query = context.BookFinancials.Include(x=>x.Customer)
-                    .Where(bf => bf.CustomerId != null
-                                 && invoiceId.HasValue
-                                 && (
-                                     (
-                                         (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
-                                         || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
-                                     )
-                                     && bf.InvoiceId == invoiceId.Value
-                                     ||
-                                     (bf.InvoiceId == invoiceId.Value &&
-                                      context.Customers
-                                          .Where(c => c.BuildingId == buildingId)
-                                          .Select(c => c.Id)
-                                          .Contains(bf.CustomerId.Value))
-                                 ))
-                    .ToList();
-            }
-            return query;
+            if (!invoiceId.HasValue)
+                return new List<BookFinancial>();
+
+            var building = context.Buildings
+                .FirstOrDefault(x => x.Id == buildingId);
+
+            if (building == null)
+                return new List<BookFinancial>();
+
+            var customerIds = context.Customers
+        .Where(c => c.BuildingId == buildingId)
+        .Select(c => c.Id)
+        .ToList();
+
+            var query = context.BookFinancials
+                .Include(x => x.Customer)
+                .Where(bf =>
+                    bf.CustomerId != null &&
+                    bf.InvoiceId == invoiceId.Value &&
+                    (
+                           (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
+                        || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
+                        || customerIds.Contains(bf.CustomerId.Value)
+                    )
+                );
+
+            return query.ToList();
         }
 
         public (int owes, int demands) GetBuildingReserve(int buildingId, int? invoiceId, int? status)

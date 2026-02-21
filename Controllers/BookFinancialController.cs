@@ -58,15 +58,23 @@ namespace CleanHub.Controllers
         {
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
             ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
+
             return View();
         }
 
         [Route("Завршна")]
         [HttpPost]
-        public async Task<IActionResult> LastInvoice(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
+        public async Task<IActionResult> LastInvoice(int? buildingId, int? paymentStatusId, int year)
         {
             try
             {
+                // Jahresanfang
+                DateTime startDate = new DateTime(year, 1, 1);
+
+                // Jahresende
+                DateTime endDate = new DateTime(year, 12, 31, 23, 59, 59);
+                string dateFromStr = startDate.ToString("dd.MM.yyyy");
+                string dateToStr = endDate.ToString("dd.MM.yyyy");
                 List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
                 var building = new Building();
                 if (!buildingId.HasValue)
@@ -79,10 +87,9 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = GetDemandsLastInvoice(dateTo, results);
-                    ViewBag.TotalOwes = GetOwesLastInvoice(dateTo, results);
-                    FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
-                    var test = results.Where(x => x.Owes != 0).ToList();
+                    ViewBag.TotalDemands = GetDemandsLastInvoice(dateToStr, results);
+                    ViewBag.TotalOwes = GetOwesLastInvoice(dateToStr, results);
+                    FilterResultsByDate(ref results, dateFromStr ?? "", dateToStr ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
                     //    CalculateOverdueStatus(results);
@@ -95,21 +102,7 @@ namespace CleanHub.Controllers
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
                 ViewBag.SelectedBuildingName = building.Name;
-                if (!string.IsNullOrWhiteSpace(dateFrom))
-                {
-                    if (DateOnly.TryParseExact(dateFrom, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedFrom))
-                    {
-                        ViewBag.DateFrom = parsedFrom;
-                    }
-                }
-
-                if (!string.IsNullOrWhiteSpace(dateTo))
-                {
-                    if (DateOnly.TryParseExact(dateTo, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedTo))
-                    {
-                        ViewBag.DateTo = parsedTo;
-                    }
-                }
+              
                 ViewBag.BuildingId = building.Id;
                 return View(results.OrderBy(x => x.DatumF));
             }
@@ -175,7 +168,7 @@ namespace CleanHub.Controllers
                 {
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     ViewBag.TotalDemands = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
-                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Owes);
+                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId == 5  ).Sum(su => su.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{

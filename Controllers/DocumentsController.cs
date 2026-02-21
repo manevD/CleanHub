@@ -1074,6 +1074,7 @@ namespace CleanHub.Controllers
             }
             catch (DbUpdateConcurrencyException e)
             {
+               
             }
         }
         // GET: Invoices/Edit/5

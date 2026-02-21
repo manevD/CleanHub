@@ -53,15 +53,23 @@
 
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
-                <label for="dateFrom">Од</label>
-                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateFrom" />
-            </div>
-        </div>
-
-        <div class="col-lg-2 col-md-3">
-            <div class="form-group mb-0">
-                <label for="dateTo">До</label>
-                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr" value="@ViewBag.DateTo" />
+                <label for="year">Година</label>
+                <select id="year" name="year" class="form-control">
+                    @{
+                        int currentYear = DateTime.Now.Year;
+                        for (int y = 2015; y <= currentYear; y++)
+                        {
+                            if (ViewBag.Year != null && ViewBag.Year == y)
+                            {
+                                <option value="@y" selected>@y</option>
+                            }
+                            else
+                            {
+                                <option value="@y">@y</option>
+                            }
+                        }
+                    }
+                </select>
             </div>
         </div>
     </div>
