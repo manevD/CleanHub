@@ -11,11 +11,7 @@ namespace CleanHub.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<DateOnly>(
-                name: "ActiveDatum",
-                table: "Customers",
-                type: "date",
-                nullable: true);
+           
         }
 
         /// <inheritdoc />
