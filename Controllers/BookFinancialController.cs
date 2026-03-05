@@ -257,7 +257,18 @@ namespace CleanHub.Controllers
             ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
             return View();
         }
+        public async Task<IActionResult> DeleteCosts(int id)
+        {
+            var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == id);
+            if (cost != null)
+            {
+                 _unitOfWork.BookFinancials.Delete(cost);
+               await _unitOfWork.SaveChangesAsync();
+            }
 
+            return RedirectToAction(nameof(Costs));
+        }
+        
         [Route("Trosoci")]
         [HttpPost]
         public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)

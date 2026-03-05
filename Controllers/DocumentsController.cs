@@ -353,6 +353,48 @@ namespace CleanHub.Controllers
             }
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
+        [Route("креирајФактураЗаСтанар")]
+        public async Task<IActionResult> CreateForCustomer()
+        {
+            var documentViewModel = new DocumentViewModel();
+            //var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id, inc => inc.Include(x => x.Building));
+            //var customers = await _unitOfWork.Customers.GetAll().Where(x=>x.BuildingId == customer.BuildingId);
+            //var lastDocument = await _unitOfWork.Documents
+            //    .GetAll()
+            //    .Where(d => d.CustomerId == customer.Id
+            //             && d.Customer.BuildingId == customer.BuildingId)
+            //    .OrderByDescending(d => d.CreatedTime) // oder Date / Id
+            //    .FirstOrDefaultAsync();
+
+            ////var docu = _unitOfWork.Documents.GetAll().Where(x => x.)
+            ////documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
+            ////                                 document.Date.Value.Year;
+            //documentViewModel.Company = _config.Value;
+            //var buildings = new List<Building>();
+            return View();
+        }
+        [HttpPost]
+        [Route("креирајФактураЗаСтанар")]
+
+        public async Task<IActionResult> CreateForCustomer(int id)
+        {
+            var documentViewModel = new DocumentViewModel();
+            var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id, inc => inc.Include(x => x.Building));
+            if (customer != null)
+            {
+                var lastDocument = _unitOfWork.Documents.GetAll().Where(d => d.CustomerId == customer.Id && d.Customer.BuildingId == customer.BuildingId)
+                .OrderByDescending(d => d.CreatedTime).FirstOrDefault();
+               // var bookFinancials = _
+            }
+       
+
+            //var docu = _unitOfWork.Documents.GetAll().Where(x => x.)
+            //documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
+            //                                 document.Date.Value.Year;
+            documentViewModel.Company = _config.Value;
+            var buildings = new List<Building>();
+            return View();
+        }
 
         /// <summary>
         /// 0 Zbirna 1 Poedinecna
@@ -626,11 +668,11 @@ namespace CleanHub.Controllers
                             }
                         var docViewModel = App.FullMapper.Map<DocumentViewModel>(docEntity);
 
-                        if (docEntity.PaymentStatus == PaymentStatus.Платено)
-                        {
-                            SetStatusPayment(docViewModel);
-                        }
-                        else if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
+                        //if (docEntity.PaymentStatus == PaymentStatus.Платено)
+                        //{
+                        //    SetStatusPayment(docViewModel);
+                        //}
+                        if (docViewModel.PaymentStatus != PaymentStatus.Платено && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
                         {
                             SendNotificationMail(customer, docViewModel.ToDocument);
                         }
@@ -731,13 +773,11 @@ namespace CleanHub.Controllers
             if (booksToDelete != null && booksToDelete.Any())
             {
                 _unitOfWork.Books.DeleteRange(booksToDelete);
-                await _unitOfWork.SaveChangesAsync();
             }
             var bookFinancialsToDelete = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId.HasValue && ids.Contains(x.DocumentId.Value)).ToList();
             if (bookFinancialsToDelete != null && bookFinancialsToDelete.Any())
             {
                 _unitOfWork.BookFinancials.DeleteRange(bookFinancialsToDelete);
-                await _unitOfWork.SaveChangesAsync();
             }
 
             var documentsToDelete = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
@@ -898,6 +938,8 @@ namespace CleanHub.Controllers
                     Status = docEntity.PaymentStatus,
                     Time = DateTime.Now,
                     Description = docEntity.PaymentType.GetEnumDescription(),
+                    PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    PaymentType = docEntity.PaymentType,
                 };
             }
             else
@@ -978,15 +1020,14 @@ namespace CleanHub.Controllers
             }
 
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
-
             _unitOfWork.Documents.Add(docEntity);
-
             await _unitOfWork.SaveChangesAsync();
             if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
             {
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
                 docEntity.PaymentStatus = PaymentStatus.Платено;
                 docEntity.PaymentType = PaymentType.Subscription;
+                docEntity.Description = customer.Building.Name;
                 docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
                 _unitOfWork.Customers.Update(customer);
             }
@@ -994,6 +1035,7 @@ namespace CleanHub.Controllers
             {
                 docEntity.PaymentStatus = PaymentStatus.Неплатено;
             }
+
             return docEntity;
         }
 
@@ -1074,7 +1116,7 @@ namespace CleanHub.Controllers
             }
             catch (DbUpdateConcurrencyException e)
             {
-               
+
             }
         }
         // GET: Invoices/Edit/5

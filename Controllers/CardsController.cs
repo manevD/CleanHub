@@ -294,17 +294,19 @@ namespace CleanHub.Controllers
 
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
+                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Sum(x => x.Demands);
+                cardsViewModel.CustomerOwesTotal = (float)dataDocument.Sum(x => x.Owes);
 
                 // Summen (unabhängig vom Datum)
-                cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
-                    .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Recieve)
-                    .Sum(x => x.Demands);
+                //cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
+                //    .GetAllNoTrakcing()
+                //    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Recieve)
+                //    .Sum(x => x.Demands);
 
-                cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents
-                    .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId)
-                    .Sum(x => x.TotalOutput ?? 0);
+                //cardsViewModel.CustomerOwesTotal = _unitOfWork.Documents
+                //    .GetAllNoTrakcing()
+                //    .Where(x => x.CustomerId == customerId)
+                //    .Sum(x => x.TotalOutput ?? 0);
             }
 
             if (cardsViewModel.CustomerData != null && cardsViewModel.CustomerData.Any())
