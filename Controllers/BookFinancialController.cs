@@ -262,7 +262,7 @@ namespace CleanHub.Controllers
             var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == id);
             if (cost != null)
             {
-                 _unitOfWork.BookFinancials.Delete(cost);
+               _unitOfWork.BookFinancials.Delete(cost);
                await _unitOfWork.SaveChangesAsync();
             }
 

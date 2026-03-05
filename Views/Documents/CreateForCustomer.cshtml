@@ -1,12 +1,10 @@
 ﻿@model CleanHub.ViewModels.DocumentViewModel
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
-    var invoiceNotice = @Model.Company?.InvoiceNotice; 
+    var invoiceNotice = @Model.Company?.InvoiceNotice;
     var plainTextNotice = string.IsNullOrEmpty(invoiceNotice)
         ? string.Empty
         : System.Text.RegularExpressions.Regex.Replace(invoiceNotice, "<.*?>", string.Empty);
-    var routeId = @ViewBag.RouteId;
-    DateTime currentDate = DateTime.Now;
 
     double summ = 0;
     double summDemands = 0;
@@ -34,8 +32,8 @@
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
-                <form asp-action="Create" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
-                    <input type="hidden" name="BuildingId" asp-for="@Model.BuildingId" />
+                <form asp-action="CreateForCustomer" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
+                    <input type="hidden" name="CustomerId" asp-for="@Model.CustomerId" />
                     <div class="col-xl-9">
                         <div class="invoice-content">
                             <div class="invoice-detail-body">
@@ -116,7 +114,7 @@
                                                     <tr aria-hidden="true" class="mt-3 d-block table-row-hidden"></tr>
                                                 </thead>
                                                 <tbody>
-                                                    @if (@Model?.Building != null && @Model.Building.BuildingProducts.Any())
+                                                    @if (Model?.Building != null && Model?.Building?.BuildingProducts?.Any() == true)
                                                     {
                                                         @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                                                         {
@@ -130,11 +128,11 @@
                                                                     }
                                                                     else
                                                                     {
-                                                                        <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes"  />
+                                                                        <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].ArticleNotes" />
                                                                     }
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement"  />
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                                                                 </td>
                                                                 <td class="rate">
                                                                     <input type="number" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" />
@@ -151,37 +149,17 @@
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTax"
                                                                            readonly />
                                                                 </td>
-                                                                @if (routeId == 2)
-                                                                {
-                                                                    <td class="rate">
-                                                                        <input type="number"
-                                                                               class="form-control form-control-sm"
-                                                                               id="Total_@i"
-                                                                               asp-for="@Model.Building.BuildingProducts[i].Total"  readonly/>
-                                                                    </td>
-                                                                }
-                                                                else
-                                                                {
-                                                                    <td class="rate">
-                                                                        <input type="number"
-                                                                               class="form-control form-control-sm"
-                                                                               id="Total_@i"
-                                                                               asp-for="@Model.Building.BuildingProducts[i].Total" />
-                                                                    </td>
-                                                                }
-                                                             
+                                                                <td class="rate">
+                                                                    <input type="number"
+                                                                           class="form-control form-control-sm"
+                                                                           id="Total_@i"
+                                                                           asp-for="@Model.Building.BuildingProducts[i].Total" />
+                                                                </td>
                                                                 <td class="rate">
                                                                     <input type="number" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTaxTotal"
                                                                            readonly />
                                                                 </td>
-                                                                @*  <td class="text-center tax">
-                                                                    <div class="n-chk">
-                                                                        <div class="form-check form-check-primary form-check-inline me-0 mb-0">
-                                                                            <input class="form-check-input" type="checkbox" value="true" asp-for="@Model.Building.BuildingProducts[i].GetFromReserve" />
-                                                                        </div>
-                                                                    </div>
-                                                                </td> *@
                                                             </tr>
                                                         }
                                                     }
@@ -190,7 +168,7 @@
                                             </table>
                                         </div>
                                     </div>
-                                    @if (@Model != null && @Model.Building.BuildingProducts.Any())
+                                    @if (Model?.Building?.BuildingProducts?.Any() == true)
                                     {
                                         <div class="invoice-detail-total" style="text-align: right;">
                                             <div class="invoice-summary-label" style="color:black;">Вкупно</div>
@@ -201,10 +179,7 @@
                                             </div>
                                         </div>
                                     }
-                                    @*                                     @Html.Partial("_BuildingProductsPartial", @Model)
-                                *@
                                 }
-
                                 <div class="invoice-detail-note">
 
                                     <div class="row">
@@ -230,14 +205,13 @@
                         <div class="invoice-actions">
                             <div class="invoice-action-currency">
                                 <div class="form-group mb-0">
-                                    <label>Објект</label>
+                                    <label>Станар</label>
                                     <div class="dropdown selectable-dropdown invoice-select">
-                                        <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
-                                        <input type="hidden" name="id" value="@routeId" />
-                                        <datalist id="buildingOptions">
-                                            @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                        <input class="form-control" list="customerOptions" id="customerSearch" name="customerName" placeholder="Пребарувај" value="@ViewBag.SelectedCustomerName">
+                                        <datalist id="customerOptions">
+                                            @foreach (var customer in (IEnumerable<SelectListItem>)ViewBag.Customers)
                                             {
-                                                <option value="@building.Text" data-id="@building.Value"></option>
+                                                <option value="@customer.Text" data-id="@customer.Value"></option>
                                             }
                                         </datalist>
                                     </div>
@@ -256,66 +230,25 @@
                                     </div>
                                 </div>
 
-                                <div class="invoice-action-discount">
-                                    <h5>Станари</h5>
-                                    <div class="invoice-action-discount-fields">
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <div class="form-group mb-0">
-                                                    @if (@Model?.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
-                                                    {
-                                                        @foreach (var customer in @Model.Building.Customers)
-                                                        {
-                                                            <h6>@customer.CustomerInfo</h6>
-                                                        }
-                                                    }
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="form-group mb-0 discount-amount" style="display: none;">
-                                                    <label for="ratet1">Amount</label>
-                                                    <input type="number" class="form-control input-rate" id="ratet1" placeholder="Rate" value="25">
-                                                </div>
-                                                <div class="form-group mb-0 discount-percent" style="display: none;">
-                                                    <label for="ratet2">Percent</label>
-                                                    <input type="number" class="form-control input-rate" id="ratet2" placeholder="Rate" value="10">
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
                                 <div class="invoice-actions-btn">
                                     <div class="invoice-action-btn">
                                         <div class="row">
-                                    <div class="col-xl-12 col-md-4">
-                                                @if (routeId == 2)
-                                                {
-                                                    <input type="hidden" name="submitCost" id="submitCostHidden" value="false" />
-                                                    <button type="submit"
-                                                            class="btn btn-primary"
-                                                            onclick="document.getElementById('submitCostHidden').value='true'">
-                                                        Зачувај
-                                                    </button>
-                                                }
-                                                else
-                                                {
-                                                    <input type="submit"
-                                                           value="Зачувај и принтај"
-                                                           asp-action="Create"
-                                                           asp-controller="Documents"
-                                                           class="btn btn-primary" />
+                                            <div class="col-xl-12 col-md-4">
+                                                <input type="submit"
+                                                       value="Зачувај и принтај"
+                                                       asp-action="CreateForCustomer"
+                                                       asp-controller="Documents"
+                                                       class="btn btn-primary" />
 
-                                                    <button type="submit"
-                                                            name="send"
-                                                            value="true"
-                                                            asp-action="Create"
-                                                            asp-controller="Documents"
-                                                            class="btn btn-primary">
-                                                        Зачувај, прати и принтај
-                                                    </button>
-                                                }
-                                </div>
+                                                <button type="submit"
+                                                        name="send"
+                                                        value="true"
+                                                        asp-action="CreateForCustomer"
+                                                        asp-controller="Documents"
+                                                        class="btn btn-primary">
+                                                    Зачувај, прати и принтај
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -438,93 +371,96 @@
             updatePriceWithTaxTotal();
         });
 
-        document.getElementById("buildingSearch").addEventListener("input", function () {
-            var buildingSearchValue = this.value; // Der Text, den der Benutzer eingibt
-            let selectedId = '';
+               document.getElementById("customerSearch").addEventListener("input", function () {
 
-            // Hole alle Optionen aus dem datalist
-            const options = document.querySelectorAll('#buildingOptions option');
-            var id = document.querySelector('input[name="id"]').value; // Verstecktes Feld für id
+            const customerSearchValue = this.value;
+            let selectedId = null;
 
-            // Suche nach der passenden Option, die dem eingegebenen Text entspricht
+            const options = document.querySelectorAll('#customerOptions option');
+
             options.forEach(option => {
-                if (option.value === buildingSearchValue) {
-                    selectedId = option.getAttribute('data-id'); // Hole die data-id
+                if (option.value === customerSearchValue) {
+                    selectedId = option.getAttribute('data-id');
                 }
             });
 
-            // Wenn ein ausgewähltes Gebäude gefunden wurde
-            if (selectedId) {
-                // Baue die URL mit den Parametern selectedId und buildingId
-                var url = '@Url.Action("Create")' + '?id=' + id + '&buildingId=' + selectedId;
+            // wenn kein Kunde gewählt → nichts machen
+            if (!selectedId) return;
 
-                // Führe die GET-Anfrage aus und navigiere zur neuen URL
-                window.location.href = url;
-            }
+            // GET Methode erneut aufrufen
+            const url = '@Url.Action("CreateForCustomer", "Documents")' + '?customerId=' + selectedId;
+
+            window.location.href = url;
         });
-  
+
     </script>
 
     <script>
-document.addEventListener("DOMContentLoaded", () => {
-    // Alle Formulare beobachten
-    document.querySelectorAll("form").forEach(form => {
-        form.addEventListener("submit", () => {
-            // Alle Submit-Buttons in diesem Formular deaktivieren
-            const buttons = form.querySelectorAll('[type="submit"]');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                const originalText = btn.innerText || btn.value;
-                btn.dataset.originalText = originalText; // speichern
+        document.addEventListener("DOMContentLoaded", () => {
+            // Alle Formulare beobachten
+            document.querySelectorAll("form").forEach(form => {
+                form.addEventListener("submit", () => {
+                    // Alle Submit-Buttons in diesem Formular deaktivieren
+                    const buttons = form.querySelectorAll('[type="submit"]');
+                    buttons.forEach(btn => {
+                        btn.disabled = true;
+                        const originalText = btn.innerText || btn.value;
+                        btn.dataset.originalText = originalText; // speichern
 
-                if (btn.tagName.toLowerCase() === "button") {
-                    btn.innerText = "⏳ Ве молиме почекајте...";
-                } else {
-                    btn.value = "⏳ Ве молиме почекајте...";
-                }
-                btn.classList.add("opacity-50");
-            });
+                        if (btn.tagName.toLowerCase() === "button") {
+                            btn.innerText = "⏳ Ве молиме почекајте...";
+                        } else {
+                            btn.value = "⏳ Ве молиме почекајте...";
+                        }
+                        btn.classList.add("opacity-50");
+                    });
 
-            // Nach 15 Sekunden wieder aktivieren
-            setTimeout(() => {
-                buttons.forEach(btn => {
-                    btn.disabled = false;
-                    if (btn.tagName.toLowerCase() === "button") {
-                        btn.innerText = btn.dataset.originalText;
-                    } else {
-                        btn.value = btn.dataset.originalText;
-                    }
-                    btn.classList.remove("opacity-50");
+                    // Nach 15 Sekunden wieder aktivieren
+                    setTimeout(() => {
+                        buttons.forEach(btn => {
+                            btn.disabled = false;
+                            if (btn.tagName.toLowerCase() === "button") {
+                                btn.innerText = btn.dataset.originalText;
+                            } else {
+                                btn.value = btn.dataset.originalText;
+                            }
+                            btn.classList.remove("opacity-50");
+                        });
+                    }, 15000);
                 });
-            }, 15000);
+            });
         });
-    });
-});
-  
-</script>
-   <script>
-             document.getElementById("invoiceDate").addEventListener("change", function () {
 
-            const dateValue = this.value; // yyyy-mm-dd
-            if (!dateValue) return;
+    </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
 
-            const date = new Date(dateValue);
+            const invoiceDate = document.getElementById("invoiceDate");
 
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
+            if (!invoiceDate) return;
 
-            const formatted = month + "." + year;
+            invoiceDate.addEventListener("change", function () {
 
-            document.querySelectorAll(".article-notes").forEach(function(input){
+                const dateValue = this.value;
+                if (!dateValue) return;
 
-                let baseText = input.value.split(" ").slice(0, -1).join(" ");
+                const date = new Date(dateValue);
 
-                if(baseText === "")
-                    baseText = input.value;
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
 
-                input.value = baseText + " " + formatted;
+                const formatted = month + "." + year;
+
+                document.querySelectorAll(".article-notes").forEach(function (input) {
+
+                    let baseText = input.value.replace(/\d{2}\.\d{4}$/, "").trim();
+
+                    input.value = baseText + " " + formatted;
+
+                });
+
             });
 
         });
-   </script>
+    </script>
 }

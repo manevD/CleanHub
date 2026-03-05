@@ -1,4 +1,7 @@
-﻿namespace CleanHub.ViewModels
+﻿using AutoMapper.Configuration.Annotations;
+using System.ComponentModel.DataAnnotations;
+
+namespace CleanHub.ViewModels
 {
     public class BookViewModel
     {
@@ -25,5 +28,8 @@
         public string? ArticleNotes { get; set; }
 
         public string? UnitOfMeasurement { get; set; }
+        [DisplayFormat(DataFormatString = "{0.00}")]
+        [Ignore]
+        public float? PriceWithTaxTotal { get; set; }
     }
 }

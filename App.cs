@@ -104,7 +104,7 @@ public class App : Profile
 
             #region Book
 
-            cfg.CreateMap<Book, BookViewModel>().ReverseMap();
+            cfg.CreateMap<Book, BookViewModel>().ForMember(dest => dest.PriceWithTaxTotal, opts => opts.Ignore()).ReverseMap();
 
             #endregion
 
