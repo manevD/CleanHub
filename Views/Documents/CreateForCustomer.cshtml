@@ -34,6 +34,8 @@
             <div class="doc-container">
                 <form asp-action="CreateForCustomer" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
                     <input type="hidden" name="CustomerId" asp-for="@Model.CustomerId" />
+                    <input type="hidden" asp-for="@Model.BuildingId" />
+                    <input type="hidden" id="actionTypeHidden" name="actionType" />
                     <div class="col-xl-9">
                         <div class="invoice-content">
                             <div class="invoice-detail-body">
@@ -234,18 +236,17 @@
                                     <div class="invoice-action-btn">
                                         <div class="row">
                                             <div class="col-xl-12 col-md-4">
-                                                <input type="submit"
-                                                       value="Зачувај и принтај"
-                                                       asp-action="CreateForCustomer"
-                                                       asp-controller="Documents"
-                                                       class="btn btn-primary" />
+                                                <button type="submit"
+                                                        data-action="print"
+                                                        class="btn btn-primary submit-btn"
+                                                        disabled>
+                                                    Зачувај и принтај
+                                                </button>
 
                                                 <button type="submit"
-                                                        name="send"
-                                                        value="true"
-                                                        asp-action="CreateForCustomer"
-                                                        asp-controller="Documents"
-                                                        class="btn btn-primary">
+                                                        data-action="send"
+                                                        class="btn btn-primary submit-btn"
+                                                        disabled>
                                                     Зачувај, прати и принтај
                                                 </button>
                                             </div>
@@ -261,7 +262,22 @@
         </div>
     </div>
 </div>
-
+<div class="modal fade" id="invoiceExistsModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Известување</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p id="invoiceExistsMessage"></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+            </div>
+        </div>
+    </div>
+</div>
 @section Scripts {
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
@@ -463,4 +479,59 @@
 
         });
     </script>
+
+    <script id="toggleSubmitButtons">
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const dateInput = document.getElementById("invoiceDate");
+            const buttons = document.querySelectorAll(".submit-btn");
+
+            function toggleButtons() {
+                if (dateInput.value) {
+                    buttons.forEach(btn => btn.disabled = false);
+                } else {
+                    buttons.forEach(btn => btn.disabled = true);
+                }
+            }
+
+            // beim Laden prüfen
+            toggleButtons();
+
+            // wenn Datum geändert wird
+            dateInput.addEventListener("change", toggleButtons);
+
+        });
+    </script>
+    <script id="showInvoiceExistsModal">
+        document.addEventListener("DOMContentLoaded", function () {
+
+            const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["InvoiceExists"]));
+
+            if (message) {
+
+                const messageElement = document.getElementById("invoiceExistsMessage");
+                if (messageElement) {
+                    messageElement.innerText = message;
+                }
+
+                const modalElement = document.getElementById("invoiceExistsModal");
+                const modal = new bootstrap.Modal(modalElement);
+
+                modal.show();
+            }
+
+        });
+    </script>
+    <script>
+document.addEventListener("DOMContentLoaded", function () {
+    const hidden = document.getElementById("actionTypeHidden");
+
+    document.querySelectorAll(".submit-btn").forEach(btn => {
+        btn.addEventListener("click", function () {
+            hidden.value = this.dataset.action;
+        });
+    });
+});
+</script>s
+  
 }
