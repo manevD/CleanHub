@@ -4,6 +4,7 @@ namespace CleanHub.Infrastructure.Repositories.Interfaces
 {
     public interface IRepository<T> where T : class
     {
+        IQueryable<T> Query();
         Task<List<T>> GetAllWithIncludeAsync(
             Func<IQueryable<T>, IQueryable<T>>? include = null,
             Expression<Func<T, bool>>? predicate = null);

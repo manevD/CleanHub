@@ -359,7 +359,7 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
             // Kunden laden
-            var customers = _unitOfWork.Customers.GetAll().Where(x => x.ActivityId == 3)
+            var customers = _unitOfWork.Customers.GetAll()
                 .Select(x => new Customer
                 {
                     Id = x.Id,
@@ -710,7 +710,7 @@ namespace CleanHub.Controllers
                 {
                     var toDocument =
                         DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
-                   
+
                     if (building.Customers.Any())
                     {
                         var customer = building.Customers.Where(x => x.ActivityId == 3).FirstOrDefault();
@@ -729,7 +729,7 @@ namespace CleanHub.Controllers
                         }
                     }
                 }
-               
+
 
                 if (document.BuildingId == null || document.BuildingId == 0)
                 {
@@ -885,11 +885,18 @@ namespace CleanHub.Controllers
             }
             var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
 
-            var documents = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
+            var documents = await _unitOfWork.Documents
+                .Query()
+                .Include(x => x.Books)
+                .Where(x => ids.Contains(x.Id))
+                .ToListAsync();
+
             if (documents != null && documents.Any())
             {
                 foreach (var document in documents)
                 {
+                    var bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId == document.Id).ToList();
+
                     if (PaymentDate != DateTime.MinValue)
                     {
                         document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
@@ -907,7 +914,28 @@ namespace CleanHub.Controllers
                         document.PaymentDescription = PaymentDescription;
                     }
                     _unitOfWork.Documents.Update(document);
+                    if (bookFinancials != null && bookFinancials.Any())
+                    {
+                        foreach (var bookFinancial in bookFinancials)
+                        {
+                            if (!string.IsNullOrEmpty(PaymentNumber))
+                            {
+                                bookFinancial.PaymentNumber = PaymentNumber;
+                            }
+                            if (!string.IsNullOrEmpty(PaymentDescription))
+                            {
+                                bookFinancial.Description = PaymentDescription;
+                            }
+                            bookFinancial.DateTimeChanges = DateTime.UtcNow;
+                            _unitOfWork.BookFinancials.Update(bookFinancial);
+                        }
+                    }
+                    else
+                    {
+                        CreateBookFinancialAndReserve(document, document.CustomerId.Value, 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                    }
                 }
+
                 await _unitOfWork.SaveChangesAsync();
                 var customerId = documents?.FirstOrDefault()?.CustomerId;
                 var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
@@ -1059,9 +1087,14 @@ namespace CleanHub.Controllers
                     Time = DateTime.Now,
                     Status = PaymentStatus.Платено,
                     DatumF = docEntity.DateReceived,
-                    PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
+                    ? paymentDate.Value
+                    : DateOnly.FromDateTime(DateTime.UtcNow),
                     PaymentType = docEntity.PaymentType,
-                    Description = docEntity.PaymentType.GetEnumDescription(),
+                    Description = string.IsNullOrEmpty(docEntity.PaymentDescription)
+                    ? docEntity.PaymentType.GetEnumDescription()
+                    : docEntity.PaymentDescription,
+                    PaymentNumber = paymentNumber
                 };
             }
             else
@@ -1103,9 +1136,14 @@ namespace CleanHub.Controllers
                     CustomerId = customerId,
                     Status = docEntity.PaymentStatus,
                     Time = DateTime.Now,
-                    Description = docEntity.PaymentType.GetEnumDescription(),
-                    PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    Description = string.IsNullOrEmpty(docEntity.PaymentDescription)
+                    ? docEntity.PaymentType.GetEnumDescription()
+                    : docEntity.PaymentDescription,
+                    PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
+                    ? paymentDate.Value
+                    : DateOnly.FromDateTime(DateTime.UtcNow),
                     PaymentType = docEntity.PaymentType,
+                    PaymentNumber = paymentNumber
                 };
             }
             else

@@ -128,5 +128,10 @@ namespace CleanHub.Infrastructure.Repositories
         {
             _dbSet.AddRange(entities);
         }
+
+        public IQueryable<T> Query()
+        {
+            return _context.Set<T>().AsQueryable();
+        }
     }
 }
