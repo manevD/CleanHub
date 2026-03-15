@@ -267,7 +267,7 @@ namespace CleanHub.Controllers
                         Description = cc.ToDocument,
                         Owes = (double)(cc.TotalOutput ?? 0),
                         Demands = 0,
-                        DocumentTyp = "Каса прими",
+                        DocumentTyp = "Фактура",
                         Date = cc.Date.Value,
                         Number = cc.Number ?? 0,
                         NumberNalog = 0
@@ -285,7 +285,7 @@ namespace CleanHub.Controllers
                         Description = cc.Description,
                         Owes = cc.Owes,
                         Demands = cc.Demands,
-                        DocumentTyp = "Фактура",
+                        DocumentTyp = "Каса прими",
                         Date = cc.DatumF.Value,
                         Number = 0,
                         NumberNalog = cc.OrderN ?? 0
