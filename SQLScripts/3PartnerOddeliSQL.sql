@@ -76,6 +76,7 @@ BEGIN TRY
     UPDATE Buildings SET CustomerRefId = 1814 WHERE Id = 152;
     UPDATE Buildings SET CustomerRefId = 1813 WHERE Id = 151;
     UPDATE Buildings SET CustomerRefId = 1707 WHERE Id = 147;
+    UPDATE Buildings SET CustomerRefId = 1845 WHERE Id = 157;
 
     -- Commit der Transaktion
     COMMIT TRANSACTION

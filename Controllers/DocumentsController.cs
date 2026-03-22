@@ -347,9 +347,15 @@ namespace CleanHub.Controllers
                     .Reverse()                            // Wieder umkehren
                     .Distinct()
                     .ToList();
-
-                documentViewModel.Debt = string.Join(",", distinctExceptLast)
-                                         + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
+                {
+                    documentViewModel.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                }
+                else
+                {
+                    documentViewModel.Debt = string.Join(",", distinctExceptLast)
+                                       + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                }
             }
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
@@ -573,7 +579,7 @@ namespace CleanHub.Controllers
                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
                 documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive && x.ActiveDatum.HasValue && x.ActiveDatum <= documentViewModel.Date).ToList();
-
+                documentViewModel.BuildingId = documentViewModel.Building.Id;
                 var filteredProducts = (id == 0)
                     ? documentViewModel.Building?.BuildingProducts
                     : documentViewModel.Building?.BuildingProducts.Where(x => x.ArticleNotes != null && x.ArticleNotes.Contains("влез")).ToList();
@@ -814,11 +820,21 @@ namespace CleanHub.Controllers
 
                 if (building != null)
                 {
+                    var products = _unitOfWork.Products.GetAll().ToList();
                     foreach (var customer in building.Customers.Where(x => x.Inactive == false && !x.Hide).ToList())
                     {
                         var docEntity = await CreateCustomerDocument(customer, document, building);
 
                         if (document?.Building?.BuildingProducts != null)
+                        {
+                            if (customer.SetCost)
+                            {
+                                var costsForCustomer = document.Building.BuildingProducts.Skip(8).ToList();
+                                foreach(var buildingProduct in costsForCustomer)
+                                {
+                                    CreateBook(buildingProduct, docEntity);
+                                }
+                            }
                             foreach (var buildingProduct in document.Building.BuildingProducts.Where(x => x.PriceWithTax != 0))
                             {
                                 try
@@ -837,6 +853,7 @@ namespace CleanHub.Controllers
                                     throw;
                                 }
                             }
+                        }
                         var docViewModel = App.FullMapper.Map<DocumentViewModel>(docEntity);
                         if (docViewModel.PaymentStatus != PaymentStatus.Платено && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
                         {
@@ -1214,6 +1231,11 @@ namespace CleanHub.Controllers
                         .Where(x => !x.ArticleNotes!.Contains("гаража"))
                         .ToList();
             }
+            if (!customer.SetCost && tempBuildingProducts.Count() > 8)
+            {
+                if (tempBuildingProducts != null)
+                    tempBuildingProducts = tempBuildingProducts.Take(8).ToList();
+            }
 
             calculator.CalculatePrices(tempBuildingProducts, customer);
             // Calculate the total PriceWithTax sum
@@ -1355,9 +1377,15 @@ namespace CleanHub.Controllers
                     .Reverse()                            // Wieder umkehren
                     .Distinct()
                     .ToList();
-
-                document.Debt = string.Join(",", distinctExceptLast)
-                                         + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
+                {
+                    document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                }
+                else
+                {
+                    document.Debt = string.Join(",", distinctExceptLast)
+                                       + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                }
             }
             ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);

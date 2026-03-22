@@ -48,8 +48,7 @@ namespace CleanHub.Controllers
                 DatumF = bf.DatumF ?? DateOnly.MinValue,
                 Owes = bf.Owes,
                 Demands = bf.Demands,
-            })
-                .ToList();
+            }).ToList();
         }
 
         [Route("Завршна")]
@@ -168,7 +167,7 @@ namespace CleanHub.Controllers
                 {
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     ViewBag.TotalDemands = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
-                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId == 5  ).Sum(su => su.Owes);
+                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId == 5).Sum(su => su.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
@@ -210,7 +209,7 @@ namespace CleanHub.Controllers
                 results = results
                     .Where(x =>
                         (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)&& !string.IsNullOrEmpty(x.Description)).ToList();
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)).ToList();
             }
             else
             {

@@ -36,8 +36,8 @@ namespace CleanHub.ViewModels
         public int ActivityId { get; set; }
         public ActivityViewModel? Activity { get; set; }
         public bool? PhysicalPerson { get; set; }
-
         public List<BookFinancialViewModel>? BookFinancials { get; set; }
         public List<DocumentViewModel>? Documents { get; set; }
+        public bool SetCost { get; set; }
     }
 }

@@ -37,5 +37,6 @@ public partial class Customer
     public int? Subscription { get; set; }
     public List<BookFinancial>? BookFinancials { get; set; } = null!;
     public List<Document>? Documents { get; set; }
+    public bool SetCost { get; set; }
 
 }

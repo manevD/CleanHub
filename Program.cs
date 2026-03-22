@@ -185,7 +185,7 @@ namespace CleanHub
             app.UseAuthorization();
 
             app.UseSession();
-            app.UseResponseCompression();
+            //app.UseResponseCompression();
 
             // ----------------------------------------------------
             // Routes
