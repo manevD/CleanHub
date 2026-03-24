@@ -7,7 +7,7 @@ namespace CleanHub.ViewModels
 {
     public class BookFinancialViewModel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public int? OrderN { get; set; }
 
         [ForeignKey(nameof(Invoice))]
@@ -37,6 +37,6 @@ namespace CleanHub.ViewModels
         public PaymentType PaymentType { get; set; }
         public DateOnly? PaymentDate { get; set; }
         public string? PaymentNumber { get; set; }
-
+        public bool DontSum { get; set; }
     }
 }

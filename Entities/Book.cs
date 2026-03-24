@@ -4,7 +4,7 @@ namespace CleanHub.Entities;
 
 public partial class Book
 {
-    public int Id { get; set; }
+    public long Id { get; set; }
 
     [ForeignKey(nameof(Document))]
     public int DocId { get; set; }

@@ -102,7 +102,7 @@ namespace CleanHub.Controllers
                     var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
                         .Where(x =>
                             x.CustomerId == customerId &&
-                            x.InvoiceId == (int)InvoiceTyp.Reserve &&
+                            x.InvoiceId == (int)InvoiceTyp.Reserve && !x.Description.Contains("салдо") &&
                             (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                             (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                         .ToList();

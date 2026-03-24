@@ -5,7 +5,7 @@ namespace CleanHub.ViewModels
 {
     public class BookViewModel
     {
-        public int Id { get; set; }
+        public long Id { get; set; }
         public int DocId { get; set; }
         public DocumentViewModel Document { get; set; }
         public bool Hide { get; set; }

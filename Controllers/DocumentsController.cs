@@ -667,7 +667,9 @@ namespace CleanHub.Controllers
                     Price = 0,
                     Tax = 0,
                     PriceWithTax = 0,
-                    Total = 0
+                    Total = 0,
+                    BuildingId = 0,
+                    IsNew = true
                 });
             }
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
@@ -791,27 +793,29 @@ namespace CleanHub.Controllers
 
                         var productsToAdd = document.Building?.BuildingProducts
                             .Where(x =>
-                                !string.IsNullOrWhiteSpace(x.ArticleNotes) &&
+                                !string.IsNullOrWhiteSpace(x.ArticleNotes.Trim()) &&
                                 !existingNotes.Any(existing =>
                                     x.ArticleNotes.Trim().StartsWith(existing, StringComparison.OrdinalIgnoreCase)))
                             .ToList();
-
-                        foreach (var product in productsToAdd)
+                        if (!building.Customers.Any(x => x.SetCost) && productsToAdd != null && productsToAdd.Any())
                         {
-                            var bookFinancialViewModelReserve = new BookFinancialViewModel
+                            foreach (var product in productsToAdd.Where(x=>x.IsNew))
                             {
-                                InvoiceId = Constants.Reserve,
-                                Demands = 0,
-                                DocumentTypId = 5,
-                                Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
-                                DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
-                                CustomerId = building.CustomerRefId,
-                                Status = PaymentStatus.Неплатено,
-                                Time = DateTime.Now,
-                                Description = product.ArticleNotes,
-                            };
-                            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
-                            _unitOfWork.BookFinancials.Add(bookFinancialReserve);
+                                var bookFinancialViewModelReserve = new BookFinancialViewModel
+                                {
+                                    InvoiceId = Constants.Reserve,
+                                    Demands = 0,
+                                    DocumentTypId = 5,
+                                    Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
+                                    DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
+                                    CustomerId = building.CustomerRefId,
+                                    Status = PaymentStatus.Неплатено,
+                                    Time = DateTime.Now,
+                                    Description = product.ArticleNotes,
+                                };
+                                var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
+                                _unitOfWork.BookFinancials.Add(bookFinancialReserve);
+                            }
                         }
                     }
                 }
@@ -820,33 +824,50 @@ namespace CleanHub.Controllers
 
                 if (building != null)
                 {
-                    var products = _unitOfWork.Products.GetAll().ToList();
                     foreach (var customer in building.Customers.Where(x => x.Inactive == false && !x.Hide).ToList())
                     {
                         var docEntity = await CreateCustomerDocument(customer, document, building);
 
                         if (document?.Building?.BuildingProducts != null)
                         {
-                            if (customer.SetCost)
+                            var hasSetCost = building?.Customers?.Any(x => x.SetCost) == true;
+
+                            var allProducts = document?.Building?.BuildingProducts?
+                                .Where(x => x.PriceWithTax != 0)
+                                ?? Enumerable.Empty<BuildingProductViewModel>();
+
+                            IEnumerable<BuildingProductViewModel> productsForCustomer;
+
+                            if (!hasSetCost)
                             {
-                                var costsForCustomer = document.Building.BuildingProducts.Skip(8).ToList();
-                                foreach(var buildingProduct in costsForCustomer)
+                                // ✔ никој нема SetCost → сите добиваат се
+                                productsForCustomer = allProducts;
+                            }
+                            else
+                            {
+                                if (customer.SetCost)
                                 {
-                                    CreateBook(buildingProduct, docEntity);
+                                    // ✔ тие со SetCost → СÈ
+                                    productsForCustomer = allProducts;
+                                }
+                                else
+                                {
+                                    // ✔ другите → само стари
+                                    productsForCustomer = allProducts.Where(x => !x.IsNew);
                                 }
                             }
-                            foreach (var buildingProduct in document.Building.BuildingProducts.Where(x => x.PriceWithTax != 0))
+
+                            foreach (var buildingProduct in productsForCustomer)
                             {
                                 try
                                 {
-                                    // Continue creating the book if the article exists
-                                    if (buildingProduct.ArticleNotes.Contains("гаража") && !customer.Garage)
+                                    if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
                                     {
                                         continue;
                                     }
+
                                     CreateBook(buildingProduct, docEntity);
                                 }
-
                                 catch (Exception e)
                                 {
                                     Console.WriteLine(e);
@@ -1224,17 +1245,23 @@ namespace CleanHub.Controllers
             var calculator = new PriceCalculator(building.Customers.Count(x => x.Inactive != null && !x.Inactive.Value), building.Customers.Count(x => x.Garage));
 
             var tempBuildingProducts = document.Building?.BuildingProducts.ToList();
+
+            var hasSetCost = building.Customers?.Any(x => x.SetCost) == true;
+
+            // ✔ Garage filter
             if (!customer.Garage)
             {
-                if (tempBuildingProducts != null)
-                    tempBuildingProducts = tempBuildingProducts
-                        .Where(x => !x.ArticleNotes!.Contains("гаража"))
-                        .ToList();
+                tempBuildingProducts = tempBuildingProducts?
+                    .Where(x => x.ArticleNotes == null || !x.ArticleNotes.Contains("гаража"))
+                    .ToList();
             }
-            if (!customer.SetCost && tempBuildingProducts.Count() > 8)
+
+            // ✔ SetCost логика
+            if (hasSetCost && !customer.SetCost)
             {
-                if (tempBuildingProducts != null)
-                    tempBuildingProducts = tempBuildingProducts.Take(8).ToList();
+                tempBuildingProducts = tempBuildingProducts?
+                    .Where(x => !x.IsNew)
+                    .ToList();
             }
 
             calculator.CalculatePrices(tempBuildingProducts, customer);

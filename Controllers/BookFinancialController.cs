@@ -3,11 +3,9 @@ using CleanHub.Entities;
 using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 
 namespace CleanHub.Controllers
@@ -48,6 +46,7 @@ namespace CleanHub.Controllers
                 DatumF = bf.DatumF ?? DateOnly.MinValue,
                 Owes = bf.Owes,
                 Demands = bf.Demands,
+                DontSum = bf.DontSum
             }).ToList();
         }
 
@@ -166,8 +165,8 @@ namespace CleanHub.Controllers
                 if (building != null)
                 {
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = results.Where(x => x.Description != "салдо" && x.DocumentTypId != 11).Sum(su => su.Demands);
-                    ViewBag.TotalOwes = results.Where(x => x.Description != "салдо" && x.DocumentTypId == 5).Sum(su => su.Owes);
+                    ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                    ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
@@ -314,7 +313,7 @@ namespace CleanHub.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> EditCosts(int? id)
+        public async Task<IActionResult> EditCosts(long? id)
         {
             var cost = await _unitOfWork.BookFinancials
         .GetByIdAsync(x => x.Id == id);
@@ -366,7 +365,7 @@ namespace CleanHub.Controllers
             catch (DbUpdateConcurrencyException)
             {
                 if (!_unitOfWork.BookFinancials.GetAll().Any(x => x.DocumentId == id)) return NotFound();
-                throw;
+                throw;  
             }
 
             return RedirectToAction(nameof(Index));

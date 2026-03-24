@@ -75,6 +75,7 @@ public class App : Profile
             cfg.CreateMap<BuildingProduct, BuildingProductViewModel>()
                 .ForMember(dest => dest.PriceWithTaxTotal, opts => opts.Ignore())
                 .ForMember(dest => dest.Hide, opts => opts.Ignore())
+                .ForMember(dest => dest.IsNew, opts => opts.Ignore())
                 .ForMember(dest => dest.GetFromReserve, opts => opts.Ignore())
                 .ReverseMap();
             cfg.CreateMap<BuildingProduct, Product>().ReverseMap();

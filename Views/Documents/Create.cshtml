@@ -120,6 +120,7 @@
                                                     {
                                                         @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                                                         {
+                                                            <input type="hidden" asp-for="@Model.Building.BuildingProducts[i].IsNew" />
                                                             <tr>
                                                                 <td class="description">
                                                                     @if (!string.IsNullOrWhiteSpace(@Model.Building.BuildingProducts[i].ArticleNotes))

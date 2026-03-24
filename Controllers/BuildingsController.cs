@@ -1,8 +1,8 @@
 ﻿using CleanHub.Attribute;
-using CleanHub.Infrastructure.Data;
 using CleanHub.Config;
 using CleanHub.Entities;
 using CleanHub.Extensions;
+using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -14,8 +14,6 @@ using Newtonsoft.Json;
 using SelectPdf;
 using System.Net;
 using System.Net.Mail;
-using System.Linq;
-using System;
 
 namespace CleanHub.Controllers
 {
