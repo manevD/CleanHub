@@ -577,7 +577,7 @@ namespace CleanHub.Controllers
                         Customers = b.Customers,
                         BuildingProducts = b.BuildingProducts
                     }));
-                _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
+                //_unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(buildingId.HasValue ? buildingId.Value : 1, invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
                 documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
                 documentViewModel.Building.Customers = documentViewModel.Building.Customers.Where(x => !x.Hide && !x.Inactive && x.ActiveDatum.HasValue && x.ActiveDatum <= documentViewModel.Date).ToList();
@@ -674,6 +674,11 @@ namespace CleanHub.Controllers
                     IsNew = true
                 });
             }
+            var results = GetFilteredBookFinancials(1201, documentViewModel.BuildingId.Value).ToList();
+            var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+            var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+            documentViewModel.TotalBuildingOwes = owes;
+            documentViewModel.TotalBuildingDemands = demands;
             //ViewData["CustomerId"] = new SelectList(_context.Customers, "Id", "CustomerInfo");
             return View(documentViewModel);
         }
@@ -1548,8 +1553,15 @@ namespace CleanHub.Controllers
                         .Distinct()
                         .ToList();
 
-                    document.Debt = string.Join(",", distinctExceptLast)
-                                             + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                    if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
+                    {
+                        document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                    }
+                    else
+                    {
+                        document.Debt = string.Join(",", distinctExceptLast)
+                                           + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                    }
                 }
                 document.Company = _config.Value;
                 document.IsForPdf = true;
@@ -1577,8 +1589,10 @@ namespace CleanHub.Controllers
         {
             if (documents != null && documents.Any())
             {
-                var owes = _unitOfWork.BookFinancials.GetOwes(building.Id);
-                var demands = _unitOfWork.BookFinancials.GetDemands(building.Id);
+                var results = GetFilteredBookFinancials(1201, building.Id).ToList();
+                var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+
                 var total = owes - demands;
                 PdfDocument endDoc = new PdfDocument();
                 MemoryStream pdfStream = new MemoryStream();

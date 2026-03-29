@@ -9,5 +9,7 @@
         public string DocumentTyp { get; set; }
         public double Owes { get; set; }
         public double Demands { get; set; }
+
+        public bool DontSum { get; set; }
     }
 }

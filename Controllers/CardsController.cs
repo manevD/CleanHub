@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CleanHub.Controllers
 {
@@ -279,24 +280,31 @@ namespace CleanHub.Controllers
                     .Where(x => x.CustomerId == customerId &&
                                 (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                                 (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
-                                x.InvoiceId == (int)InvoiceTyp.Recieve)
+                                (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11))
                     .Select(cc => new CustomerDataDTO
                     {
                         Description = cc.Description,
                         Owes = cc.Owes,
                         Demands = cc.Demands,
-                        DocumentTyp = "Каса прими",
+                        DocumentTyp = string.Equals(cc.Description, "салдо", StringComparison.OrdinalIgnoreCase)
+                            ? "затварање"
+                            : "Каса прими",
                         Date = cc.DatumF.Value,
                         Number = 0,
+                        DontSum= cc.DontSum,
                         NumberNalog = cc.OrderN ?? 0
                     })
                     .ToList();
 
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
-                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Sum(x => x.Demands);
-                cardsViewModel.CustomerOwesTotal = (float)dataDocument.Sum(x => x.Owes);
+                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum &&  x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
+                cardsViewModel.CustomerOwesTotal = (float)dataDocument.Where(x=>x.Date > new DateOnly(2021,1,1)).Sum(x => x.Owes);
 
+                if (dataBookFinancial.Any(x=>x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)))
+                {
+                    cardsViewModel.CustomerOwesTotal += (float)dataBookFinancial.Where(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)).Sum(x=>x.Owes);
+                }
                 // Summen (unabhängig vom Datum)
                 //cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
                 //    .GetAllNoTrakcing()
