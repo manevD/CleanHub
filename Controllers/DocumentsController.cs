@@ -305,10 +305,6 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-
-            if (documentViewModel.Customer != null)
-                _unitOfWork.BookFinancials.SetOwesAndDemandsToDocument(documentViewModel.Customer.BuildingId,
-                    invoiceId: (int)InvoiceTyp.Reserve, status: null, documentViewModel);
             //documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
             //if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
             //{
@@ -357,6 +353,12 @@ namespace CleanHub.Controllers
                                        + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
             }
+            var results = GetFilteredBookFinancials(1201, documentViewModel.Customer.BuildingId).ToList();
+            var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+            var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+            documentViewModel.TotalBuildingOwes = owes;
+            documentViewModel.TotalBuildingDemands = demands;
+
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
 
@@ -1507,8 +1509,10 @@ namespace CleanHub.Controllers
                 startDate = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
                 endDate = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
             }
-            var owes = _unitOfWork.BookFinancials.GetOwes(buildingId.Value);
-            var demands = _unitOfWork.BookFinancials.GetDemands(buildingId.Value);
+            var results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
+            var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+            var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+
 
             PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
             MemoryStream pdfStream = new MemoryStream();
@@ -1520,7 +1524,6 @@ namespace CleanHub.Controllers
                           da.Date.Value <= endDate,
                     d => d.Include(x => x.Customer).Include(x => x.Books)
                 );
-
 
 
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
@@ -1635,5 +1638,23 @@ namespace CleanHub.Controllers
             }
             return null;
         }
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId)
+        {
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
+
+            return query.Select(bf => new BookFinancialInfoViewModel
+            {
+                Id = bf.Id,
+                Status = bf.Status,
+                InvoiceId = bf.InvoiceId ?? 0,
+                Description = bf.Description ?? "",
+                DocumentTypId = bf.DocumentTypId ?? 0,
+                DatumF = bf.DatumF ?? DateOnly.MinValue,
+                Owes = bf.Owes,
+                Demands = bf.Demands,
+                DontSum = bf.DontSum
+            }).ToList();
+        }
     }
+
 }

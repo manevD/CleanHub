@@ -77,11 +77,11 @@
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
                             </tr>
                         }
-                       @*  <tr role="row">
+                        <tr role="row">
                             <td>Вкупно</td>
                             <td></td>
-                            <td>Побарува :@Model.CustomerDemandsTotal </td>
-                            <td>Должи : @Model.CustomerOwesTotal</td>
+                            <td></td>
+                            <td>Должи : @Model.BuildingFinancial.Sum(x=>x.Owes)</td>
                             @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
                             {
                                 <td>Салдо :- @Model.Total</td>
@@ -90,7 +90,7 @@
                             {
                                 <td>Салдо :@Model.Total</td>
                             }
-                        </tr> *@
+                        </tr>
                     }
                     else
                     {

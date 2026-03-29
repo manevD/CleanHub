@@ -4,6 +4,7 @@ using CleanHub.Entities;
 using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
 using CleanHub.ViewModels;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Mvc.ViewEngines;
@@ -72,16 +73,34 @@ namespace CleanHub.Controllers
 
             if (buildingViewModel != null &&  buildingViewModel.Customers.Any())
             {
-                var owes = _unitOfWork.BookFinancials.GetOwes(buildingViewModel.Id);
-                var demands = _unitOfWork.BookFinancials.GetDemands(buildingViewModel.Id);
-                buildingViewModel.ReserveTotal = (demands - owes);
+                var results = GetFilteredBookFinancials(1201, id.Value).ToList();
+                var totalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                var totalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+
+                buildingViewModel.ReserveTotal = (totalDemands - totalOwes);
             }
 
             ViewBag.Month = _month;
             ViewBag.Year = _year;
             return View(buildingViewModel);
         }
+        private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId)
+        {
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
 
+            return query.Select(bf => new BookFinancialInfoViewModel
+            {
+                Id = bf.Id,
+                Status = bf.Status,
+                InvoiceId = bf.InvoiceId ?? 0,
+                Description = bf.Description ?? "",
+                DocumentTypId = bf.DocumentTypId ?? 0,
+                DatumF = bf.DatumF ?? DateOnly.MinValue,
+                Owes = bf.Owes,
+                Demands = bf.Demands,
+                DontSum = bf.DontSum
+            }).ToList();
+        }
         // GET: Buildings/Create
         [HttpGet]
         public async Task<IActionResult> Create()
