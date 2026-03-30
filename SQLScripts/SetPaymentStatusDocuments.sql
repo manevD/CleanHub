@@ -66,3 +66,32 @@ FROM Documents d;
 
 
 Update Documents set PaymentStatus = 0 where PaymentStatus = 1 and YEAR(Date) IN (2019, 2020, 2021, 2022, 2023)
+
+
+
+
+
+
+
+
+
+
+Update Documents set PaymentStatus = 0 where Id = 35667
+Update Documents set PaymentStatus = 0 where Id = 42439
+
+Update Documents set PaymentStatus = 0 where Id = 30837
+
+Update Documents set PaymentStatus = 0 where Id = 32130
+
+Update Documents set PaymentStatus = 0 where Id = 53006
+Update Documents set PaymentStatus = 0 where Id = 54357
+
+Update Documents set PaymentStatus = 0 where Id = 4909
+
+Update Documents set PaymentStatus = 0 where CustomerId = 605
+
+Update Documents set PaymentStatus = 0 where Id = 9195
+Update Documents set PaymentStatus = 0 where CustomerId = 847
+
+
+Update Documents set PaymentStatus = 0 where CustomerId = 1146

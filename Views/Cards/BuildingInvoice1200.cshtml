@@ -1,4 +1,5 @@
-﻿@using CleanHub.Entities.Enums
+﻿@using CleanHub.Entities
+@using CleanHub.Entities.Enums
 @model IEnumerable<CleanHub.Entities.Customer>
 
 @{
@@ -54,54 +55,63 @@
             <tbody>
                 @if (Model != null && Model.Any())
                 {
-                    var totalDemands = Model.SelectMany(d => d.Documents.Where(x => x.PaymentStatus == PaymentStatus.Платено)).Sum(x => x.TotalOutput);
-                    var totalOwes = Model.SelectMany(d => d.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено)).Sum(x => x.TotalOutput);
+                    var allDocs = Model
+                        .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>());
+
+                    var totalDemands = allDocs
+                        .Where(x => x.PaymentStatus == PaymentStatus.Платено)
+                        .Sum(x => x.TotalOutput ?? 0);
+
+                    var totalOwes = allDocs
+                        .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                        .Sum(x => x.TotalOutput ?? 0);
+
                     var counter = 0;
+
                     @foreach (var customer in Model.OrderBy(x => x.Id))
                     {
-                        var dolzi = customer.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено).Sum(x => x.TotalOutput);
-                        var pobaruva = customer.Documents.Where(x => x.PaymentStatus == PaymentStatus.Платено).Sum(x => x.TotalOutput);
+                        var docs = customer.Documents ?? Enumerable.Empty<Document>();
+
+                        var dolzi = docs
+                            .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                            .Sum(x => x.TotalOutput ?? 0);
+
+                        var pobaruva = docs
+                            .Where(x => x.PaymentStatus == PaymentStatus.Платено)
+                            .Sum(x => x.TotalOutput ?? 0);
+
+                        var saldo = pobaruva - dolzi;
+
                         counter++;
-                        <tr role="row">
+
+                        <tr>
                             <td>@counter</td>
                             <td>@customer.CustomerInfo</td>
                             <td>@pobaruva МКД</td>
                             <td>@dolzi МКД</td>
-                            <td>@(pobaruva-dolzi)</td>
+                            <td style="color:@(saldo < 0 ? "red" : "green")">
+                                @(saldo.ToString("+0.00;-0.00;0"))
+                            </td>
                         </tr>
                     }
-                    <tr role="row">
+
+                    <tr style="font-weight:bold; background:#f1f1f1">
                         <td>Вкупно</td>
                         <td></td>
-                        <td>Побарува : @totalDemands</td>
-
-                        <td>Должи : @totalOwes</td>
-                        <td>Разлика Побарува - Должи @(totalDemands - totalOwes)</td>
+                        <td>Побарува : @totalDemands МКД</td>
+                        <td>Должи : @totalOwes МКД</td>
+                        <td style="color:@((totalDemands - totalOwes) < 0 ? "red" : "green")">
+                            Разлика : @( (totalDemands - totalOwes).ToString("+0.00;-0.00;0") )
+                        </td>
                     </tr>
                 }
                 else
                 {
                     <tr>
-                        <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                        <td colspan="5" class="text-center">Нема пронајдени податоци</td>
                     </tr>
                 }
             </tbody>
-            @*  <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th>Побарува : @Model.CustomerDemandsTotal</th>
-                    <th>Должи : @Model.CustomerOwesTotal</th>
-                    @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
-                    {
-                        <th>Салдо :- @Model.Total</th>
-                    }
-                    else
-                    {
-                        <th>Салдо :@Model.Total</th>
-                    }
-                </tr>
-                </tfoot> *@
         </table>
     </div>
 </div>
