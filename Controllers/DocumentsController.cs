@@ -333,9 +333,8 @@ namespace CleanHub.Controllers
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
             if (debt != null && debt.Any())
             {
-                var allParts = debt.OrderBy(x => x.Id)
-                    .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    .ToList();
+
+                var allParts = debt.OrderBy(x => x.Id).SelectMany(x =>(x.ToDocument ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)).ToList();
 
                 var distinctExceptLast = allParts
                     .Reverse<string>()                    // Umkehren

@@ -1,0 +1,91 @@
+﻿@using CleanHub.Entities.Enums
+@using CleanHub.Entities
+@model IEnumerable<CleanHub.Entities.Building>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
+    <br />
+    <div class="statbox widget box box-shadow">
+        <div class="widget-content widget-content-area">
+            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+                <thead>
+                    <tr>
+                        <th>Бр.</th>
+                        <th>Зграда</th>
+                        <th>Побарува</th>
+                        <th>Должи</th>
+                        <th>Салдо</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        var allDocs = Model
+                            .SelectMany(b => b.Customers ?? Enumerable.Empty<Customer>())
+                            .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>());
+
+                        var totalDemands = allDocs
+                            .Where(x => x.PaymentStatus == PaymentStatus.Платено)
+                            .Sum(x => x.TotalOutput ?? 0);
+
+                        var totalOwes = allDocs
+                            .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                            .Sum(x => x.TotalOutput ?? 0);
+
+                        var counter = 0;
+
+                        foreach (var building in Model.OrderBy(x => x.Id))
+                        {
+                            var allDocuments = building.Customers?
+                                .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>())
+                                ?? Enumerable.Empty<Document>();
+
+                            var dolzi = allDocuments
+                                .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                                .Sum(x => x.TotalOutput ?? 0);
+
+                            var pobaruva = allDocuments
+                                .Where(x => x.PaymentStatus == PaymentStatus.Платено)
+                                .Sum(x => x.TotalOutput ?? 0);
+
+                            var saldo = pobaruva - dolzi;
+
+                            counter++;
+
+                            <tr>
+                                <td>@counter</td>
+                                <td>@building.Name</td>
+                                <td>@pobaruva МКД</td>
+                                <td>@dolzi МКД</td>
+                                <td style="color:@(saldo < 0 ? "red" : "green")">
+                                    @(saldo.ToString("+0.00;-0.00;0"))
+                                </td>
+                            </tr>
+                        }
+
+                        <tr style="font-weight:bold; background:#f1f1f1">
+                            <td>Вкупно</td>
+                            <td></td>
+                            <td>Побарува : @totalDemands МКД</td>
+                            <td>Должи : @totalOwes МКД</td>
+                            <td style="color:@((totalDemands - totalOwes) < 0 ? "red" : "green")">
+                                Разлика : @( (totalDemands - totalOwes).ToString("+0.00;-0.00;0") )
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                Нема пронајдени податоци
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

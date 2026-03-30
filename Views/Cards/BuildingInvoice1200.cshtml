@@ -1,0 +1,125 @@
+﻿@using CleanHub.Entities.Enums
+@model IEnumerable<CleanHub.Entities.Customer>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<hr />
+<form asp-action="BuildingInvoice1200" asp-controller="Cards" method="get">
+    <div class="row">
+        @if (ViewBag.Buildings != null)
+        {
+            <div class="col-lg-2 col-md-3">
+                <div class="form-group mb-0">
+                    <label for="buildingSearch">Објект</label>
+                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
+                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
+                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
+                    <datalist id="buildingOptions">
+                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                        {
+                            <option value="@building.Text" data-id="@building.Value"></option>
+                        }
+                    </datalist>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p>Нема пронајдено партнери!</p>
+        }
+
+    </div>
+    <br />
+    <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+        <div class="form-group mb-0">
+            <button type="submit" class="btn btn-primary">Пребарувај</button>
+        </div>
+    </div>
+</form>
+<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
+</br>
+<div class="statbox widget box box-shadow">
+    <div class="widget-content widget-content-area">
+        <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+            <thead>
+                <th data-sorter="false">Бр.</th>
+                <th data-sorter="false">Партнер</th>
+                <th data-sorter="false">Побарува</th>
+                <th data-sorter="false">Должи</th>
+                <th data-sorter="false">Салдо</th>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    var totalDemands = Model.SelectMany(d => d.Documents.Where(x => x.PaymentStatus == PaymentStatus.Платено)).Sum(x => x.TotalOutput);
+                    var totalOwes = Model.SelectMany(d => d.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено)).Sum(x => x.TotalOutput);
+                    var counter = 0;
+                    @foreach (var customer in Model.OrderBy(x => x.Id))
+                    {
+                        var dolzi = customer.Documents.Where(x => x.PaymentStatus == PaymentStatus.Неплатено).Sum(x => x.TotalOutput);
+                        var pobaruva = customer.Documents.Where(x => x.PaymentStatus == PaymentStatus.Платено).Sum(x => x.TotalOutput);
+                        counter++;
+                        <tr role="row">
+                            <td>@counter</td>
+                            <td>@customer.CustomerInfo</td>
+                            <td>@pobaruva МКД</td>
+                            <td>@dolzi МКД</td>
+                            <td>@(pobaruva-dolzi)</td>
+                        </tr>
+                    }
+                    <tr role="row">
+                        <td>Вкупно</td>
+                        <td></td>
+                        <td>Побарува : @totalDemands</td>
+
+                        <td>Должи : @totalOwes</td>
+                        <td>Разлика Побарува - Должи @(totalDemands - totalOwes)</td>
+                    </tr>
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+                    </tr>
+                }
+            </tbody>
+            @*  <tfoot>
+                <tr>
+                    <th></th>
+                    <th></th>
+                    <th>Побарува : @Model.CustomerDemandsTotal</th>
+                    <th>Должи : @Model.CustomerOwesTotal</th>
+                    @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
+                    {
+                        <th>Салдо :- @Model.Total</th>
+                    }
+                    else
+                    {
+                        <th>Салдо :@Model.Total</th>
+                    }
+                </tr>
+                </tfoot> *@
+        </table>
+    </div>
+</div>
+</div>
+<script>
+    document.getElementById('buildingSearch').addEventListener('input', function () {
+        const selectedValue = this.value;
+        const options = document.querySelectorAll('#buildingOptions option');
+        let selectedId = '';
+
+        // Find the matching option and get its data-id
+        options.forEach(option => {
+            if (option.value === selectedValue) {
+                selectedId = option.getAttribute('data-id');
+            }
+        });
+
+        // Set the hidden input's value
+        document.getElementById('buildingId').value = selectedId || '';
+    });
+</script>

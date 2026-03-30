@@ -5,15 +5,13 @@ using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json.Linq;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CleanHub.Controllers
 {
     public class CardsController(IUnitOfWork _unitOfWork) : Controller
     {
         public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll(x => x.Include(c => c.Customers)).ToList();
-        public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().Where(x=> !x.Hide).ToList();
+        public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().Where(x => !x.Hide).ToList();
 
         [Route("КартицаЗгради")]
         public async Task<IActionResult> Buildings(string dateFrom, string dateTo)
@@ -39,7 +37,7 @@ namespace CleanHub.Controllers
             foreach (var building in BuildingsList)
             {
                 building.CustomerRefId = building.CustomerRefId ?? building.Id;
-                
+
                 var bookFinancial = _unitOfWork.BookFinancials.GetAllNoTrakcing(
                     inc => inc.Include(x => x.Customer).Where(d =>
                         d.Customer.BuildingId == building.Id &&
@@ -69,7 +67,31 @@ namespace CleanHub.Controllers
 
             return View(buildingCards);
         }
+        public async Task<IActionResult> BuildingsInvoice1200()
+        {
+            var buildings = _unitOfWork.Buildings.GetAll(x => x.Include(c => c.Customers).ThenInclude(d => d.Documents)).ToList();
+            return View(buildings);
+        }
+        public async Task<IActionResult> BuildingInvoice1200(int? buildingId)
+        {
+            var customers = new List<Customer>();
+            if (buildingId.HasValue)
+            {
+                ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", buildingId.Value);
+                ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault(x=>x.Id == buildingId.Value).Name;
 
+                ViewBag.BuildingId = buildingId.Value;
+                customers =  _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == buildingId.Value)).ToList();
+                return View(customers);
+            }
+            ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name",1);
+            ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault().Name;
+
+            ViewBag.BuildingId = 1;
+            customers = _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == 1)).ToList();
+
+            return View(customers);
+        }
 
         public async Task<IActionResult> BuildingsReserve(int? buildingId, string dateFrom, string dateTo)
         {
@@ -184,7 +206,7 @@ namespace CleanHub.Controllers
                        .Include(c => c.Documents)
                        .Where(x => building.CustomerRefId == x.Id || x.BuildingId == buildingId.Value));
 
-                foreach (var customer in customers.Where(x=>!x.Hide))
+                foreach (var customer in customers.Where(x => !x.Hide))
                 {
                     var filteredDocuments = customer.Documents.Where(c =>
                         (!DateFrom.HasValue || c.Date >= DateFrom.Value) &&
@@ -240,7 +262,7 @@ namespace CleanHub.Controllers
             if (customerId.HasValue)
             {
                 cardsViewModel.CustomerData = new List<CustomerDataDTO>();
-                var customer =await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId.Value);
+                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId.Value);
                 DateOnly? DateFrom = null;
                 DateOnly? DateTo = null;
                 ViewBag.Customers = new SelectList(CustomersList, "Id", "CustomerInfo", customer.CustomerInfo);
@@ -291,19 +313,19 @@ namespace CleanHub.Controllers
                             : "Каса прими",
                         Date = cc.DatumF.Value,
                         Number = 0,
-                        DontSum= cc.DontSum,
+                        DontSum = cc.DontSum,
                         NumberNalog = cc.OrderN ?? 0
                     })
                     .ToList();
 
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
-                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum &&  x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
-                cardsViewModel.CustomerOwesTotal = (float)dataDocument.Where(x=>x.Date > new DateOnly(2021,1,1)).Sum(x => x.Owes);
+                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum && x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
+                cardsViewModel.CustomerOwesTotal = (float)dataDocument.Where(x => x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
 
-                if (dataBookFinancial.Any(x=>x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)))
+                if (dataBookFinancial.Any(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)))
                 {
-                    cardsViewModel.CustomerOwesTotal += (float)dataBookFinancial.Where(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)).Sum(x=>x.Owes);
+                    cardsViewModel.CustomerOwesTotal += (float)dataBookFinancial.Where(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
                 }
                 // Summen (unabhängig vom Datum)
                 //cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
