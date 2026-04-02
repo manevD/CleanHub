@@ -199,7 +199,12 @@ namespace CleanHub
                 pattern: "{area:Identity}/{controller=Account}/{action=Login}/{id?}");
 
             app.MapRazorPages();
-
+            app.Use(async (context, next) =>
+            {
+                context.Response.Headers["Content-Security-Policy"] =
+                    "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
+                await next();
+            });
             // ----------------------------------------------------
             // Startup-Tasks (KORREKT)
             // ----------------------------------------------------

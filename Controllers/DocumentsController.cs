@@ -18,6 +18,7 @@ using SelectPdf;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
@@ -205,18 +206,21 @@ namespace CleanHub.Controllers
 
 
         [HttpGet]
-        public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, int? year)
         {
             Buildings.Insert(0, new Building() { Name = "Сите", Id = 0 });
+
             if (!buildingId.HasValue)
             {
                 return RedirectToAction(nameof(Index));
             }
+
             if (!Buildings.Any())
             {
                 throw new Exception("No buildings found in the database.");
             }
 
+            // ✅ Payment Status
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                 .Cast<PaymentStatus>()
                 .Select(e => new SelectListItem
@@ -226,26 +230,90 @@ namespace CleanHub.Controllers
                     Selected = (int)e == paymentStatusId
                 })
                 .ToList();
-            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+
+            // ✅ Building
+            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value, inc => inc.Include(c => c.Customers));
             if (building != null)
             {
                 ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", building.Id);
                 ViewBag.SelectedBuildingName = building.Name;
                 ViewBag.BuildingId = building.Id;
+                ViewBag.Customers = building.Customers.ToList();
+                var bookFinancials = _unitOfWork.BookFinancials
+                    .GetAllNoTrakcing(
+                        query => query
+                            .Include(bf => bf.Customer)        // Include Customer
+                            .Where(bf => bf.Customer.BuildingId == buildingId.Value && (bf.InvoiceId == (int)InvoiceTyp.Recieve || bf.DocumentTypId == 11)) // Filter nach BuildingId
+                    )
+                    .ToList();
+
+                var dataDocument = _unitOfWork.Documents.GetAllNoTrakcing(query => query
+                            .Include(bf => bf.Customer)        // Include Customer
+                            .Where(bf => bf.Customer.BuildingId == buildingId.Value)).ToList();
+                ViewBag.Documents = dataDocument;
+
+                ViewBag.BookFinancials = bookFinancials;
+
+                var customerBalances = building.Customers.Select(c =>
+                {
+                    var dataBookFinancial = bookFinancials.Where(x => x.CustomerId == c.Id).ToList();
+                    
+                    // ✅ Dokumente (gleich wie oben)
+                    var customerDocs = dataDocument
+                        .Where(x => x.CustomerId == c.Id &&
+                                    x.Date.HasValue &&
+                                    x.Date.Value > new DateOnly(2021, 1, 1))
+                        .ToList();
+
+
+                    // ✅ Pobaruva (identisch!)
+                    var pobaruva = dataBookFinancial
+                        .Where(x => !x.DontSum && x.DatumF.HasValue && x.DatumF > new DateOnly(2021, 1, 1))
+                        .Sum(x => x.Demands);
+
+                    // ✅ Dolzi (Teil 1: Dokumente)
+                    var dolzi = customerDocs.Sum(x => x.TotalOutput);
+
+                    // ✅ Dolzi (Teil 2: BookFinancial nur wenn Owes != 0)
+                    if (dataBookFinancial.Any(x => x.Owes != 0))
+                    {
+                        dolzi += (float)dataBookFinancial.Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
+                    }
+
+                    var saldo = pobaruva - dolzi;
+
+                    return new
+                    {
+                        Customer = c,
+                        Pobaruva = pobaruva,
+                        Dolzi = dolzi,
+                        Saldo = saldo
+                    };
+                }).ToList();
+
+                // An View übergeben
+                ViewBag.CustomerBalances = customerBalances;
             }
 
-            var documentEntities = await GetDocuments(buildingId, paymentStatusId, dateFrom, dateTo);
-
+            // ✅ Default Year = Current Year
+            int selectedYear = year ?? DateTime.Now.Year;
+            ViewBag.Year = selectedYear;
+            
+            // ❗ WICHTIG: Neue Methode mit Year verwenden
+            var documentEntities = await GetDocumentsByYear(buildingId, paymentStatusId, selectedYear);
+            
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
-            //foreach (var doc in documents.Where(x => x.PaymentStatus != (int)PaymentStatus.Платено))
-            //{
-            //    doc.Delay = CalculateOverdueDays(doc.DateReceived);
-            //    if (doc.Delay != 0)
-            //    {
-            //        doc.NewTotal = (int?)(doc.TotalOutput + CalculateNewTotal(doc));
-            //    }
-            //}
-            return View("Index", documents.OrderBy(x => x.Date.HasValue ? x.Date.Value : DateOnly.MinValue).ToList());
+            if (paymentStatusId == (int)PaymentStatus.Неплатено)
+            {
+                ViewBag.Docs = App.FullMapper.Map <List<DocumentViewModel>> (await GetDocumentsByYear(buildingId, (int)PaymentStatus.Платено, selectedYear));
+            }
+            else
+            {
+                ViewBag.Docs = documents;
+            }
+            return View("Index", documents
+                .OrderBy(x => x.Date.HasValue ? x.Date.Value : DateOnly.MinValue)
+                .ToList());
         }
 
 
@@ -271,7 +339,27 @@ namespace CleanHub.Controllers
         //        return (int)Math.Round(doc.TotalOutput.Value * (doc.ChargesInPercent.Value / 100f), MidpointRounding.AwayFromZero);
         //    return 0;
         //}
+        private async Task<List<Document>> GetDocumentsByYear(int? buildingId, int? paymentStatusId, int? year)
+        {
+            var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
+                q => q.Include(d => d.Customer)
+                      .ThenInclude(c => c.Building),
 
+                d =>
+                    (buildingId.GetValueOrDefault() == 0 || d.Customer.BuildingId == buildingId.Value) &&
+                    (paymentStatusId == (int)PaymentStatus.Сите || (int)d.PaymentStatus == paymentStatusId)
+            );
+
+            // ✅ YEAR FILTER
+            if (year.HasValue)
+            {
+                query = query
+                    .Where(d => d.Date.HasValue && d.Date.Value.Year == year.Value)
+                    .ToList();
+            }
+
+            return query;
+        }
         private async Task<List<Document>> GetDocuments(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
             var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
@@ -334,7 +422,7 @@ namespace CleanHub.Controllers
             if (debt != null && debt.Any())
             {
 
-                var allParts = debt.OrderBy(x => x.Id).SelectMany(x =>(x.ToDocument ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)).ToList();
+                var allParts = debt.OrderBy(x => x.Id).SelectMany(x => (x.ToDocument ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)).ToList();
 
                 var distinctExceptLast = allParts
                     .Reverse<string>()                    // Umkehren
@@ -805,7 +893,7 @@ namespace CleanHub.Controllers
                             .ToList();
                         if (!building.Customers.Any(x => x.SetCost) && productsToAdd != null && productsToAdd.Any())
                         {
-                            foreach (var product in productsToAdd.Where(x=>x.IsNew))
+                            foreach (var product in productsToAdd.Where(x => x.IsNew))
                             {
                                 var bookFinancialViewModelReserve = new BookFinancialViewModel
                                 {
@@ -1085,6 +1173,7 @@ namespace CleanHub.Controllers
 
             return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
         }
+
         private void CreateSpecialInvoice(DocumentViewModel document)
         {
             int sum = 0;
@@ -1500,7 +1589,7 @@ namespace CleanHub.Controllers
             return _unitOfWork.Documents.GetAllAsync().Result.Any(e => e.Id == id);
         }
 
-        public async Task<IActionResult> CombineAndDownloadPdfs(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
+        public async Task<IActionResult> CombineAndDownloadPdfs(int? buildingId, int? paymentStatusId, int year)
         {
             // Hole die Kunden, die dem Gebäude zugeordnet sind
             var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(buildingId.Value);
@@ -1508,11 +1597,7 @@ namespace CleanHub.Controllers
             var startDate = new DateOnly();
             var endDate = new DateOnly();
 
-            if (!string.IsNullOrEmpty(dateFrom) && !string.IsNullOrEmpty(dateTo))
-            {
-                startDate = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-                endDate = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
-            }
+           
             var results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
             var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
@@ -1579,8 +1664,10 @@ namespace CleanHub.Controllers
 
             endDoc.Close();
 
-            FileResult fileResult = new FileContentResult(pdf, "application/pdf");
-            fileResult.FileDownloadName = $"{Buildings.FirstOrDefault(x => x.Id == buildingId.Value)?.Name}_{startDate.Month}_{startDate.Year}.pdf";
+            FileResult fileResult = new FileContentResult(pdf, "application/pdf")
+            {
+                FileDownloadName = $"{Buildings.FirstOrDefault(x => x.Id == buildingId.Value)?.Name}_{startDate.Month}_{startDate.Year}.pdf"
+            };
             return fileResult;
         }
 

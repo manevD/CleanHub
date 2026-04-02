@@ -1,296 +1,374 @@
 ﻿@using CleanHub.Entities.Enums
 @using CleanHub.Extensions
+@using CleanHub.ViewModels
 @model List<CleanHub.ViewModels.DocumentViewModel>
 
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
-<hr />
 
-<form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
+<div class="container-fluid" style="font-size:10px;">
     <div class="row">
-        @if (ViewBag.Buildings != null)
-        {
-            <div class="col-lg-2 col-md-3">
-                <div class="form-group mb-0">
-                    <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
-                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
-                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
 
-                    <datalist id="buildingOptions">
-                        @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
-                        {
-                            <option value="@building.Text" data-id="@building.Value"></option>
-                        }
-                    </datalist>
-                </div>
-            </div>
-        }
-        else
-        {
-            <p>Нема пронајдено објекти!</p>
-        }
+        <!-- 🔹 SIDEBAR -->
+        <div class="col-lg-2 col-md-3">
+            <div class="card p-2 h-100" style="position: sticky; top:20px; font-size:10px;">
 
-        @if (ViewBag.PaymentStatusList != null)
-        {
-            <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-                <div class="form-group mb-0">
-                    <label for="paymentStatusId">Статус</label>
-                    @Html.DropDownList("paymentStatusId", (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList, new { @class = "form-control" })
-                </div>
-            </div>
-        }
-        else
-        {
-            <p>Нема пронајдено статус!</p>
-        }
+                <form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
 
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <label>Од</label>
-                <input id="dateFrom" name="dateFrom" type="text" class="form-control flatpickr flatpickr-input active" placeholder="ден.месец.година" value="@ViewBag.DateFrom" />
-            </div>
-        </div>
+                    <h5 class="mb-3" style="font-size:10px;">Филтер</h5>
 
-        <div class="col-xl-3 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <label>До</label>
-                <input id="dateTo" name="dateTo" type="text" class="form-control flatpickr flatpickr-input active" placeholder="ден.месец.година" value="@ViewBag.DateTo" />
-            </div>
-        </div>
-
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="submit" class="form-control btn btn-primary">Пребарувај</button>
-            </div>
-        </div>
-
-        <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
-            <div class="form-group mb-0">
-                <button type="button" class="form-control btn btn-secondary" id="navigateButton">Извади сметки</button>
-            </div>
-        </div>
-    </div>
-</form>
-
-<br />
-
-<div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-    <div class="statbox widget box box-shadow">
-        <div class="widget-content widget-content-area">
-            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
-                <thead>
-                    <tr>
-                        <th class="checkbox-column dt-no-sorting"></th>
-                        <th data-sorter="false">Бр.</th>
-                        <th data-sorter="false">Станар</th>
-                        <th data-sorter="false">Претплата</th>
-                        <th data-sorter="false">Вкупно</th>
-                        <th data-sorter="false">Сметка</th>
-                        <th data-sorter="false">Статус</th>
-                        <th data-sorter="false">Опис на плаќање</th>
-                        <th data-sorter="false">Дата на плаќање</th>
-                        <th data-sorter="false">Платено на</th>
-                        <th data-sorter="false">Тип на плаќање</th>
-                        <th data-sorter="false">Број на плаќање</th>
-                        @*      <th data-sorter="false">Задоцнување</>
-                    <th data-sorter="false">Камата</th>
-                    @if (@unpayed)
+                    @if (ViewBag.Buildings != null)
                     {
-                        <th data-sorter="false">Нова вредност</th>
-                    } *@
-                        <th data-sorter="false">Функции</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @if (Model != null && Model.Any())
-                    {
-                        var counter = 0;
-                        var sortedInvoices = Model.OrderBy(x => x.Date);
-                        foreach (var invoice in sortedInvoices)
-                        {
-                            counter++;
-                            <tr>
-                                <td>
-                                    <input type="checkbox" class="invoice-check" value="@invoice.Id" />
-                                </td>
-                                <td>@counter</td>
-                                <td>@(invoice.Customer?.CustomerInfo ?? "")</td>
-                                <td>@(invoice.Customer?.Subscription)</td>
-                                <td>@invoice.TotalOutput МКД</td>
-                                <td>@(invoice.ToDocument ?? "")</td>
-                                <td>
-                                    @switch (invoice.PaymentStatus)
-                                    {
-                                        case PaymentStatus.Платено:
-                                            <span class="badge badge-light-success inv-status">@invoice.PaymentStatus</span>
-                                            ;
-                                            break;
-                                        case PaymentStatus.Неплатено:
-                                        case PaymentStatus.Делумно:
-                                            <span class="badge badge-light-warning inv-status">@invoice.PaymentStatus</span>
-                                            ;
-                                            break;
-                                        case PaymentStatus.Задоцнето:
-                                            <span class="badge badge-light-danger inv-status">@invoice.PaymentStatus</span>
-                                            ;
-                                            break;
-                                        default:
-                                            <span>Неопределен статус</span>
-                                            break;
-                                    }
-                                </td>
-                                <td>@(invoice.PaymentDescription ?? "")</td>
-                                <td>@(invoice.DateReceived?.ToString("dd.MM.yyyy") ?? "")</td>
-                                <td>@(invoice.PaymentDate?.ToString("dd.MM.yyyy") ?? "")</td>
-                                <td>@invoice.PaymentType.GetEnumDescription()</td>
-                                <td>@(invoice.PaymentNumber ?? "—")</td>
-                                <td>
-                                    <a asp-action="Details" asp-controller="Documents" asp-route-id="@invoice.Id"
-                                       class="badge badge-light-primary text-start me-2 action-edit">
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                             viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-                                             stroke-linecap="round" stroke-linejoin="round" class="feather feather-eye">
-                                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                                            <circle cx="12" cy="12" r="3"></circle>
-                                        </svg>
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    }
-                    else
-                    {
-                        <tr>
-                            <td colspan="12" class="text-center">Нема пронајдени податоци</td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
-<div class="d-flex gap-3 mt-3 align-items-start">
+                        <div class="form-group mb-3">
+                            <label style="font-size:10px;">Објект</label>
+                            <input class="form-control" style="font-size:10px;" list="buildingOptions" id="buildingSearch"
+                                   name="buildingName" value="@ViewBag.SelectedBuildingName">
 
-    <form asp-action="SetMultiplePayments" asp-controller="Documents" method="post">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="SelectedInvoiceIds" id="selectedInvoices" />
+                            <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
 
-        <button type="button" class="btn btn-dark mt-3" data-bs-toggle="modal" data-bs-target="#multiPaymentModal">
-            Плати селектирани
-        </button>
-
-        <div class="modal fade" id="multiPaymentModal" tabindex="-1" role="dialog" aria-labelledby="multiPaymentModalLabel" aria-hidden="true">
-            <div class="modal-dialog modal-dialog-centered" role="document">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h5 class="modal-title">Плати повеќе фактури</h5>
-                    </div>
-                    <div class="modal-body">
-                        <div class="form-group">
-                            <label for="paymentType">Тип на плаќање</label>
-                            <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
-                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                            <datalist id="buildingOptions">
+                                @foreach (var b in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                                 {
-                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                    <option value="@b.Text" data-id="@b.Value"></option>
                                 }
-                            </select>
+                            </datalist>
                         </div>
-                        <div class="form-group">
-                            <label for="paymentDate">Дата на плаќање</label>
-                            <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                    }
+
+                    @if (ViewBag.PaymentStatusList != null)
+                    {
+                        <div class="form-group mb-3">
+                            <label style="font-size:10px;">Статус</label>
+                            @Html.DropDownList("paymentStatusId",
+                                (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
+                                new { @class = "form-control", style = "font-size:10px;" })
                         </div>
-                        <div class="form-group">
-                            <label for="paymentNumber">Број на плаќање</label>
-                            <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
-                        </div>
-                        <div class="form-group">
-                            <label for="paymentDescription">Опис</label>
-                            <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
-                        </div>
+                    }
+
+                    <div class="form-group mb-3">
+                        <label style="font-size:10px;">Година</label>
+                        <select name="year" class="form-control" style="font-size:10px;">
+                            @{
+                                var currentYear = DateTime.Now.Year;
+                                for (int y = 2019; y <= currentYear; y++)
+                                {
+                                    <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">
+                                        @y
+                                    </option>
+                                }
+                            }
+                        </select>
                     </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-primary">Плати селектирани</button>
-                    </div>
-                </div>
+
+                    <button type="submit" class="btn btn-primary w-100 mb-2" style="font-size:10px;">
+                        Пребарувај
+                    </button>
+
+                    <button type="button" class="btn btn-secondary w-100" id="navigateButton" style="font-size:10px;">
+                        Извади сметки
+                    </button>
+
+                </form>
             </div>
         </div>
-    </form>
 
-    <!-- DELETE FORM -->
-    <form id="deleteForm" asp-action="DeleteMultipleDocuments" asp-controller="Documents" method="post">
-        @Html.AntiForgeryToken()
-        <input type="hidden" name="SelectedInvoiceIds" id="selectedInvoicesForDelete" />
+        <!-- 🔹 RIGHT SIDE -->
+        <div class="col-lg-10 col-md-9 ps-0 pe-1">
 
-        <button type="submit" class="btn btn-delete mt-3" style="margin-left:125px;color:red">
-            Избриши селектирани
-        </button>
-    </form>
-    @if (Model?.FirstOrDefault()?.PaymentStatus == PaymentStatus.Платено)
-    {
-        <form asp-action="ChangePaymentMultipleDocuments" asp-controller="Documents" method="post" style="margin-left:125px;">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="SelectedInvoiceIds" id="selectedInvoicesMultipleChange" />
+            <!-- ✅ TABLE 2 -->
+            <div class="statbox widget box box-shadow mb-4">
+                <div class="widget-content widget-content-area">
+                    <table class="table table-bordered table-sm table-compact w-100" style="font-size:10px;">
+                        <thead>
+                            <tr>
+                                <th>Партнер</th>
+                                
+                                <th>Должи</th>
+                                <th>Побарува</th>
+                                <th>Салдо</th>
 
-            <button type="button" class="btn btn-dark mt-3" data-bs-toggle="modal" data-bs-target="#multiChangeModal">
-                Измени плаќање
-            </button>
+                                <th>Јан</th>
+                                <th>Фев</th>
+                                <th>Мар</th>
+                                <th>Апр</th>
+                                <th>Мај</th>
+                                <th>Јун</th>
+                                <th>Јул</th>
+                                <th>Авг</th>
+                                <th>Сеп</th>
+                                <th>Окт</th>
+                                <th>Ное</th>
+                                <th>Дек</th>
 
-            <div class="modal fade" id="multiChangeModal" tabindex="-1" role="dialog" aria-labelledby="multiChangeModalLabel" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered" role="document">
-                    <div class="modal-content">
-                        <div class="modal-header">
-                            <h5 class="modal-title">Плати повеќе фактури</h5>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label for="paymentType">Тип на плаќање</label>
-                                <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
-                                    @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
-                                    {
-                                        <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
-                                    }
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label for="paymentDate">Дата на плаќање</label>
-                                <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
-                            </div>
-                            <div class="form-group">
-                                <label for="paymentNumber">Број на плаќање</label>
-                                <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
-                            </div>
-                            <div class="form-group">
-                                <label for="paymentDescription">Опис</label>
-                                <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="submit" class="btn btn-primary"> Измени плаќање</button>
-                        </div>
-                    </div>
+                                <th>Вкупно</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (ViewBag.Customers != null && ViewBag.CustomerBalances != null)
+                            {
+                                var customers = (IEnumerable<dynamic>)ViewBag.Customers;
+                                var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
+
+                                foreach (var c in customers)
+                                {
+                                    var cusBalance = balances.FirstOrDefault(b => b.Customer.Id == c.Id);
+                                    var docs = ViewBag.Docs as List<CleanHub.ViewModels.DocumentViewModel>;
+
+                                    var customerInvoices = docs?
+                                        .Where(x => x.CustomerId == c.Id)
+                                        .ToList()
+                                        ?? new List<CleanHub.ViewModels.DocumentViewModel>();
+
+                                    <tr>
+                                        <td>@c.CustomerInfo</td>
+                                        <td style="color:red">@cusBalance?.Dolzi</td>
+                                        <td style="color:blue">@cusBalance?.Pobaruva</td>
+                                        <td style="color:green">@cusBalance?.Saldo</td>
+
+                                        @for (int m = 1; m <= 12; m++)
+                                        {
+                                            var monthName = new DateTime(ViewBag.Year, m, 1)
+                                                            .ToString("MMMM", new System.Globalization.CultureInfo("mk-MK"));
+
+                                            var monthly = customerInvoices
+                                                .Where(x =>
+                                                    x.ToDocument != null &&
+                                                    x.ToDocument.IndexOf(monthName, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                                                    x.ToDocument.IndexOf(ViewBag.Year.ToString(), StringComparison.OrdinalIgnoreCase) >= 0 &&
+                                                    x.PaymentStatus == 0 // nur wenn PaymentStatus 0
+                                                )
+                                                .Sum(x => x.TotalOutput ?? 0);
+
+                                            <td>@(monthly == 0 ? "0" : monthly.ToString())</td>
+                                        }
+
+                                        <td style="font-weight:bold">
+                                            @customerInvoices.Sum(x => x.TotalOutput)
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="17" class="text-center">Нема корисници</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
-        </form>
-    }
+
+            <!-- ✅ TABLE 1 -->
+            <div class="statbox widget box box-shadow mb-4">
+                <div class="widget-content widget-content-area">
+                    <table id="html5-extension" class="table dt-table-hover w-100" style="font-size:10px;">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Бр.</th>
+                                <th>Станар</th>
+                                <th>Претплата</th>
+                                <th>Вкупно</th>
+                                <th>Сметка</th>
+                                <th>Статус</th>
+                                <th>Опис на плаќање</th>
+                                <th>Дата на плаќање</th>
+                                <th>Платено на</th>
+                                <th>Тип на плаќање</th>
+                                <th>Број на плаќање</th>
+                                <th>Функции</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            @if (Model != null && Model.Any())
+                            {
+                                var counter = 0;
+                                foreach (var invoice in Model.OrderBy(x => x.Date))
+                                {
+                                    counter++;
+                                    <tr>
+                                        <td><input type="checkbox" class="invoice-check" value="@invoice.Id" /></td>
+                                        <td>@counter</td>
+                                        <td>@invoice.Customer?.CustomerInfo</td>
+                                        <td>@invoice.Customer?.Subscription</td>
+                                        <td>@invoice.TotalOutput МКД</td>
+                                        <td>@invoice.ToDocument</td>
+
+                                        <td>
+                                            @switch (invoice.PaymentStatus)
+                                            {
+                                                case PaymentStatus.Платено:
+                                                    <span class="badge badge-light-success">@invoice.PaymentStatus</span>
+                                                    break;
+                                                case PaymentStatus.Неплатено:
+                                                case PaymentStatus.Делумно:
+                                                    <span class="badge badge-light-warning">@invoice.PaymentStatus</span>
+                                                    break;
+                                                case PaymentStatus.Задоцнето:
+                                                    <span class="badge badge-light-danger">@invoice.PaymentStatus</span>
+                                                    break;
+                                            }
+                                        </td>
+
+                                        <td>@invoice.PaymentDescription</td>
+                                        <td>@invoice.DateReceived?.ToString("dd.MM.yyyy")</td>
+                                        <td>@invoice.PaymentDate?.ToString("dd.MM.yyyy")</td>
+                                        <td>@invoice.PaymentType.GetEnumDescription()</td>
+                                        <td>@invoice.PaymentNumber </td>
+
+                                        <td>
+                                            <a asp-action="Details" asp-route-id="@invoice.Id"
+                                                   class="badge badge-light-primary">
+                                                👁
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="13" class="text-center">Нема податоци</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 🔹 ACTIONS -->
+            <div class="d-flex gap-3 mt-3" style="font-size:10px;">
+                @if (Model != null && Model.Any(x => x.PaymentStatus == PaymentStatus.Неплатено))
+                {
+                    <form asp-action="SetMultiplePayments" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="selectedInvoices" name="SelectedInvoiceIds" />
+
+                        <button type="button" class="btn btn-dark"
+                                data-bs-toggle="modal" data-bs-target="#multiPaymentModal" style="font-size:10px;">
+                            Плати селектирани
+                        </button>
+                        <div class="modal fade" id="multiPaymentModal" tabindex="-1" role="dialog" aria-labelledby="multiPaymentModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Плати повеќе фактури</h5>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="paymentType">Тип на плаќање</label>
+                                            <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
+                                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                                {
+                                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentDate">Дата на плаќање</label>
+                                            <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentNumber">Број на плаќање</label>
+                                            <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentDescription">Опис</label>
+                                            <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary">Плати селектирани</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                }
+                <form id="deleteForm" asp-action="DeleteMultipleDocuments" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" id="selectedInvoicesForDelete" name="SelectedInvoiceIds" />
+
+                    <button type="submit" class="btn btn-danger" style="font-size:10px;">
+                        Избриши селектирани
+                    </button>
+                </form>
+
+                @if (Model != null && Model.Any(x => x.PaymentStatus == PaymentStatus.Платено))
+                {
+                    <form asp-action="ChangePaymentMultipleDocuments" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" id="selectedInvoicesMultipleChange" name="SelectedInvoiceIds" />
+
+                        <button type="button" class="btn btn-secondary"
+                                data-bs-toggle="modal" data-bs-target="#multiChangeModal" style="font-size:10px;">
+                            Измени плаќање
+                        </button>
+                        <div class="modal fade" id="multiChangeModal" tabindex="-1" role="dialog" aria-labelledby="multiChangeModalLabel" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered" role="document">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Измени плаќање</h5>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div class="form-group">
+                                            <label for="paymentType">Тип на плаќање</label>
+                                            <select id="paymentType" name="PaymentType" class="form-control form-control-sm">
+                                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                                {
+                                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                                }
+                                            </select>
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentDate">Дата на плаќање</label>
+                                            <input type="date" id="paymentDate" name="PaymentDate" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentNumber">Број на плаќање</label>
+                                            <input type="text" id="paymentNumber" name="PaymentNumber" class="form-control form-control-sm" />
+                                        </div>
+                                        <div class="form-group">
+                                            <label for="paymentDescription">Опис</label>
+                                            <input type="text" id="paymentDescription" name="PaymentDescription" class="form-control form-control-sm" />
+                                        </div>
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="submit" class="btn btn-primary"> Измени плаќање</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                }
+
+            </div>
+
+        </div>
+    </div>
 </div>
+
 @section Scripts {
     <script>
-        document.addEventListener("DOMContentLoaded", function () {
+        window.addEventListener("load", function () {
 
             // ==========================
-            // 1. Filterform / Navigation
+            // 1. Filter / Navigation
             // ==========================
             const form = document.getElementById("filterForm");
             const navigateButton = document.getElementById("navigateButton");
+
             if (form && navigateButton) {
                 const searchButton = form.querySelector('button[type="submit"]');
                 const originalAction = form.action;
 
                 navigateButton.addEventListener("click", function () {
-                    form.action = '@Url.Action("CombineAndDownloadPdfs", "Documents")';
+                    form.action = "/Documents/CombineAndDownloadPdfs"; // ❗ kein Razor mehr
                     form.submit();
                 });
 
@@ -299,104 +377,81 @@
                         form.action = originalAction;
                     });
                 }
-
-                const dateFromInput = document.getElementById("dateFrom");
-                const dateToInput = document.getElementById("dateTo");
-
-                function isValidDate(dateString) {
-                    return /^\d{2}\.\d{2}\.\d{4}$/.test(dateString);
-                }
-
-                function toggleButtonState() {
-                    if (dateFromInput && dateToInput) {
-                        navigateButton.disabled = !(isValidDate(dateFromInput.value) && isValidDate(dateToInput.value));
-                    }
-                }
-
-                toggleButtonState();
-                if (dateFromInput) dateFromInput.addEventListener("input", toggleButtonState);
-                if (dateToInput) dateToInput.addEventListener("input", toggleButtonState);
             }
 
-            // ==========================================
-            // 2. Building-Search Hidden Input Handling
-            // ==========================================
+            // ==========================
+            // 2. Building Search
+            // ==========================
             const buildingSearch = document.getElementById('buildingSearch');
             if (buildingSearch) {
                 buildingSearch.addEventListener('input', function () {
-                    const selectedValue = this.value;
-                    const options = document.querySelectorAll('#buildingOptions option');
-                    let selectedId = '';
+                    const selected = [...document.querySelectorAll('#buildingOptions option')]
+                        .find(o => o.value === this.value);
 
-                    options.forEach(option => {
-                        if (option.value === selectedValue) {
-                            selectedId = option.getAttribute('data-id');
-                        }
-                    });
-
-                    const buildingIdInput = document.getElementById('buildingId');
-                    if (buildingIdInput) buildingIdInput.value = selectedId || '';
+                    const hidden = document.getElementById('buildingId');
+                    if (hidden) hidden.value = selected ? selected.dataset.id : '';
                 });
             }
 
             // ==========================
-            // 3. Modal-Date Inputs
+            // 3. SELECTED CHECKBOXES
             // ==========================
-            document.querySelectorAll('[data-bs-toggle="modal"]').forEach(button => {
-                button.addEventListener('click', function () {
-                    const dateFrom = document.getElementById('dateFrom')?.value || '';
-                    const dateTo = document.getElementById('dateTo')?.value || '';
+            function getSelectedInvoices() {
+                return [...document.querySelectorAll('.invoice-check:checked')]
+                    .map(cb => cb.value);
+            }
 
-                    const modalId = button.getAttribute('data-bs-target');
-                    const modal = document.querySelector(modalId);
+            // ==========================
+            // 4. PAY (Плати селектирани)
+            // ==========================
+            document.querySelectorAll('[data-bs-target="#multiPaymentModal"]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const selected = getSelectedInvoices();
+                    const input = document.getElementById('selectedInvoices');
 
-                    if (modal) {
-                        const inputFrom = modal.querySelector('.modal-date-from');
-                        const inputTo = modal.querySelector('.modal-date-to');
-                        if (inputFrom) inputFrom.value = dateFrom;
-                        if (inputTo) inputTo.value = dateTo;
+                    if (input) input.value = selected.join(',');
+
+                    if (selected.length === 0) {
+                        alert('Немате селектирано фактури!');
                     }
                 });
             });
 
-            // ====================================
-            // 4. Multi-Payment Modal: Checkbox IDs
-            // ====================================
-            const payButton = document.querySelector('[data-bs-target="#multiPaymentModal"]');
-            if (payButton) {
-                payButton.addEventListener('click', function () {
-                    const selected = [...document.querySelectorAll('.invoice-check:checked')].map(cb => cb.value);
-                    const hiddenInput = document.getElementById('selectedInvoices');
-                    if (hiddenInput) hiddenInput.value = selected.join(',');
+            // ==========================
+            // 5. CHANGE PAYMENT
+            // ==========================
+            document.querySelectorAll('[data-bs-target="#multiChangeModal"]').forEach(btn => {
+                btn.addEventListener('click', function () {
+                    const selected = getSelectedInvoices();
+                    const input = document.getElementById('selectedInvoicesMultipleChange');
+
+                    if (input) input.value = selected.join(',');
+
+                    if (selected.length === 0) {
+                        alert('Немате селектирано фактури!');
+                    }
                 });
-            }
-
-            const changeButton = document.querySelector('[data-bs-target="#multiChangeModal"]');
-            if (changeButton) {
-                changeButton.addEventListener('click', function () {
-                    const selected = [...document.querySelectorAll('.invoice-check:checked')].map(cb => cb.value);
-                    const hiddenInput = document.getElementById('selectedInvoicesMultipleChange');
-                    if (hiddenInput) hiddenInput.value = selected.join(',');
-                });
-            }
-
-           const deleteButton = document.querySelector('#deleteForm button[type="submit"]');
-        if (deleteButton) {
-            deleteButton.addEventListener('click', function (e) {
-                const selected = [...document.querySelectorAll('.invoice-check:checked')].map(cb => cb.value);
-                const hiddenInput = document.getElementById('selectedInvoicesForDelete');
-
-                if (hiddenInput) hiddenInput.value = selected.join(',');
-
-                // Optional: Wenn keine selektiert, Abbruch
-                if (selected.length === 0) {
-                    e.preventDefault();
-                    alert('Немате селектирано фактури за бришење!');
-                }
             });
-        }
-        });
 
+            // ==========================
+            // 6. DELETE
+            // ==========================
+            const deleteForm = document.getElementById('deleteForm');
+            if (deleteForm) {
+                deleteForm.addEventListener('submit', function (e) {
+                    const selected = getSelectedInvoices();
+                    const input = document.getElementById('selectedInvoicesForDelete');
+
+                    if (input) input.value = selected.join(',');
+
+                    if (selected.length === 0) {
+                        e.preventDefault();
+                        alert('Немате селектирано фактури за бришење!');
+                    }
+                });
+            }
+
+        });
     </script>
 
 }
