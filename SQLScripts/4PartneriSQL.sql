@@ -35,4 +35,11 @@ update Customers set ActivityId = 1 where Id in (240,320,546,334,549,448,550,551
 
 update Customers set Hide = 1 where ActivityId != 3
 
+
+
+
 update Customers set ApartmentUnit = 1 where ActivityId = 3
+
+--bitno za tie so nemat ActiveDatum nema da gi pokazuva pri kreiranje na faktura
+update Customers set ActiveDatum = '2026-01-01' where ActiveDatum is null and Inactive = 0
+update Customers set ActivityId = 3 where ActivityId is null and id not in (2117,2116,2092,2091,2089,2061,2042,2019,2012,1983,1980,1979,1934,1913,1909,1908,1907,1906,1896,1881,1879,1875,1867,1866)

@@ -725,7 +725,7 @@ namespace CleanHub.Controllers
             var selectedBuildingName = buildings?.FirstOrDefault(x => x.Id == (buildingId ?? 1))?.Name;
             if (selectedBuildingName != null)
                 ViewBag.SelectedBuildingName = selectedBuildingName;
-            if (documentViewModel.Building == null)
+            if (documentViewModel.BuildingId == null)
             {
                 documentViewModel.Building = buildingId.HasValue ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId) : documentViewModel.Buildings.FirstOrDefault();
             }
@@ -734,7 +734,7 @@ namespace CleanHub.Controllers
 
                 documentViewModel.Building.BuildingProducts = new List<BuildingProductViewModel>();
             }
-
+            documentViewModel.BuildingId = documentViewModel.Building.Id;
             foreach (var product in documentViewModel.Building?.BuildingProducts)
             {
                 if (product.PriceWithTax == null)
@@ -761,7 +761,10 @@ namespace CleanHub.Controllers
                     IsNew = true
                 });
             }
-            var results = GetFilteredBookFinancials(1201, documentViewModel.BuildingId.Value).ToList();
+            ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", documentViewModel.Building.Id);
+            ViewBag.SelectedBuildingName = Buildings.FirstOrDefault(x=>x.Id == documentViewModel.Building.Id).Name;
+            ViewBag.BuildingId = documentViewModel.Building.Id;
+            var results = GetFilteredBookFinancials(1201, documentViewModel.Building.Id).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
             var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
             documentViewModel.TotalBuildingOwes = owes;
