@@ -1,11 +1,11 @@
 BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2025MartiTest].dbo.DocumentTyp ON;
+    SET IDENTITY_INSERT [2026OriginalMarti].dbo.DocumentTyp ON;
 
-    INSERT INTO [2025MartiTest].dbo.DocumentTyp( Id,VidDokument)
+    INSERT INTO [2026OriginalMarti].dbo.DocumentTyp( Id,VidDokument)
     SELECT VidID,VidDokument
-    FROM [2025MartiHigiena].dbo.VidDokumenti ;
+    FROM [2026-04Marti].dbo.VidDokumenti ;
 
     COMMIT TRANSACTION;
     PRINT 'Data inserted successfully.';
@@ -16,3 +16,4 @@ BEGIN CATCH
     -- Optionally, you can re-throw the error to see more details
     THROW;
 END CATCH;
+select * from DocumentTyp

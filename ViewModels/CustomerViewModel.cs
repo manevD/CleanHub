@@ -19,7 +19,6 @@ namespace CleanHub.ViewModels
         public string? Web { get; set; }
 
         public string? PartnerOpis { get; set; }
-        public int Balance { get; set; }
         public bool Garage { get; set; }
         public bool Hide { get; set; }
 

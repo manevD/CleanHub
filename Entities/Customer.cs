@@ -22,7 +22,6 @@ public partial class Customer
 
     public bool? Inactive { get; set; }
     public bool Garage { get; set; }
-    public int Balance { get; set; }
     public DateOnly? InactiveDatum { get; set; }
     public DateOnly? ActiveDatum { get; set; }
     public DateOnly?  SubscriptionDate { get; set; }

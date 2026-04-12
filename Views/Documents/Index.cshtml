@@ -226,6 +226,19 @@
                                                    class="badge badge-light-primary">
                                                 👁
                                             </a>
+                                            @if (invoice.PaymentStatus == PaymentStatus.Неплатено)
+                                            {
+
+                                                <a asp-action="JustSetDocumentPayedStatus"
+                                                       asp-route-id="@invoice.Id"
+                                                       asp-route-year="@ViewBag.Year"
+                                                       asp-route-buildingId="@ViewBag.BuildingId"
+                                                       asp-route-paymentStatusId="@ViewBag.PaymentStatusId"
+                                                       class="badge badge-light-primary">
+                                                    Стави како платено
+                                                </a>
+                                            }
+                                           
                                         </td>
                                     </tr>
                                 }

@@ -5,8 +5,8 @@ BEGIN TRANSACTION;
 BEGIN TRY
     SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings ON;
 
-    INSERT INTO [2025MartiTest].dbo.Buildings(Id,Name,BankAccount)
-    SELECT OddelID,Oddel,OddelBanka
+    INSERT INTO [2025MartiTest].dbo.Buildings(Id,Name,BankAccount,CustomerRefId)
+    SELECT OddelID,Oddel,OddelBanka,OddelPartnerID
     FROM [2025MartiHigiena].dbo.Partneri_Oddeli
     COMMIT TRANSACTION;
 	    SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings Off;

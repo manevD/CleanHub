@@ -1,10 +1,10 @@
 ﻿BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2025MartiTest].dbo.Documents ON;
+    SET IDENTITY_INSERT [2026OriginalMarti].dbo.Documents ON;
 
-    INSERT INTO [2025MartiTest].dbo.Documents
-        (Id, Number, Date, CustomerId, ToDocument, Description, DateReceived, TotalInput, TotalOutput, CreatedTime, DateTimeChanged)
+    INSERT INTO [2026OriginalMarti].dbo.Documents
+        (Id, Number, Date, CustomerId, ToDocument, Description, DateReceived, TotalInput, TotalOutput, CreatedTime, DateTimeChanged,PaymentStatus,PaymentType)
     SELECT 
         Dokid,
         Broj,
@@ -16,11 +16,12 @@ BEGIN TRY
         VkupnoVl,
         VkupnoIz,
         Vreme,
-        VremePromena
-    FROM [2025MartiHigiena].dbo.Dokumenti
+        VremePromena,1,0
+    FROM [2026-04Marti].dbo.Dokumenti
 
     COMMIT TRANSACTION;
-    SET IDENTITY_INSERT [2025MartiTest].dbo.Documents OFF;
+    SET IDENTITY_INSERT [2026OriginalMarti].dbo.Documents OFF;
+
     PRINT 'Data inserted successfully.';
 END TRY
 BEGIN CATCH
@@ -28,6 +29,7 @@ BEGIN CATCH
     PRINT 'Error occurred. Transaction rolled back.';
     THROW;
 END CATCH;
+
 
 BEGIN TRANSACTION;
 BEGIN TRY

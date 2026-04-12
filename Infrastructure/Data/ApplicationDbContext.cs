@@ -46,13 +46,13 @@ namespace CleanHub.Infrastructure.Data
             // modelBuilder.Entity<CompanyConfig>().HasNoKey();
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
-            modelBuilder.Entity<Activity>().ToTable("Activity", t => t.ExcludeFromMigrations());
+            //modelBuilder.Entity<Activity>().ToTable("Activity", t => t.ExcludeFromMigrations());
         }
 
         //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         // => optionsBuilder.UseSqlServer("Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
             => optionsBuilder.UseSqlServer(
-        "Server=.\\SQLEXPRESS;Database=NewTestOriginal;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        "Server=.\\SQLEXPRESS;Database=2026OriginalMarti;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }

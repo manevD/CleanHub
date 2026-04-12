@@ -25,7 +25,7 @@ namespace CleanHub.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Articles",
+                name: "Article",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
@@ -36,7 +36,7 @@ namespace CleanHub.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Articles", x => x.Id);
+                    table.PrimaryKey("PK_Article", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -98,7 +98,9 @@ namespace CleanHub.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    BankAccount = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    BankAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    ReserveFund = table.Column<int>(type: "int", nullable: true),
+                    CustomerRefId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -131,6 +133,27 @@ namespace CleanHub.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Invoice", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Products",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Input = table.Column<float>(type: "real", nullable: true),
+                    Output = table.Column<float>(type: "real", nullable: true),
+                    Quantity = table.Column<float>(type: "real", nullable: true),
+                    PriceWithTax = table.Column<float>(type: "real", nullable: true),
+                    Price = table.Column<float>(type: "real", nullable: false),
+                    Tax = table.Column<float>(type: "real", nullable: true),
+                    Total = table.Column<float>(type: "real", nullable: true),
+                    ArticleNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UnitOfMeasurement = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Products", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -240,22 +263,57 @@ namespace CleanHub.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "BuildingProducts",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    BuildingId = table.Column<int>(type: "int", nullable: false),
+                    Input = table.Column<float>(type: "real", nullable: true),
+                    Output = table.Column<float>(type: "real", nullable: true),
+                    Quantity = table.Column<float>(type: "real", nullable: true),
+                    PriceWithTax = table.Column<float>(type: "real", nullable: true),
+                    Price = table.Column<float>(type: "real", nullable: false),
+                    Tax = table.Column<float>(type: "real", nullable: true),
+                    Total = table.Column<float>(type: "real", nullable: true),
+                    ArticleNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    UnitOfMeasurement = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_BuildingProducts", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BuildingProducts_Buildings_BuildingId",
+                        column: x => x.BuildingId,
+                        principalTable: "Buildings",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Customers",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    CustomerInfo = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    CustomerInfo = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    ApartmentUnit = table.Column<int>(type: "int", nullable: false),
                     Adress = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Email = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Web = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PartnerOpis = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Hide = table.Column<bool>(type: "bit", nullable: false),
+                    Web = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Inactive = table.Column<bool>(type: "bit", nullable: true),
+                    Garage = table.Column<bool>(type: "bit", nullable: false),
                     InactiveDatum = table.Column<DateOnly>(type: "date", nullable: true),
-                    BuidlingId = table.Column<int>(type: "int", nullable: true),
+                    ActiveDatum = table.Column<DateOnly>(type: "date", nullable: true),
+                    SubscriptionDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    BuildingId = table.Column<int>(type: "int", nullable: true),
                     ActivityId = table.Column<int>(type: "int", nullable: true),
-                    PhysicalPerson = table.Column<bool>(type: "bit", nullable: true)
+                    PhysicalPerson = table.Column<bool>(type: "bit", nullable: true),
+                    Subscription = table.Column<int>(type: "int", nullable: true),
+                    SetCost = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -266,9 +324,70 @@ namespace CleanHub.Migrations
                         principalTable: "Activity",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_Customers_Buildings_BuidlingId",
-                        column: x => x.BuidlingId,
+                        name: "FK_Customers_Buildings_BuildingId",
+                        column: x => x.BuildingId,
                         principalTable: "Buildings",
+                        principalColumn: "Id");
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SpecialInvoices",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    InvoiceId = table.Column<int>(type: "int", nullable: false),
+                    ForDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    BuildingId = table.Column<int>(type: "int", nullable: true),
+                    Total = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SpecialInvoices", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SpecialInvoices_Buildings_BuildingId",
+                        column: x => x.BuildingId,
+                        principalTable: "Buildings",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_SpecialInvoices_Invoice_InvoiceId",
+                        column: x => x.InvoiceId,
+                        principalTable: "Invoice",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Documents",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Number = table.Column<int>(type: "int", nullable: true),
+                    Date = table.Column<DateOnly>(type: "date", nullable: true),
+                    CustomerId = table.Column<int>(type: "int", nullable: true),
+                    ToDocument = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PaymentDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DateReceived = table.Column<DateOnly>(type: "date", nullable: true),
+                    NewTotal = table.Column<int>(type: "int", nullable: true),
+                    PaymentNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    TotalInput = table.Column<float>(type: "real", nullable: true),
+                    TotalOutput = table.Column<float>(type: "real", nullable: true),
+                    CreatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    DateTimeChanged = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    PaymentStatus = table.Column<int>(type: "int", nullable: false),
+                    PaymentType = table.Column<int>(type: "int", nullable: false),
+                    PaymentDate = table.Column<DateOnly>(type: "date", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Documents", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Documents_Customers_CustomerId",
+                        column: x => x.CustomerId,
+                        principalTable: "Customers",
                         principalColumn: "Id");
                 });
 
@@ -276,10 +395,11 @@ namespace CleanHub.Migrations
                 name: "BookFinancials",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    Оrder = table.Column<int>(type: "int", nullable: false),
-                    SmetkaId = table.Column<int>(type: "int", nullable: true),
+                    OrderN = table.Column<int>(type: "int", nullable: true),
+                    InvoiceId = table.Column<int>(type: "int", nullable: true),
+                    DocumentId = table.Column<int>(type: "int", nullable: true),
                     CustomerId = table.Column<int>(type: "int", nullable: true),
                     DocumentTypId = table.Column<int>(type: "int", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
@@ -287,7 +407,12 @@ namespace CleanHub.Migrations
                     Owes = table.Column<double>(type: "float", nullable: false),
                     Demands = table.Column<double>(type: "float", nullable: false),
                     Time = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DateTimeChanges = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    DateTimeChanges = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    PaymentType = table.Column<int>(type: "int", nullable: false),
+                    PaymentDate = table.Column<DateOnly>(type: "date", nullable: true),
+                    PaymentNumber = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    DontSum = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -303,57 +428,14 @@ namespace CleanHub.Migrations
                         principalTable: "DocumentTyp",
                         principalColumn: "Id");
                     table.ForeignKey(
-                        name: "FK_BookFinancials_Invoice_SmetkaId",
-                        column: x => x.SmetkaId,
+                        name: "FK_BookFinancials_Documents_DocumentId",
+                        column: x => x.DocumentId,
+                        principalTable: "Documents",
+                        principalColumn: "Id");
+                    table.ForeignKey(
+                        name: "FK_BookFinancials_Invoice_InvoiceId",
+                        column: x => x.InvoiceId,
                         principalTable: "Invoice",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Documents",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    Number = table.Column<int>(type: "int", nullable: true),
-                    Date = table.Column<DateOnly>(type: "date", nullable: true),
-                    CustomerId = table.Column<int>(type: "int", nullable: true),
-                    ToDocument = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    DateReceived = table.Column<DateOnly>(type: "date", nullable: true),
-                    TotalInput = table.Column<float>(type: "real", nullable: true),
-                    TotalOutput = table.Column<float>(type: "real", nullable: true),
-                    CreatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
-                    DateTimeChanged = table.Column<DateTime>(type: "datetime2", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Documents", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Documents_Customers_CustomerId",
-                        column: x => x.CustomerId,
-                        principalTable: "Customers",
-                        principalColumn: "Id");
-                });
-
-            migrationBuilder.CreateTable(
-                name: "BookFinancialSub",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    BookFinancialId = table.Column<int>(type: "int", nullable: true),
-                    Date = table.Column<DateOnly>(type: "date", nullable: true),
-                    Owes = table.Column<float>(type: "real", nullable: true),
-                    Demands = table.Column<float>(type: "real", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_BookFinancialSub", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_BookFinancialSub_BookFinancials_BookFinancialId",
-                        column: x => x.BookFinancialId,
-                        principalTable: "BookFinancials",
                         principalColumn: "Id");
                 });
 
@@ -361,26 +443,28 @@ namespace CleanHub.Migrations
                 name: "Books",
                 columns: table => new
                 {
-                    Id = table.Column<int>(type: "int", nullable: false)
+                    Id = table.Column<long>(type: "bigint", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     DocId = table.Column<int>(type: "int", nullable: false),
                     ArticleId = table.Column<int>(type: "int", nullable: true),
                     Input = table.Column<float>(type: "real", nullable: true),
                     Output = table.Column<float>(type: "real", nullable: true),
                     Quantity = table.Column<float>(type: "real", nullable: true),
+                    Price = table.Column<float>(type: "real", nullable: true),
                     PriceWithTax = table.Column<float>(type: "real", nullable: true),
                     Tax = table.Column<float>(type: "real", nullable: true),
                     Total = table.Column<float>(type: "real", nullable: true),
                     ArticleNotes = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    UnitOfMeasurement = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    UnitOfMeasurement = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Hide = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Books", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Books_Articles_ArticleId",
+                        name: "FK_Books_Article_ArticleId",
                         column: x => x.ArticleId,
-                        principalTable: "Articles",
+                        principalTable: "Article",
                         principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_Books_Documents_DocId",
@@ -430,19 +514,19 @@ namespace CleanHub.Migrations
                 column: "CustomerId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BookFinancials_DocumentId",
+                table: "BookFinancials",
+                column: "DocumentId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_BookFinancials_DocumentTypId",
                 table: "BookFinancials",
                 column: "DocumentTypId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_BookFinancials_SmetkaId",
+                name: "IX_BookFinancials_InvoiceId",
                 table: "BookFinancials",
-                column: "SmetkaId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_BookFinancialSub_BookFinancialId",
-                table: "BookFinancialSub",
-                column: "BookFinancialId");
+                column: "InvoiceId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Books_ArticleId",
@@ -455,19 +539,34 @@ namespace CleanHub.Migrations
                 column: "DocId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_BuildingProducts_BuildingId",
+                table: "BuildingProducts",
+                column: "BuildingId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Customers_ActivityId",
                 table: "Customers",
                 column: "ActivityId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Customers_BuidlingId",
+                name: "IX_Customers_BuildingId",
                 table: "Customers",
-                column: "BuidlingId");
+                column: "BuildingId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Documents_CustomerId",
                 table: "Documents",
                 column: "CustomerId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpecialInvoices_BuildingId",
+                table: "SpecialInvoices",
+                column: "BuildingId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SpecialInvoices_InvoiceId",
+                table: "SpecialInvoices",
+                column: "InvoiceId");
         }
 
         /// <inheritdoc />
@@ -492,10 +591,19 @@ namespace CleanHub.Migrations
                 name: "Banks");
 
             migrationBuilder.DropTable(
-                name: "BookFinancialSub");
+                name: "BookFinancials");
 
             migrationBuilder.DropTable(
                 name: "Books");
+
+            migrationBuilder.DropTable(
+                name: "BuildingProducts");
+
+            migrationBuilder.DropTable(
+                name: "Products");
+
+            migrationBuilder.DropTable(
+                name: "SpecialInvoices");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -504,16 +612,13 @@ namespace CleanHub.Migrations
                 name: "AspNetUsers");
 
             migrationBuilder.DropTable(
-                name: "BookFinancials");
+                name: "DocumentTyp");
 
             migrationBuilder.DropTable(
-                name: "Articles");
+                name: "Article");
 
             migrationBuilder.DropTable(
                 name: "Documents");
-
-            migrationBuilder.DropTable(
-                name: "DocumentTyp");
 
             migrationBuilder.DropTable(
                 name: "Invoice");

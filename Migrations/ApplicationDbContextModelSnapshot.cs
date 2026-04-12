@@ -36,10 +36,7 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Activity", null, t =>
-                        {
-                            t.ExcludeFromMigrations();
-                        });
+                    b.ToTable("Activity");
                 });
 
             modelBuilder.Entity("CleanHub.Entities.Article", b =>
@@ -290,9 +287,6 @@ namespace CleanHub.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("ApartmentUnit")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Balance")
                         .HasColumnType("int");
 
                     b.Property<int?>("BuildingId")

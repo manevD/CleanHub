@@ -1,10 +1,12 @@
+
+
 BEGIN TRANSACTION;
 BEGIN TRY
     -- Allow explicit values to be inserted into the identity column
-    SET IDENTITY_INSERT [2025MartiTest].dbo.BookFinancials ON;
+    SET IDENTITY_INSERT [2026OriginalMarti].dbo.BookFinancials ON;
 
-    INSERT INTO [2025MartiTest].dbo.BookFinancials 
-        (Id, OrderN, InvoiceId, CustomerId, DocumentTypId, Description, DatumF, Owes, Demands, Time, DateTimeChanges)
+    INSERT INTO [2026OriginalMarti].dbo.BookFinancials 
+        (Id, OrderN, InvoiceId, CustomerId, DocumentTypId, Description, DatumF, Owes, Demands, Time, DateTimeChanges,DontSum,Status,PaymentType)
     SELECT 
         KnigaFID,
         Nalog,
@@ -16,10 +18,10 @@ BEGIN TRY
         Dolzi, 
         Pobaruva, 
         Vreme, 
-        VremePromena
-    FROM [2025MartiHigiena].dbo.KnigaF
+        VremePromena,0,0,0
+    FROM [2026-04Marti].dbo.KnigaF
     -- Turn off IDENTITY_INSERT after the insertion
-    SET IDENTITY_INSERT [2025MartiTest].dbo.BookFinancials OFF;
+    SET IDENTITY_INSERT [2026OriginalMarti].dbo.BookFinancials OFF;
 
     COMMIT TRANSACTION;
     PRINT 'Data inserted successfully.';
@@ -29,7 +31,7 @@ BEGIN CATCH
     PRINT 'Error occurred. Transaction rolled back.';
     -- Optionally, you can re-throw the error to see more details
     THROW;
-END CATCH;
+END CATCH;	
 
  ---Update BookFinancial Status
 UPDATE bf

@@ -5,7 +5,6 @@ using CleanHub.Entities.Enums;
 using CleanHub.Extensions;
 using CleanHub.Helpers;
 using CleanHub.Infrastructure.Data;
-using CleanHub.Migrations;
 using CleanHub.Services;
 using CleanHub.ViewModels;
 using Microsoft.AspNetCore.Mvc;
@@ -18,7 +17,6 @@ using SelectPdf;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 using PaymentStatus = CleanHub.Entities.Enums.PaymentStatus;
 using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 
@@ -378,7 +376,32 @@ namespace CleanHub.Controllers
 
             return query;
         }
+        // GET: Invoices/Details/5
+        public async Task<IActionResult> JustSetDocumentPayedStatus(int id,
+    int? year,
+    int? buildingId,
+    int? paymentStatusId)
+        {
+            if (id == null)
+            {
+                return NotFound();
+            }
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
+            if (documentEntity == null)
+            {
+                return NotFound();
+            }
+            documentEntity.PaymentStatus = PaymentStatus.Платено;
+            _unitOfWork.Documents.Update(documentEntity);
+            await _unitOfWork.SaveChangesAsync();
 
+            return RedirectToAction("InvoiceFiltered", new
+            {
+                year = year,
+                buildingId = buildingId,
+                paymentStatusId = paymentStatusId
+            });
+        }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
         {
@@ -1206,7 +1229,7 @@ namespace CleanHub.Controllers
             _unitOfWork.SpecialInvoices.UpdateSpecialInvoices(document, specialInvoice);
         }
 
-        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType paymentType, string? paymentNumber)
+        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber)
         {
             var bookFinancialViewModel = new BookFinancialViewModel();
 
@@ -1226,7 +1249,7 @@ namespace CleanHub.Controllers
                     PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
                     ? paymentDate.Value
                     : DateOnly.FromDateTime(DateTime.UtcNow),
-                    PaymentType = docEntity.PaymentType,
+                    PaymentType = docEntity.PaymentType.Value,
                     Description = string.IsNullOrEmpty(docEntity.PaymentDescription)
                     ? docEntity.PaymentType.GetEnumDescription()
                     : docEntity.PaymentDescription,
@@ -1255,7 +1278,7 @@ namespace CleanHub.Controllers
         }
 
         public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate,
-            PaymentType paymentType, string? paymentNumber)
+            PaymentType? paymentType, string? paymentNumber)
         {
             var bookFinancialViewModelReserve = new BookFinancialViewModel();
 
@@ -1278,7 +1301,7 @@ namespace CleanHub.Controllers
                     PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
                     ? paymentDate.Value
                     : DateOnly.FromDateTime(DateTime.UtcNow),
-                    PaymentType = docEntity.PaymentType,
+                    PaymentType = docEntity.PaymentType.Value,
                     PaymentNumber = paymentNumber
                 };
             }

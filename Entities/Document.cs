@@ -28,6 +28,6 @@ public partial class Document
     public DateTime? DateTimeChanged { get; set; }
     public List<Book> Books { get; set; } = null!;
     public PaymentStatus PaymentStatus { get; set; }
-    public PaymentType PaymentType { get; set; }
+    public PaymentType? PaymentType { get; set; }
     public DateOnly? PaymentDate { get; set; }
 }
