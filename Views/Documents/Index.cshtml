@@ -42,8 +42,8 @@
                         <div class="form-group mb-3">
                             <label style="font-size:10px;">Статус</label>
                             @Html.DropDownList("paymentStatusId",
-                                (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
-                                new { @class = "form-control", style = "font-size:10px;" })
+                                 (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
+                                 new { @class = "form-control", style = "font-size:10px;", id = "paymentStatusId" })
                         </div>
                     }
 
@@ -229,12 +229,9 @@
                                             @if (invoice.PaymentStatus == PaymentStatus.Неплатено)
                                             {
 
-                                                <a asp-action="JustSetDocumentPayedStatus"
-                                                       asp-route-id="@invoice.Id"
-                                                       asp-route-year="@ViewBag.Year"
-                                                       asp-route-buildingId="@ViewBag.BuildingId"
-                                                       asp-route-paymentStatusId="@ViewBag.PaymentStatusId"
-                                                       class="badge badge-light-primary">
+                                                <a href="#"
+                                                       class="badge badge-light-primary set-paid-btn"
+                                                       data-id="@invoice.Id">
                                                     Стави како платено
                                                 </a>
                                             }
@@ -464,6 +461,25 @@
                 });
             }
 
+        });
+
+                document.querySelectorAll('.set-paid-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+
+                const id = this.dataset.id;
+                const year = document.querySelector('[name="year"]').value;
+                const buildingId = document.getElementById('buildingId').value;
+                const buildingName = document.getElementById('buildingSearch').value;
+                const paymentStatusId = document.getElementById('paymentStatusId').value;
+
+                const url = `/Documents/JustSetDocumentPayedStatus?id=${id}`
+                    + `&year=${year}`
+                    + `&buildingId=${buildingId}`
+                    + `&buildingName=${encodeURIComponent(buildingName)}`
+                    + `&paymentStatusId=${paymentStatusId}`;
+
+                window.location.href = url;
+            });
         });
     </script>
 

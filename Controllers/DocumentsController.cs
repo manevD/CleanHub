@@ -201,8 +201,7 @@ namespace CleanHub.Controllers
             }
             return View("Index");
         }
-
-
+        
         [HttpGet]
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, int? year)
         {
@@ -377,30 +376,35 @@ namespace CleanHub.Controllers
             return query;
         }
         // GET: Invoices/Details/5
-        public async Task<IActionResult> JustSetDocumentPayedStatus(int id,
-    int? year,
-    int? buildingId,
-    int? paymentStatusId)
+        public async Task<IActionResult> JustSetDocumentPayedStatus(
+      int id,
+      int? year,
+      int? buildingId,
+      int? paymentStatusId,
+      string buildingName)
         {
-            if (id == null)
             {
-                return NotFound();
-            }
-            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
-            if (documentEntity == null)
-            {
-                return NotFound();
-            }
-            documentEntity.PaymentStatus = PaymentStatus.Платено;
-            _unitOfWork.Documents.Update(documentEntity);
-            await _unitOfWork.SaveChangesAsync();
+                if (id == null)
+                {
+                    return NotFound();
+                }
+                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
+                if (documentEntity == null)
+                {
+                    return NotFound();
+                }
+                documentEntity.PaymentStatus = PaymentStatus.Платено;
+                _unitOfWork.Documents.Update(documentEntity);
+                await _unitOfWork.SaveChangesAsync();
 
-            return RedirectToAction("InvoiceFiltered", new
-            {
-                year = year,
-                buildingId = buildingId,
-                paymentStatusId = paymentStatusId
-            });
+                return RedirectToAction("InvoiceFiltered", new
+                {
+                    year = year,
+                    buildingId = buildingId,
+                    paymentStatusId = paymentStatusId,
+                    buildingName = buildingName
+                });
+            }
         }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
