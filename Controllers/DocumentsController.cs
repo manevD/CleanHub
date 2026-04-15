@@ -240,7 +240,7 @@ namespace CleanHub.Controllers
                     .GetAllNoTrakcing(
                         query => query
                             .Include(bf => bf.Customer)        // Include Customer
-                            .Where(bf => bf.Customer.BuildingId == buildingId.Value && (bf.InvoiceId == (int)InvoiceTyp.Recieve || bf.DocumentTypId == 11)) // Filter nach BuildingId
+                            .Where(bf => bf.Customer.BuildingId == buildingId.Value && (bf.InvoiceId == (int)InvoiceTyp.Recieve || bf.DocumentTypId == 11) && bf.InvoiceId != (int)InvoiceTyp.Reserve) // Filter nach BuildingId
                     )
                     .ToList();
 
@@ -265,7 +265,7 @@ namespace CleanHub.Controllers
 
                     // ✅ Pobaruva (identisch!)
                     var pobaruva = dataBookFinancial
-                        .Where(x => !x.DontSum && x.DatumF.HasValue && x.DatumF > new DateOnly(2021, 1, 1))
+                        .Where(x => !x.DontSum && (x.DatumF.HasValue && x.DatumF > new DateOnly(2021, 1, 1)) || x.DocumentTypId != 0 && x.DocumentTypId == 11)
                         .Sum(x => x.Demands);
 
                     // ✅ Dolzi (Teil 1: Dokumente)

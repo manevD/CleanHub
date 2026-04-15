@@ -302,7 +302,7 @@ namespace CleanHub.Controllers
                     .Where(x => x.CustomerId == customerId &&
                                 (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                                 (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
-                                (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11))
+                                (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11) && x.InvoiceId != (int)InvoiceTyp.Reserve)
                     .Select(cc => new CustomerDataDTO
                     {
                         Description = cc.Description,
@@ -320,7 +320,7 @@ namespace CleanHub.Controllers
 
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
-                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum && x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
+                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum && x.Date >= new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
                 cardsViewModel.CustomerOwesTotal = (float)dataDocument.Where(x => x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
 
                 if (dataBookFinancial.Any(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)))
