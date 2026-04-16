@@ -406,6 +406,32 @@ namespace CleanHub.Controllers
                 });
             }
         }
+
+        public async Task<IActionResult> JustSetDocumentNotPayedStatus(int id,int? year,int? buildingId,int? paymentStatusId,string buildingName)
+        {
+            {
+                if (id == null)
+                {
+                    return NotFound();
+                }
+                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
+                if (documentEntity == null)
+                {
+                    return NotFound();
+                }
+                documentEntity.PaymentStatus = PaymentStatus.Неплатено;
+                _unitOfWork.Documents.Update(documentEntity);
+                await _unitOfWork.SaveChangesAsync();
+
+                return RedirectToAction("InvoiceFiltered", new
+                {
+                    year = year,
+                    buildingId = buildingId,
+                    paymentStatusId = paymentStatusId,
+                    buildingName = buildingName
+                });
+            }
+        }
         // GET: Invoices/Details/5
         public async Task<IActionResult> Details(int? id)
         {

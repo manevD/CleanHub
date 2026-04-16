@@ -235,7 +235,14 @@
                                                     Стави како платено
                                                 </a>
                                             }
-                                           
+                                            @if (invoice.PaymentStatus == PaymentStatus.Платено)
+                                            {
+                                                <a href="#"
+                                                       class="badge badge-light-primary set-notpaid-btn"
+                                                       data-id="@invoice.Id">
+                                                    Стави како неплатено
+                                                </a>
+                                            }
                                         </td>
                                     </tr>
                                 }
@@ -473,6 +480,25 @@
                 const paymentStatusId = document.getElementById('paymentStatusId').value;
 
                 const url = `/Documents/JustSetDocumentPayedStatus?id=${id}`
+                    + `&year=${year}`
+                    + `&buildingId=${buildingId}`
+                    + `&buildingName=${encodeURIComponent(buildingName)}`
+                    + `&paymentStatusId=${paymentStatusId}`;
+
+                window.location.href = url;
+            });
+        });
+
+           document.querySelectorAll('.set-notpaid-btn').forEach(btn => {
+            btn.addEventListener('click', function () {
+
+                const id = this.dataset.id;
+                const year = document.querySelector('[name="year"]').value;
+                const buildingId = document.getElementById('buildingId').value;
+                const buildingName = document.getElementById('buildingSearch').value;
+                const paymentStatusId = document.getElementById('paymentStatusId').value;
+
+                const url = `/Documents/JustSetDocumentNotPayedStatus?id=${id}`
                     + `&year=${year}`
                     + `&buildingId=${buildingId}`
                     + `&buildingName=${encodeURIComponent(buildingName)}`
