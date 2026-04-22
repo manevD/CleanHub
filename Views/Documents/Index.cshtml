@@ -6,24 +6,46 @@
 @{
     ViewData["Title"] = "Сметки";
     Layout = "~/Views/Shared/_Layout.cshtml";
+    var selectedItem = ((List<SelectListItem>)ViewBag.PaymentStatusList)
+        .FirstOrDefault(x => x.Selected);
+
+    int selectedValue = selectedItem != null
+        ? int.Parse(selectedItem.Value)
+        : -1;
 }
+<style>
+    /* Дебела линија после Салдо (4-та колона) */
+    table th:nth-child(4),
+    table td:nth-child(4) {
+        border-right: 3px solid black !important;
+    }
+
+    /* Селектиран ред */
+    .selected-row td {
+        background-color: #e0e0e0 !important;
+    }
+
+    tbody tr {
+        cursor: pointer;
+    }
+</style>
 
 <div class="container-fluid" style="font-size:10px;">
     <div class="row">
 
         <!-- 🔹 SIDEBAR -->
         <div class="col-lg-2 col-md-3">
-            <div class="card p-2 h-100" style="position: sticky; top:20px; font-size:10px;">
+            <div class="card p-2 h-100" style="position: sticky; top:20px; font-size:15px;">
 
                 <form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
 
-                    <h5 class="mb-3" style="font-size:10px;">Филтер</h5>
+                    <h5 class="mb-3" style="font-size:15px;">Филтер</h5>
 
                     @if (ViewBag.Buildings != null)
                     {
                         <div class="form-group mb-3">
-                            <label style="font-size:10px;">Објект</label>
-                            <input class="form-control" style="font-size:10px;" list="buildingOptions" id="buildingSearch"
+                            <label style="font-size:15px;">Објект</label>
+                            <input class="form-control" style="font-size:15px;" list="buildingOptions" id="buildingSearch"
                                    name="buildingName" value="@ViewBag.SelectedBuildingName">
 
                             <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
@@ -40,16 +62,16 @@
                     @if (ViewBag.PaymentStatusList != null)
                     {
                         <div class="form-group mb-3">
-                            <label style="font-size:10px;">Статус</label>
+                            <label style="font-size:15px;">Статус</label>
                             @Html.DropDownList("paymentStatusId",
                                  (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
-                                 new { @class = "form-control", style = "font-size:10px;", id = "paymentStatusId" })
+                                 new { @class = "form-control", style = "font-size:15px;", id = "paymentStatusId" })
                         </div>
                     }
 
                     <div class="form-group mb-3">
-                        <label style="font-size:10px;">Година</label>
-                        <select name="year" class="form-control" style="font-size:10px;">
+                        <label style="font-size:15px;">Година</label>
+                        <select name="year" class="form-control" style="font-size:15px;">
                             @{
                                 var currentYear = DateTime.Now.Year;
                                 for (int y = 2019; y <= currentYear; y++)
@@ -62,11 +84,11 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 mb-2" style="font-size:10px;">
+                    <button type="submit" class="btn btn-primary w-100 mb-2" style="font-size:15px;">
                         Пребарувај
                     </button>
 
-                    <button type="button" class="btn btn-secondary w-100" id="navigateButton" style="font-size:10px;">
+                    <button type="button" class="btn btn-secondary w-100" id="navigateButton" style="font-size:15px;">
                         Извади сметки
                     </button>
 
@@ -80,85 +102,90 @@
             <!-- ✅ TABLE 2 -->
             <div class="statbox widget box box-shadow mb-4">
                 <div class="widget-content widget-content-area">
-                    <table class="table table-bordered table-sm table-compact w-100" style="font-size:10px;">
-                        <thead>
-                            <tr>
-                                <th>Партнер</th>
+                    <div style="overflow-x:auto; width:100%;">
+
+                        <table class="table table-bordered table-sm table-compact w-100">
+                            <thead>
+                                <tr>
+                                    <th>Партнер</th>
                                 
-                                <th>Должи</th>
-                                <th>Побарува</th>
-                                <th>Салдо</th>
+                                    <th>Должи</th>
+                                    <th>Побарува</th>
+                                    <th>Салдо</th>
 
-                                <th>Јан</th>
-                                <th>Фев</th>
-                                <th>Мар</th>
-                                <th>Апр</th>
-                                <th>Мај</th>
-                                <th>Јун</th>
-                                <th>Јул</th>
-                                <th>Авг</th>
-                                <th>Сеп</th>
-                                <th>Окт</th>
-                                <th>Ное</th>
-                                <th>Дек</th>
+                                    <th>Јан</th>
+                                    <th>Фев</th>
+                                    <th>Мар</th>
+                                    <th>Апр</th>
+                                    <th>Мај</th>
+                                    <th>Јун</th>
+                                    <th>Јул</th>
+                                    <th>Авг</th>
+                                    <th>Сеп</th>
+                                    <th>Окт</th>
+                                    <th>Ное</th>
+                                    <th>Дек</th>
 
-                                <th>Вкупно</th>
-                            </tr>
-                        </thead>
+                                    <th>Вкупно</th>
+                                </tr>
+                            </thead>
 
-                        <tbody>
-                            @if (ViewBag.Customers != null && ViewBag.CustomerBalances != null)
-                            {
-                                var customers = (IEnumerable<dynamic>)ViewBag.Customers;
-                                var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
-
-                                foreach (var c in customers)
+                            <tbody>
+                                @if (ViewBag.Customers != null && ViewBag.CustomerBalances != null)
                                 {
-                                    var cusBalance = balances.FirstOrDefault(b => b.Customer.Id == c.Id);
-                                    var docs = ViewBag.Docs as List<CleanHub.ViewModels.DocumentViewModel>;
+                                    var customers = (IEnumerable<dynamic>)ViewBag.Customers;
+                                    var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
 
-                                    var customerInvoices = docs?
-                                        .Where(x => x.CustomerId == c.Id)
-                                        .ToList()
-                                        ?? new List<CleanHub.ViewModels.DocumentViewModel>();
+                                    foreach (var c in customers)
+                                    {
+                                        var cusBalance = balances.FirstOrDefault(b => b.Customer.Id == c.Id);
+                                        var docs = ViewBag.Docs as List<CleanHub.ViewModels.DocumentViewModel>;
 
+                                        var customerInvoices = docs?
+                                            .Where(x => x.CustomerId == c.Id)
+                                            .ToList()
+                                            ?? new List<CleanHub.ViewModels.DocumentViewModel>();
+
+                                        <tr>
+                                            <td style="font-size:13px !important;">@c.CustomerInfo</td>
+                                            <td style="color:red;font-size: 15px !important;">@cusBalance?.Dolzi</td>
+                                            <td style="color:blue;font-size: 15px !important;">@cusBalance?.Pobaruva</td>
+                                            <td style="color:green;font-size: 15px !important;">@cusBalance?.Saldo</td>
+
+                                            @for (int m = 1; m <= 12; m++)
+                                            {
+                                                var monthName = new DateTime(ViewBag.Year, m, 1)
+                                                                .ToString("MMMM", new System.Globalization.CultureInfo("mk-MK"));
+
+                                                var monthly = customerInvoices
+                                                    .Where(x =>
+                                                        x.ToDocument != null &&
+                                                        x.ToDocument.IndexOf(monthName, StringComparison.OrdinalIgnoreCase) >= 0 &&
+                                                        x.ToDocument.IndexOf(ViewBag.Year.ToString(), StringComparison.OrdinalIgnoreCase) >= 0 &&
+                                                        x.PaymentStatus == 0 // nur wenn PaymentStatus 0
+                                                    )
+                                                    .Sum(x => x.TotalOutput ?? 0);
+
+                                                <td style="font-size: 15px !important; font-weight:bold;">
+                                                    @(monthly == 0 ? "0" : monthly.ToString())
+                                                </td>
+                                            }
+
+                                            <td style="font-weight:bold;font-size: 15px !important;">
+                                                @customerInvoices.Sum(x => x.TotalOutput)
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
                                     <tr>
-                                        <td>@c.CustomerInfo</td>
-                                        <td style="color:red">@cusBalance?.Dolzi</td>
-                                        <td style="color:blue">@cusBalance?.Pobaruva</td>
-                                        <td style="color:green">@cusBalance?.Saldo</td>
-
-                                        @for (int m = 1; m <= 12; m++)
-                                        {
-                                            var monthName = new DateTime(ViewBag.Year, m, 1)
-                                                            .ToString("MMMM", new System.Globalization.CultureInfo("mk-MK"));
-
-                                            var monthly = customerInvoices
-                                                .Where(x =>
-                                                    x.ToDocument != null &&
-                                                    x.ToDocument.IndexOf(monthName, StringComparison.OrdinalIgnoreCase) >= 0 &&
-                                                    x.ToDocument.IndexOf(ViewBag.Year.ToString(), StringComparison.OrdinalIgnoreCase) >= 0 &&
-                                                    x.PaymentStatus == 0 // nur wenn PaymentStatus 0
-                                                )
-                                                .Sum(x => x.TotalOutput ?? 0);
-
-                                            <td>@(monthly == 0 ? "0" : monthly.ToString())</td>
-                                        }
-
-                                        <td style="font-weight:bold">
-                                            @customerInvoices.Sum(x => x.TotalOutput)
-                                        </td>
+                                        <td colspan="17" class="text-center">Нема корисници</td>
                                     </tr>
                                 }
-                            }
-                            else
-                            {
-                                <tr>
-                                    <td colspan="17" class="text-center">Нема корисници</td>
-                                </tr>
-                            }
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -175,11 +202,17 @@
                                 <th>Вкупно</th>
                                 <th>Сметка</th>
                                 <th>Статус</th>
-                                <th>Опис на плаќање</th>
-                                <th>Дата на плаќање</th>
-                                <th>Платено на</th>
-                                <th>Тип на плаќање</th>
-                                <th>Број на плаќање</th>
+                                @if (selectedValue != (int)PaymentStatus.Платено)
+                                {
+                                    <th>Дата на плаќање</th>
+                                }
+                                @if (selectedValue == (int)PaymentStatus.Платено)
+                                {
+                                    <th>Опис на плаќање</th>
+                                    <th>Платено на</th>
+                                    <th>Тип на плаќање</th>
+                                    <th>Број на плаќање</th>
+                                }
                                 <th>Функции</th>
                             </tr>
                         </thead>
@@ -215,11 +248,17 @@
                                             }
                                         </td>
 
-                                        <td>@invoice.PaymentDescription</td>
-                                        <td>@invoice.DateReceived?.ToString("dd.MM.yyyy")</td>
-                                        <td>@invoice.PaymentDate?.ToString("dd.MM.yyyy")</td>
-                                        <td>@invoice.PaymentType.GetEnumDescription()</td>
-                                        <td>@invoice.PaymentNumber </td>
+                                        @if (selectedValue != (int)PaymentStatus.Платено)
+                                        {
+                                            <td>@invoice.DateReceived?.ToString("dd.MM.yyyy")</td>
+                                        }
+                                        @if (selectedValue == (int)PaymentStatus.Платено)
+                                        {
+                                            <td>@invoice.PaymentDescription</td>
+                                            <td>@invoice.PaymentDate?.ToString("dd.MM.yyyy")</td>
+                                            <td>@invoice.PaymentType.GetEnumDescription()</td>
+                                            <td>@invoice.PaymentNumber </td>
+                                        }
 
                                         <td>
                                             <a asp-action="Details" asp-route-id="@invoice.Id"
@@ -508,5 +547,21 @@
             });
         });
     </script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const table = document.querySelector("table");
 
+            table.querySelectorAll("tbody tr").forEach(row => {
+                row.addEventListener("click", function () {
+
+                    // тргни стара селекција
+                    table.querySelectorAll(".selected-row")
+                        .forEach(r => r.classList.remove("selected-row"));
+
+                    // селектирај нов ред
+                    this.classList.add("selected-row");
+                });
+            });
+        });
+    </script>
 }

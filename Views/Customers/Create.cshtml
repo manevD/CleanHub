@@ -98,6 +98,20 @@
                                                                name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
                                                     </div>
                                                 </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Салдо</label>
+                                                        <input asp-for="Saldo" type="number" step="0.01" class="form-control mb-3" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис на претплата</label>
+                                                        <textarea asp-for="SubscriptionDescription"
+                                                                  class="form-control mb-3"
+                                                                  rows="3"></textarea>
+                                                    </div>
+                                                </div>
                                                 <div class="col-md-12 mt-1">
                                                     <div class="form-group text-end">
                                                         <input type="submit" value="Зачувај" class="btn btn-primary" />
