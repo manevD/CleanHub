@@ -208,6 +208,7 @@
                                                         @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                                                         {
                                                             <input type="hidden" asp-for="@Model.Building.BuildingProducts[i].IsNew" />
+                                                            <input type="hidden" asp-for="@Model.Building.BuildingProducts[i].IsDeleted" class="is-deleted" value="false" />
                                                             <tr>
                                                                 <td class="description">
                                                                     @if (!string.IsNullOrWhiteSpace(@Model.Building.BuildingProducts[i].ArticleNotes))
@@ -582,7 +583,7 @@
 
             // ================= ADD ROW =================
 
-            let rowIndex = @(Model.Building.BuildingProducts.Count);
+            let rowIndex = @(Model?.Building?.BuildingProducts.Count);
 
             function addRow() {
 
@@ -591,10 +592,22 @@
                 const newRow = document.createElement("tr");
 
                 newRow.innerHTML = `
+                  
                     <td class="description">
-                        <input type="text"
-                               name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
-                               class="form-control form-control-sm" />
+                        <input type="hidden"
+            name="Building.BuildingProducts[${rowIndex}].IsDeleted"
+            value="false" 
+            class="is-deleted" />
+
+         
+            <input type="hidden"
+                   name="Building.BuildingProducts[${rowIndex}].IsNew"
+                   value="true" />
+                   
+                            <input type="text"
+            name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
+            class="form-control form-control-sm article-notes"
+            />
                     </td>
 
                     <td class="rate">
@@ -611,7 +624,7 @@
 
                     <td class="rate">
                         <input type="number"
-                               id="Price_${rowIndex}"
+                               id="Price_${rowIndex}" 
                                name="Building.BuildingProducts[${rowIndex}].Price"
                                class="form-control form-control-sm" />
                     </td>
@@ -662,16 +675,102 @@
 
         </script>
         <script>
-            function deleteRow(button) {
+                       function deleteRow(button) {
 
                 const row = button.closest("tr");
-
                 if (!row) return;
 
-                row.remove();
+                const isDeletedInput = row.querySelector(".is-deleted");
 
-                // update total after delete
+                if (isDeletedInput) {
+                    isDeletedInput.value = "true";
+                    row.style.display = "none";
+                } else {
+                    row.remove();
+                }
+
                 updatePriceWithTaxTotal();
             }
+        </script>
+        <script id="showInvoiceExistsModal">
+            document.addEventListener("DOMContentLoaded", function () {
+
+                const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["InvoiceExists"]));
+
+                if (message) {
+
+                    const messageElement = document.getElementById("invoiceExistsMessage");
+                    if (messageElement) {
+                        messageElement.innerText = message;
+                    }
+
+                    const modalElement = document.getElementById("invoiceExistsModal");
+                    const modal = new bootstrap.Modal(modalElement);
+
+                    modal.show();
+                }
+
+            });
+        </script>
+
+        <script>
+                 document.getElementById("invoiceDate").addEventListener("change", function () {
+
+                const dateValue = this.value; // yyyy-mm-dd
+                if (!dateValue) return;
+
+                const date = new Date(dateValue);
+
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const year = date.getFullYear();
+
+                const formatted = month + "." + year;
+
+                document.querySelectorAll(".article-notes").forEach(function(input){
+
+                    let baseText = input.value.split(" ").slice(0, -1).join(" ");
+
+                    if(baseText === "")
+                        baseText = input.value;
+
+                    input.value = baseText + " " + formatted;
+                });
+
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+
+                const hidden = document.getElementById("actionTypeHidden");
+
+                document.querySelectorAll(".submit-btn").forEach(btn => {
+                    btn.addEventListener("click", function () {
+                        hidden.value = this.dataset.action;
+                    });
+                });
+
+            });
+        </script>
+        <script id="toggleSubmitButtons">
+            document.addEventListener("DOMContentLoaded", function () {
+
+                const dateInput = document.getElementById("invoiceDate");
+                const buttons = document.querySelectorAll(".submit-btn");
+
+                function toggleButtons() {
+                    if (dateInput.value) {
+                        buttons.forEach(btn => btn.disabled = false);
+                    } else {
+                        buttons.forEach(btn => btn.disabled = true);
+                    }
+                }
+
+                // beim Laden prüfen
+                toggleButtons();
+
+                // wenn Datum geändert wird
+                dateInput.addEventListener("change", toggleButtons);
+
+            });
         </script>
     }

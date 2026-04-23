@@ -78,26 +78,14 @@
                                                     </div>
                                                 </div>
 
-                                                <div class="col-md-6">
-                                                    <div class="form-check">
-                                                        <label>Физичко Лице</label>
-                                                        <input type="checkbox" class="form-check-input" id="PhysicalPerson"
-                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
-                                                    </div>
-                                                </div>
+                                               
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label asp-for="ActiveDatum">Активен од</label>
                                                         <input asp-for="ActiveDatum" type="date" class="form-control mb-3" id="ActiveDatum" />
                                                     </div>
                                                 </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-check">
-                                                        <label>Со гаража</label>
-                                                        <input type="checkbox" class="form-check-input" id="Garage"
-                                                               name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
-                                                    </div>
-                                                </div>
+                                               
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Салдо</label>
@@ -110,6 +98,21 @@
                                                         <textarea asp-for="SubscriptionDescription"
                                                                   class="form-control mb-3"
                                                                   rows="3"></textarea>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Со гаража</label>
+                                                        <input type="checkbox" class="form-check-input" id="Garage"
+                                                               name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Физичко Лице</label>
+                                                        <input type="checkbox" class="form-check-input" id="PhysicalPerson"
+                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
                                                     </div>
                                                 </div>
                                                 <div class="col-md-12 mt-1">

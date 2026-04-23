@@ -540,9 +540,14 @@ namespace CleanHub.Controllers
                 if (customer != null)
                 {
                     documentViewModel.CustomerId = customerId;
-                    documentViewModel.Building = App.FullMapper.Map<BuildingViewModel>(customer.Building);
-                    documentViewModel.BuildingId = documentViewModel.Building.Id;
-                    if (!documentViewModel.Building.BuildingProducts.Any())
+                    //ЕКОНОМИЈА ДОО
+                    if (customer.Building != null)
+                    {
+                        documentViewModel.Building = App.FullMapper.Map<BuildingViewModel>(customer.Building);
+                        documentViewModel.BuildingId = documentViewModel.Building.Id;
+                    }
+                  
+                    if (!documentViewModel.Building?.BuildingProducts?.Any() == true)
                     {
                         documentViewModel.Building.BuildingProducts =
                             App.FullMapper.Map<List<BuildingProductViewModel>>(await _unitOfWork.Products.GetAllAsync());
@@ -684,7 +689,18 @@ namespace CleanHub.Controllers
             bool send = actionType == "send";
             return await PrintDocuments(new List<Document> { docEntity }, building, send);
         }
+        [HttpGet] 
+        public async Task<IActionResult> CreateWithDate(int? id, int? buildingId, DateTime? date)
+        {
+            var formattedDate = date?.ToString("yyyy-MM-dd");
 
+            return RedirectToAction("Create", new
+            {
+                id = id,
+                buildingId = buildingId,
+                date = formattedDate
+            });
+        }
         /// <summary>
         /// 0 Zbirna 1 Poedinecna
         /// </summary>
@@ -692,17 +708,25 @@ namespace CleanHub.Controllers
         /// <param name="buildingId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> Create(int? id, int? buildingId)
+        public async Task<IActionResult> Create(int? id, int? buildingId,DateTime? date)
         {
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
             var now = DateTime.UtcNow;
+            var formattedDate = date?.ToString("yyyy-MM-dd");
 
-            // Move to the first day of the current month, then subtract one day
-            var lastDayOfLastMonth = new DateTime(now.Year, now.Month, 1).AddDays(-1);
+            if (!date.HasValue)
+            {
+                // Move to the first day of the current month, then subtract one day
+                var lastDayOfLastMonth = new DateTime(now.Year, now.Month, 1).AddDays(-1);
 
-            // Convert to DateOnly
-            documentViewModel.Date = DateOnly.FromDateTime(lastDayOfLastMonth);
+                // Convert to DateOnly
+                documentViewModel.Date = DateOnly.FromDateTime(lastDayOfLastMonth);
+            }
+            else
+            {
+                documentViewModel.Date = DateOnly.FromDateTime(date.Value);
+            }
             documentViewModel.Company = _config.Value;
             var buildings = new List<Building>();
             if (id != 2)
@@ -1767,18 +1791,24 @@ namespace CleanHub.Controllers
                     }
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
+
                     if (send && !string.IsNullOrEmpty(document?.Customer?.Email))
                     {
                         await CreateAndSend(document);
                     }
-                    string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
+                    else
+                    {
+                        string htmlContent = await RenderPartialViewToStringAsync(
+                            "~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
-                    var request = _httpContextAccessor?.HttpContext?.Request;
-                    string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
+                        var request = _httpContextAccessor?.HttpContext?.Request;
+                        string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
-                    HtmlToPdf converter = new HtmlToPdf();
-                    PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
-                    endDoc.Append(doc);
+                        HtmlToPdf converter = new HtmlToPdf();
+                        PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
+
+                        endDoc.Append(doc);
+                    }
                 }
 
                 byte[] pdf = endDoc.Save();

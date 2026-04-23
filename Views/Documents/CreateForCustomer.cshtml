@@ -282,111 +282,183 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
-    <script>
-                  document.addEventListener('DOMContentLoaded', function () {
-            // Get all rows in the tbody
-            var rows = document.querySelectorAll('tbody tr');
+        <script>
 
-            // Get the number of customers
-            var customerCount = @(Model?.Building?.Customers?.Count ?? 0);
+            // ================= GLOBAL =================
 
-            // Function to calculate and update values
             function calculatePrice(row) {
-                // Get elements in the row
-                var priceInput = row.querySelector('input[id^="Price_"]');
-                var taxInput = row.querySelector('input[id^="Tax_"]');
-                var priceWithTaxInput = row.querySelector('input[id^="PriceWithTax_"]');
-                var totalInput = row.querySelector('input[id^="Total_"]');
-                var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]'); // This should match PriceWithTaxInput
 
-                // Parse total value (ensure it uses dot as decimal separator)
-                var total = parseFloat(totalInput.value.replace(',', '.') || 0);
+                const priceInput = row.querySelector('input[id^="Price_"]');
+                const taxInput = row.querySelector('input[id^="Tax_"]');
+                const priceWithTaxInput = row.querySelector('input[id^="PriceWithTax_"]');
+                const totalInput = row.querySelector('input[id^="Total_"]');
+                const priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]');
 
-                // If total is provided, calculate price per customer
+                const customerCount = @(Model?.Building?.Customers?.Count ?? 0);
+
+                let total = parseFloat((totalInput?.value || "0").replace(',', '.')) || 0;
+
                 if (total > 0) {
-                    var pricePerCustomer = 0;
-
-                    if (customerCount > 0) {
-                        pricePerCustomer = total / customerCount;
-                    } else {
-                        pricePerCustomer = total;
-                    }
-
-                    priceInput.value = pricePerCustomer.toFixed(2); // Keep decimal precision with a dot
+                    let pricePerCustomer = customerCount > 0 ? total / customerCount : total;
+                    priceInput.value = pricePerCustomer.toFixed(2);
                 }
 
-                // Recalculate PriceWithTax based on the new Price
-                var price = parseFloat(priceInput.value.replace(',', '.')) || 0; // Price without VAT
-                var tax = parseFloat(taxInput.value.replace(',', '.')) || 0; // VAT
+                let price = parseFloat((priceInput?.value || "0").replace(',', '.')) || 0;
+                let tax = parseFloat((taxInput?.value || "0").replace(',', '.')) || 0;
 
-                // Calculate PriceWithTax
-                var priceWithTax;
-                if (tax === 0) {
-                    // If tax is 0, set PriceWithTax to Price
-                    priceWithTax = price;
-                } else {
-                    // Calculate tax amount and add it to the price
-                    var taxAmount = (price * tax) / 100; // Calculate tax based on the price
-                    priceWithTax = price + taxAmount; // Price without VAT + VAT = Total Price
-                }
+                let priceWithTax = tax === 0 ? price : price + (price * tax / 100);
 
-                // Format PriceWithTax to 2 decimal places with a dot
-                priceWithTaxInput.value = priceWithTax.toFixed(2);
+                if (priceWithTaxInput)
+                    priceWithTaxInput.value = priceWithTax.toFixed(2);
 
-                // Ensure priceWithTaxTotal is rounded to the nearest whole number, but keep decimal for display
-                var priceWithTaxTotalValue = Math.round(priceWithTax); // Round for calculation purposes
-                priceWithTaxTotal.value = priceWithTax.toFixed(2); // Display as decimal
+                if (priceWithTaxTotal)
+                    priceWithTaxTotal.value = priceWithTax.toFixed(2);
 
-                // Update the total PriceWithTax sum
                 updatePriceWithTaxTotal();
             }
 
-            // Function to calculate and update the sum of all PriceWithTaxTotal values
-            function updatePriceWithTaxTotal() {
-                var totalSum = 0;
 
-                // Loop through all rows and sum the PriceWithTaxTotal values
-                rows.forEach(function (row) {
-                    var priceWithTaxTotal = row.querySelector('input[id^="PriceWithTaxTotal_"]');
-                    var priceWithTax = parseFloat(priceWithTaxTotal.value.replace(',', '.')) || 0;
-                    totalSum += priceWithTax;
+            function updatePriceWithTaxTotal() {
+
+                const rows = document.querySelectorAll('.item-table tbody tr');
+
+                let totalSum = 0;
+
+                rows.forEach(row => {
+                    const el = row.querySelector('input[id^="PriceWithTaxTotal_"]');
+                    if (!el) return;
+
+                    let val = parseFloat((el.value || "0").replace(',', '.')) || 0;
+                    totalSum += val;
                 });
 
-                // Round the total sum: round up if the decimal value >= 0.5, else round down
-                var roundedSum = totalSum % 1 === 0 ? totalSum : Math.round(totalSum);
-
-                // Display total sum with dot as decimal separator
-                document.querySelector('#totalPriceWithTax').innerText = roundedSum.toFixed(2);
+                document.querySelector('#totalPriceWithTax').innerText = totalSum.toFixed(2);
             }
 
-            // For each row, add input event listeners
-            rows.forEach(function (row) {
-                // Get elements in the row
-                var priceInput = row.querySelector('input[id^="Price_"]');
-                var totalInput = row.querySelector('input[id^="Total_"]');
-                var taxInput = row.querySelector('input[id^="Tax_"]');
 
-                // Add input event listeners
-                priceInput.addEventListener('input', function () {
-                    calculatePrice(row);
-                });
+            // ================= INIT =================
 
-                totalInput.addEventListener('input', function () {
-                    calculatePrice(row);
-                });
+            document.addEventListener('DOMContentLoaded', function () {
 
-                taxInput.addEventListener('input', function () {
-                    calculatePrice(row);
-                });
+                const rows = document.querySelectorAll('.item-table tbody tr');
 
-                // Perform Initial calculation on page load
-                calculatePrice(row);
+                rows.forEach(row => attachEvents(row));
+
+                updatePriceWithTaxTotal();
             });
 
-            // Perform Initial sum calculation on page load
-            updatePriceWithTaxTotal();
-        });
 
+            // ================= EVENTS =================
+
+            function attachEvents(row) {
+
+                const priceInput = row.querySelector('input[id^="Price_"]');
+                const totalInput = row.querySelector('input[id^="Total_"]');
+                const taxInput = row.querySelector('input[id^="Tax_"]');
+
+                priceInput?.addEventListener('input', () => calculatePrice(row));
+                totalInput?.addEventListener('input', () => calculatePrice(row));
+                taxInput?.addEventListener('input', () => calculatePrice(row));
+
+                calculatePrice(row);
+            }
+
+
+            // ================= ADD ROW =================
+
+            let rowIndex = @(Model?.Building?.BuildingProducts.Count);
+
+            function addRow() {
+
+                const tbody = document.querySelector(".item-table tbody");
+
+                const newRow = document.createElement("tr");
+
+                newRow.innerHTML = `
+                    <td class="description">
+                        <input type="text"
+                               name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="text"
+                               name="Building.BuildingProducts[${rowIndex}].UnitOfMeasurement"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               name="Building.BuildingProducts[${rowIndex}].Quantity"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               id="Price_${rowIndex}"
+                               name="Building.BuildingProducts[${rowIndex}].Price"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               id="Tax_${rowIndex}"
+                               name="Building.BuildingProducts[${rowIndex}].Tax"
+                               value="18"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               id="PriceWithTax_${rowIndex}"
+                               name="Building.BuildingProducts[${rowIndex}].PriceWithTax"
+                               class="form-control form-control-sm"
+                               readonly />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               id="Total_${rowIndex}"
+                               name="Building.BuildingProducts[${rowIndex}].Total"
+                               class="form-control form-control-sm" />
+                    </td>
+
+                    <td class="rate">
+                        <input type="number"
+                               id="PriceWithTaxTotal_${rowIndex}"
+                               name="Building.BuildingProducts[${rowIndex}].PriceWithTaxTotal"
+                               class="form-control form-control-sm"
+                               readonly />
+                    </td>
+                                <td>
+                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">
+                    ❌
+                </button>
+                </td>
+                `;
+
+                tbody.appendChild(newRow);
+
+                attachEvents(newRow);
+
+                rowIndex++;
+            }
+
+        </script>
+        <script>
+            function deleteRow(button) {
+
+                const row = button.closest("tr");
+
+                if (!row) return;
+
+                row.remove();
+
+                // update total after delete
+                updatePriceWithTaxTotal();
+            }
+        </script>
+        <script>
                document.getElementById("customerSearch").addEventListener("input", function () {
 
             const customerSearchValue = this.value;

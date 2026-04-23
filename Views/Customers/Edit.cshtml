@@ -31,183 +31,222 @@
                                                     <div class="form-group">
                                                         <label>Информации</label>
                                                         <input asp-for="CustomerInfo" type="text" class="form-control mb-3" id="CustomerInformation" placeholder="Информации">
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <div class="form-group">
-                                                            <label>Дејност</label>
-                                                            <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId"></select>
-                                                            <span asp-validation-for="ActivityId" class="text-danger"></span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div class="col-md-6">
-                                                        <div class="form-group">
-                                                            <label>Адреса</label>
-                                                            <input asp-for="Adress" type="text" class="form-control mb-3" id="Adress" placeholder="Адреса">
-                                                            </div>
-                                                        </div>
-
-                                                        <div class="col-md-6">
-                                                            <div class="form-group">
-                                                                <label>Телефон</label>
-                                                                <input asp-for="PhoneNumber" type="text" class="form-control mb-3" id="PhoneNumber" placeholder="Телефонски Број">
-                                                                </div>
-                                                            </div>
-                                                            <div class="col-md-6">
-                                                                <div class="form-group">
-                                                                    <label>Е - Маил</label>
-                                                                    <input asp-for="Email" type="text" class="form-control mb-3" id="Email" placeholder="Е - Маил">
-                                                                    </div>
-                                                                </div>
-                                                                <div class="col-md-6">
-                                                                    <div class="form-group">
-                                                                        <label>Веб</label>
-                                                                        <input asp-for="Web" type="text" class="form-control mb-3" id="Web" placeholder="Веб">
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label>Објект </label>
-                                                                            <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label>Опис</label>
-                                                                            <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis" />
-                                                                        </div>
-                                                                    </div>
-
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-check">
-                                                                            <label>Физичко Лице</label>
-                                                                            <input type="checkbox" class="form-check-input" id="PhysicalPerson"
-                                                                                   name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-check">
-                                                                            <input type="checkbox" class="form-check-input" id="Inactive"
-                                                                                   name="Inactive" value="true" @(Model.Inactive == true ? "checked" : "") />
-                                                                            <label class="form-check-label" for="Inactive">Неактивен</label>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-check">
-                                                                            <input type="checkbox" class="form-check-input" id="Garage"
-                                                                                   name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
-                                                                            <label class="form-check-label">Со гаража</label>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-check">
-                                                                            <input type="checkbox" class="form-check-input" id="SetCost"
-                                                                                   name="SetCost" value="true" @(Model.SetCost == true ? "checked" : "") />
-                                                                            <label class="form-check-label">Пресмети трошок</label>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label asp-for="InactiveDatum">Неактивен од</label>
-                                                                            <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label asp-for="ActiveDatum">Aктивен од</label>
-                                                                            <input asp-for="ActiveDatum" type="date" class="form-control mb-3" id="ActiveDatum" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label asp-for="Subscription">Во претплата</label>
-                                                                            <input asp-for="Subscription" type="number" class="form-control mb-3" id="Subscription" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-6">
-                                                                        <div class="form-group">
-                                                                            <label asp-for="SubscriptionDate">Во претплата од : </label>
-                                                                            <input asp-for="SubscriptionDate" type="date" class="form-control mb-3" id="SubscriptionDate" />
-                                                                        </div>
-                                                                    </div>
-                                                                    <div class="col-md-12 mt-1">
-                                                                        <div class="form-group text-end">
-                                                                            <input type="submit" value="Зачувај" class="btn btn-primary" />
-                                                                        </div>
-                                                                    </div>
-
-                                                                </div>
-
-                                                            </div>
-                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
 
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Дејност</label>
+                                                        <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId"></select>
+                                                        <span asp-validation-for="ActivityId" class="text-danger"></span>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Адреса</label>
+                                                        <input asp-for="Adress" type="text" class="form-control mb-3" id="Adress" placeholder="Адреса">
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Телефон</label>
+                                                        <input asp-for="PhoneNumber" type="text" class="form-control mb-3" id="PhoneNumber" placeholder="Телефонски Број">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Е - Маил</label>
+                                                        <input asp-for="Email" type="text" class="form-control mb-3" id="Email" placeholder="Е - Маил">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Веб</label>
+                                                        <input asp-for="Web" type="text" class="form-control mb-3" id="Web" placeholder="Веб">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Објект </label>
+                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис</label>
+                                                        <input asp-for="PartnerOpis" class="form-control mb-3" id="PartnerOpis" />
+                                                    </div>
+                                                </div>
+
+                                                                  
+                                            
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="ActiveDatum">Aктивен од</label>
+                                                        <input asp-for="ActiveDatum" type="date" class="form-control mb-3" id="ActiveDatum" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="Subscription">Во претплата</label>
+                                                        <input asp-for="Subscription" type="number" class="form-control mb-3" id="Subscription" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="SubscriptionDate">Во претплата од : </label>
+                                                        <input asp-for="SubscriptionDate" type="date" class="form-control mb-3" id="SubscriptionDate" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label asp-for="InactiveDatum">Неактивен од</label>
+                                                        <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Салдо</label>
+                                                        <input asp-for="Saldo" type="number" step="0.01" class="form-control mb-3" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label>Опис на претплата</label>
+                                                        <textarea asp-for="SubscriptionDescription"
+                                                                  class="form-control mb-3"
+                                                                  rows="3" id="SubscriptionDescription"></textarea>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="Inactive"
+                                                               name="Inactive" value="true" @(Model.Inactive == true ? "checked" : "") />
+                                                        <label class="form-check-label" for="Inactive">Неактивен</label>
+                                                    </div>
+                                                </div>
+                                              
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <label>Физичко Лице</label>
+                                                        <input type="checkbox" class="form-check-input" id="PhysicalPerson"
+                                                               name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="Garage"
+                                                               name="Garage" value="true" @(Model.Garage == true ? "checked" : "") />
+                                                        <label class="form-check-label">Со гаража</label>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+                                                        <input type="checkbox" class="form-check-input" id="SetCost"
+                                                               name="SetCost" value="true" @(Model.SetCost == true ? "checked" : "") />
+                                                        <label class="form-check-label">Пресмети трошок</label>
+                                                    </div>
+                                                </div>
+                                               
+                                                <div class="col-md-12 mt-1">
+                                                    <div class="form-group text-end">
+                                                        <input type="submit" value="Зачувај" class="btn btn-primary" />
+                                                    </div>
+                                                </div>
+
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
+                </form>
+            </div>
 
-                    @section Scripts {
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function () {
+        </div>
+    </div>
+</div>
 
-                                /* ==========================
-                                   INACTIVE / ACTIVE LOGIC
-                                   ========================== */
-                                const inactiveCheckbox = document.getElementById('Inactive');
-                                const inactiveDatumInput = document.getElementById('InactiveDatum');
-                                const activDatumInput = document.getElementById('ActiveDatum');
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
 
-                                function toggleInactiveDatum() {
-                                    inactiveDatumInput.readOnly = !inactiveCheckbox.checked;
-                                    activDatumInput.readOnly = inactiveCheckbox.checked;
-                                    inactiveDatumInput.classList.toggle('bg-light', !inactiveCheckbox.checked);
-                                    activDatumInput.classList.toggle('bg-light', inactiveCheckbox.checked);
-                                }
+            /* ==========================
+               INACTIVE / ACTIVE LOGIC
+               ========================== */
+            const inactiveCheckbox = document.getElementById('Inactive');
+            const inactiveDatumInput = document.getElementById('InactiveDatum');
+            const activDatumInput = document.getElementById('ActiveDatum');
 
-                                toggleInactiveDatum();
-                                inactiveCheckbox.addEventListener('change', toggleInactiveDatum);
+            function toggleInactiveDatum() {
+                inactiveDatumInput.readOnly = !inactiveCheckbox.checked;
+                activDatumInput.readOnly = inactiveCheckbox.checked;
+                inactiveDatumInput.classList.toggle('bg-light', !inactiveCheckbox.checked);
+                activDatumInput.classList.toggle('bg-light', inactiveCheckbox.checked);
+            }
+
+            toggleInactiveDatum();
+            inactiveCheckbox.addEventListener('change', toggleInactiveDatum);
 
 
-                                /* ==========================
-                                   SUBSCRIPTION LOGIC
-                                   ========================== */
-                                const subscriptionInput = document.getElementById('Subscription');
-                                const subscriptionDateInput = document.getElementById('SubscriptionDate');
+            /* ==========================
+               SUBSCRIPTION LOGIC
+               ========================== */
+            const subscriptionInput = document.getElementById('Subscription');
+            const subscriptionDateInput = document.getElementById('SubscriptionDate');
 
-                                function toggleSubscriptionDate() {
-                                    const value = parseFloat(subscriptionInput.value);
+            function toggleSubscriptionDate() {
+                const value = parseFloat(subscriptionInput.value);
 
-                                    if (!isNaN(value) && value > 0) {
-                                        subscriptionDateInput.disabled = false;
-                                        subscriptionDateInput.classList.remove('bg-light');
+                if (!isNaN(value) && value > 0) {
+                    subscriptionDateInput.disabled = false;
+                    subscriptionDateInput.classList.remove('bg-light');
 
-                                        // опционално: ако нема датум, постави денешен
-                                        if (!subscriptionDateInput.value) {
-                                            const today = new Date().toISOString().split('T')[0];
-                                            subscriptionDateInput.value = today;
-                                        }
-                                    } else {
-                                        subscriptionDateInput.disabled = true;
-                                        subscriptionDateInput.value = '';
-                                        subscriptionDateInput.classList.add('bg-light');
-                                    }
-                                }
-
-                                toggleSubscriptionDate();
-                                subscriptionInput.addEventListener('input', toggleSubscriptionDate);
-
-                            });
-                        </script>
-
-                        @{
-                            await Html.RenderPartialAsync("_ValidationScriptsPartial");
-                        }
+                    // опционално: ако нема датум, постави денешен
+                    if (!subscriptionDateInput.value) {
+                        const today = new Date().toISOString().split('T')[0];
+                        subscriptionDateInput.value = today;
                     }
+                } else {
+                    subscriptionDateInput.disabled = true;
+                    subscriptionDateInput.value = '';
+                    subscriptionDateInput.classList.add('bg-light');
+                }
+            }
+
+            toggleSubscriptionDate();
+            subscriptionInput.addEventListener('input', toggleSubscriptionDate);
+
+
+             /* ==========================
+               SUBSCRIPTION LOGIC
+               ========================== */
+            const subscriptionDescriptionInput = document.getElementById('SubscriptionDescription');
+
+            function toggleSubscriptionDescription() {
+                const value = parseFloat(subscriptionInput.value);
+
+                if (!isNaN(value) && value > 0) {
+                    subscriptionDescriptionInput.disabled = false;
+                    subscriptionDescriptionInput.classList.remove('bg-light');
+                } else {
+                    subscriptionDescriptionInput.disabled = true;
+                    subscriptionDescriptionInput.classList.add('bg-light');
+                }
+            }
+
+            toggleSubscriptionDescription();
+            subscriptionInput.addEventListener('input', toggleSubscriptionDescription);
+
+        });
+    </script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+}
