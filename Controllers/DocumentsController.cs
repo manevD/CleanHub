@@ -823,21 +823,6 @@ namespace CleanHub.Controllers
                     product.Total = 0;
                 }
             }
-            for (int i = 0; i < 3; i++)
-            {
-                documentViewModel.Building?.BuildingProducts.Add(new BuildingProductViewModel
-                {
-                    ArticleNotes = "",
-                    UnitOfMeasurement = "бр.",
-                    Quantity = 1,
-                    Price = 0,
-                    Tax = 0,
-                    PriceWithTax = 0,
-                    Total = 0,
-                    BuildingId = 0,
-                    IsNew = true
-                });
-            }
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", documentViewModel.Building.Id);
             ViewBag.SelectedBuildingName = Buildings.FirstOrDefault(x=>x.Id == documentViewModel.Building.Id).Name;
             ViewBag.BuildingId = documentViewModel.Building.Id;

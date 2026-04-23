@@ -38,6 +38,5 @@ namespace CleanHub.ViewModels
         public float? PriceWithTaxTotal { get; set; }
         public string? UnitOfMeasurement { get; set; }
         public bool IsNew { get; set; }
-        public bool IsDeleted { get; set; }
     }
 }

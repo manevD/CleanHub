@@ -121,7 +121,7 @@
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
-                <form asp-action="Create" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
+                <form asp-action="Create" asp-controller="Documents" method="post" class="row" novalidate>
                     <input type="hidden" name="BuildingId" asp-for="@Model.BuildingId" />
                     <div class="col-xl-9">
                         <div class="invoice-content">
@@ -208,7 +208,6 @@
                                                         @for (var i = 0; i < Model.Building.BuildingProducts.Count; i++)
                                                         {
                                                             <input type="hidden" asp-for="@Model.Building.BuildingProducts[i].IsNew" />
-                                                            <input type="hidden" asp-for="@Model.Building.BuildingProducts[i].IsDeleted" class="is-deleted" value="false" />
                                                             <tr>
                                                                 <td class="description">
                                                                     @if (!string.IsNullOrWhiteSpace(@Model.Building.BuildingProducts[i].ArticleNotes))
@@ -226,24 +225,24 @@
                                                                     <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].UnitOfMeasurement" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="number" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" />
+                                                                    <input type="text" class="form-control form-control-sm" asp-for="@Model.Building.BuildingProducts[i].Quantity" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="number" class="form-control form-control-sm" id="Price_@i"
+                                                                    <input type="text" class="form-control form-control-sm" id="Price_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].Price" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="number" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
+                                                                    <input type="text" class="form-control form-control-sm" id="Tax_@i" asp-for="@Model.Building.BuildingProducts[i].Tax" value="@Model.Building.BuildingProducts[i].Tax" />
                                                                 </td>
                                                                 <td class="rate">
-                                                                    <input type="number" class="form-control form-control-sm" id="PriceWithTax_@i"
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTax_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTax"
                                                                            readonly />
                                                                 </td>
                                                                 @if (routeId == 2)
                                                                 {
                                                                     <td class="rate">
-                                                                        <input type="number"
+                                                                        <input type="text"
                                                                                class="form-control form-control-sm"
                                                                                id="Total_@i"
                                                                                asp-for="@Model.Building.BuildingProducts[i].Total" readonly />
@@ -252,7 +251,7 @@
                                                                 else
                                                                 {
                                                                     <td class="rate">
-                                                                        <input type="number"
+                                                                        <input type="text"
                                                                                class="form-control form-control-sm"
                                                                                id="Total_@i"
                                                                                asp-for="@Model.Building.BuildingProducts[i].Total" />
@@ -260,15 +259,11 @@
                                                                 }
                                                              
                                                                 <td class="rate">
-                                                                    <input type="number" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
+                                                                    <input type="text" class="form-control form-control-sm" id="PriceWithTaxTotal_@i"
                                                                            asp-for="@Model.Building.BuildingProducts[i].PriceWithTaxTotal"
                                                                            readonly />
                                                                 </td>
-                                                                <td>
-                                                                    <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">
-                                                                        ❌
-                                                                    </button>
-                                                                </td>
+                                                               
                                                                 @*  <td class="text-center tax">
                                                                     <div class="n-chk">
                                                                         <div class="form-check form-check-primary form-check-inline me-0 mb-0">
@@ -392,7 +387,7 @@
                                                     @if (routeId == 2)
                                                     {
                                                         <input type="hidden" name="submitCost" id="submitCostHidden" value="false" />
-                                                        <button type="submit"
+                                                        <button type="submit" formnovalidate
                                                                 class="btn btn-primary"
                                                                 onclick="document.getElementById('submitCostHidden').value='true'">
                                                             Зачувај
@@ -401,17 +396,17 @@
                                                     else
                                                     {
                                                         <input type="hidden" id="actionTypeHidden" name="actionType" />
-                                                        <button type="submit"
+                                                        <button type="submit" formnovalidate
                                                                 data-action="print"
                                                                 class="btn btn-primary submit-btn"
-                                                                disabled>
+                                                                >
                                                             Зачувај и принтај
                                                         </button>
 
                                                         <button type="submit"
                                                                 data-action="send"
                                                                 class="btn btn-primary submit-btn"
-                                                                disabled>
+                                                                >
                                                             Зачувај, прати и принтај
                                                         </button>
                                                     }
@@ -483,27 +478,24 @@
                     });
                 }
 
-
-                // ===== BUTTON ENABLE =====
-                const dateInput = document.getElementById("invoiceDate");
-                const buttons = document.querySelectorAll(".submit-btn");
-
-                if (dateInput) {
-                    function toggleButtons() {
-                        buttons.forEach(btn => btn.disabled = !dateInput.value);
-                    }
-
-                    toggleButtons();
-                    dateInput.addEventListener("change", toggleButtons);
-                }
-
             });
         </script>
         <script>
+            // ================= HELPERS =================
 
-            // ================= GLOBAL =================
+            function parseNumber(val) {
+                if (!val) return 0;
+                return parseFloat(val.toString().replace(',', '.')) || 0;
+            }
 
-            function calculatePrice(row) {
+            function formatNumber(val) {
+                return (val || 0).toFixed(2).replace('.', ',');
+            }
+
+
+            // ================= CALCULATE =================
+
+                       function calculatePrice(row, source) {
 
                 const priceInput = row.querySelector('input[id^="Price_"]');
                 const taxInput = row.querySelector('input[id^="Tax_"]');
@@ -513,27 +505,27 @@
 
                 const customerCount = @(Model?.Building?.Customers?.Count ?? 0);
 
-                let total = parseFloat((totalInput?.value || "0").replace(',', '.')) || 0;
+                let total = parseNumber(totalInput?.value);
+                let price = parseNumber(priceInput?.value);
+                let tax = parseNumber(taxInput?.value);
 
-                if (total > 0) {
-                    let pricePerCustomer = customerCount > 0 ? total / customerCount : total;
-                    priceInput.value = pricePerCustomer.toFixed(2);
+                if (source === "total" && total > 0) {
+                    price = customerCount > 0 ? total / customerCount : total;
+                    priceInput.value = formatNumber(price);
                 }
 
-                let price = parseFloat((priceInput?.value || "0").replace(',', '.')) || 0;
-                let tax = parseFloat((taxInput?.value || "0").replace(',', '.')) || 0;
-
                 let priceWithTax = tax === 0 ? price : price + (price * tax / 100);
+                            if (priceWithTaxInput)
+                priceWithTaxInput.value = formatNumber(priceWithTax);
 
-                if (priceWithTaxInput)
-                    priceWithTaxInput.value = priceWithTax.toFixed(2);
-
-                if (priceWithTaxTotal)
-                    priceWithTaxTotal.value = priceWithTax.toFixed(2);
+            if (priceWithTaxTotal)
+                priceWithTaxTotal.value = formatNumber(priceWithTax);
 
                 updatePriceWithTaxTotal();
             }
 
+
+            // ================= TOTAL =================
 
             function updatePriceWithTaxTotal() {
 
@@ -545,24 +537,13 @@
                     const el = row.querySelector('input[id^="PriceWithTaxTotal_"]');
                     if (!el) return;
 
-                    let val = parseFloat((el.value || "0").replace(',', '.')) || 0;
+                    let val = parseNumber(el.value);
                     totalSum += val;
                 });
 
-                document.querySelector('#totalPriceWithTax').innerText = totalSum.toFixed(2);
+                document.querySelector('#totalPriceWithTax').innerText =
+                    totalSum.toFixed(2).replace('.', ',');
             }
-
-
-            // ================= INIT =================
-
-            document.addEventListener('DOMContentLoaded', function () {
-
-                const rows = document.querySelectorAll('.item-table tbody tr');
-
-                rows.forEach(row => attachEvents(row));
-
-                updatePriceWithTaxTotal();
-            });
 
 
             // ================= EVENTS =================
@@ -573,17 +554,25 @@
                 const totalInput = row.querySelector('input[id^="Total_"]');
                 const taxInput = row.querySelector('input[id^="Tax_"]');
 
-                priceInput?.addEventListener('input', () => calculatePrice(row));
-                totalInput?.addEventListener('input', () => calculatePrice(row));
-                taxInput?.addEventListener('input', () => calculatePrice(row));
+                priceInput?.addEventListener('input', () => calculatePrice(row, "price"));
+                totalInput?.addEventListener('input', () => calculatePrice(row, "total"));
+                taxInput?.addEventListener('input', () => calculatePrice(row, "tax"));
 
-                calculatePrice(row);
-            }
+                // 👉 FORMAT само на blur
+                [priceInput, totalInput, taxInput].forEach(input => {
+                    input?.addEventListener('blur', () => {
+                        let val = parseNumber(input.value);
+                        input.value = formatNumber(val);
+                    });
+                });
+
+                calculatePrice(row, "init");
+                }
 
 
             // ================= ADD ROW =================
 
-            let rowIndex = @(Model?.Building?.BuildingProducts.Count);
+            let rowIndex = document.querySelectorAll('.item-table tbody tr').length;
 
             function addRow() {
 
@@ -592,105 +581,73 @@
                 const newRow = document.createElement("tr");
 
                 newRow.innerHTML = `
-                  
+
                     <td class="description">
                         <input type="hidden"
-            name="Building.BuildingProducts[${rowIndex}].IsDeleted"
-            value="false" 
-            class="is-deleted" />
+                               name="Building.BuildingProducts[${rowIndex}].IsNew"
+                               value="true" />
 
-         
-            <input type="hidden"
-                   name="Building.BuildingProducts[${rowIndex}].IsNew"
-                   value="true" />
-                   
-                            <input type="text"
-            name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
-            class="form-control form-control-sm article-notes"
-            />
+                        <input type="text"
+                               name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
+                               class="form-control form-control-sm article-notes" />
                     </td>
 
-                    <td class="rate">
+                    <td>
                         <input type="text"
                                name="Building.BuildingProducts[${rowIndex}].UnitOfMeasurement"
-                               class="form-control form-control-sm" />
+                               class="form-control form-control-sm" value="бр."/>
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                name="Building.BuildingProducts[${rowIndex}].Quantity"
-                               class="form-control form-control-sm" />
+                               class="form-control form-control-sm" value="1" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
-                               id="Price_${rowIndex}" 
+                    <td>
+                        <input type="text"
+                               id="Price_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Price"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="Tax_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Tax"
-                               value="18"
+                               value="0"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="PriceWithTax_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].PriceWithTax"
                                class="form-control form-control-sm"
                                readonly />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="Total_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Total"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="PriceWithTaxTotal_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].PriceWithTaxTotal"
                                class="form-control form-control-sm"
                                readonly />
                     </td>
-                                <td>
-                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">
-                    ❌
-                </button>
-                </td>
                 `;
 
                 tbody.appendChild(newRow);
-
                 attachEvents(newRow);
-
                 rowIndex++;
             }
 
-        </script>
-        <script>
-                       function deleteRow(button) {
-
-                const row = button.closest("tr");
-                if (!row) return;
-
-                const isDeletedInput = row.querySelector(".is-deleted");
-
-                if (isDeletedInput) {
-                    isDeletedInput.value = "true";
-                    row.style.display = "none";
-                } else {
-                    row.remove();
-                }
-
-                updatePriceWithTaxTotal();
-            }
         </script>
         <script id="showInvoiceExistsModal">
             document.addEventListener("DOMContentLoaded", function () {
@@ -714,26 +671,34 @@
         </script>
 
         <script>
-                 document.getElementById("invoiceDate").addEventListener("change", function () {
+                         document.addEventListener("DOMContentLoaded", function () {
 
-                const dateValue = this.value; // yyyy-mm-dd
-                if (!dateValue) return;
+                const dateInput = document.getElementById("invoiceDate");
 
-                const date = new Date(dateValue);
+                if (!dateInput) return;
 
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
+                dateInput.addEventListener("change", function () {
 
-                const formatted = month + "." + year;
+                    const dateValue = this.value;
+                    if (!dateValue) return;
 
-                document.querySelectorAll(".article-notes").forEach(function(input){
+                    const date = new Date(dateValue);
 
-                    let baseText = input.value.split(" ").slice(0, -1).join(" ");
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
 
-                    if(baseText === "")
-                        baseText = input.value;
+                    const formatted = month + "." + year;
 
-                    input.value = baseText + " " + formatted;
+                    document.querySelectorAll(".article-notes").forEach(function (input) {
+
+                        let baseText = input.value.split(" ").slice(0, -1).join(" ");
+
+                        if (baseText === "")
+                            baseText = input.value;
+
+                        input.value = baseText + " " + formatted;
+                    });
+
                 });
 
             });
@@ -741,36 +706,18 @@
         <script>
             document.addEventListener("DOMContentLoaded", function () {
 
-                const hidden = document.getElementById("actionTypeHidden");
+                           const hidden = document.getElementById("actionTypeHidden");
 
-                document.querySelectorAll(".submit-btn").forEach(btn => {
-                    btn.addEventListener("click", function () {
+                       document.querySelectorAll(".submit-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const hidden = document.getElementById("actionTypeHidden");
+                    if (hidden) {
                         hidden.value = this.dataset.action;
-                    });
-                });
-
-            });
-        </script>
-        <script id="toggleSubmitButtons">
-            document.addEventListener("DOMContentLoaded", function () {
-
-                const dateInput = document.getElementById("invoiceDate");
-                const buttons = document.querySelectorAll(".submit-btn");
-
-                function toggleButtons() {
-                    if (dateInput.value) {
-                        buttons.forEach(btn => btn.disabled = false);
-                    } else {
-                        buttons.forEach(btn => btn.disabled = true);
                     }
-                }
-
-                // beim Laden prüfen
-                toggleButtons();
-
-                // wenn Datum geändert wird
-                dateInput.addEventListener("change", toggleButtons);
+                });
+            });
 
             });
         </script>
+       
     }
