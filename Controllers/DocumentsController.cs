@@ -201,7 +201,7 @@ namespace CleanHub.Controllers
             }
             return View("Index");
         }
-        
+
         [HttpGet]
         public async Task<IActionResult> InvoiceFiltered(int? buildingId, int? paymentStatusId, int? year)
         {
@@ -254,7 +254,7 @@ namespace CleanHub.Controllers
                 var customerBalances = building.Customers.Select(c =>
                 {
                     var dataBookFinancial = bookFinancials.Where(x => x.CustomerId == c.Id).ToList();
-                    
+
                     // ✅ Dokumente (gleich wie oben)
                     var customerDocs = dataDocument
                         .Where(x => x.CustomerId == c.Id &&
@@ -295,14 +295,14 @@ namespace CleanHub.Controllers
             // ✅ Default Year = Current Year
             int selectedYear = year ?? DateTime.Now.Year;
             ViewBag.Year = selectedYear;
-            
+
             // ❗ WICHTIG: Neue Methode mit Year verwenden
             var documentEntities = await GetDocumentsByYear(buildingId, paymentStatusId, selectedYear);
-            
+
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
             if (paymentStatusId == (int)PaymentStatus.Неплатено)
             {
-                ViewBag.Docs = App.FullMapper.Map <List<DocumentViewModel>> (await GetDocumentsByYear(buildingId, (int)PaymentStatus.Платено, selectedYear));
+                ViewBag.Docs = App.FullMapper.Map<List<DocumentViewModel>>(await GetDocumentsByYear(buildingId, (int)PaymentStatus.Платено, selectedYear));
             }
             else
             {
@@ -407,7 +407,7 @@ namespace CleanHub.Controllers
             }
         }
 
-        public async Task<IActionResult> JustSetDocumentNotPayedStatus(int id,int? year,int? buildingId,int? paymentStatusId,string buildingName)
+        public async Task<IActionResult> JustSetDocumentNotPayedStatus(int id, int? year, int? buildingId, int? paymentStatusId, string buildingName)
         {
             {
                 if (id == null)
@@ -503,68 +503,103 @@ namespace CleanHub.Controllers
         }
 
         [Route("креирајФактураЗаСтанар")]
-        public async Task<IActionResult> CreateForCustomer(int? customerId)
+          public async Task<IActionResult> CreateForCustomer(int? customerId)
         {
             var documentViewModel = new DocumentViewModel();
+
+            // =========================
             // Kunden laden
+            // =========================
             var customers = _unitOfWork.Customers.GetAll()
                 .Select(x => new Customer
                 {
                     Id = x.Id,
                     CustomerInfo = x.CustomerInfo
-                }).ToList();
+                })
+                .ToList();
 
-            ViewBag.Customers = new SelectList(customers, "Id", "CustomerInfo", customerId);
+            // Fallback für Auswahl
+            var selectedCustomer = customers
+                .FirstOrDefault(x => x.Id == customerId)
+                ?? customers.FirstOrDefault();
 
-            // 👉 wenn kein Customer gewählt ist → nichts laden
+            ViewBag.SelectedCustomerName = selectedCustomer?.CustomerInfo;
+
+            // Firma setzen
+            documentViewModel.Company = _config.Value;
+
+            // =========================
+            // Dropdown setzen (immer!)
+            // =========================
+            ViewBag.Customers = new SelectList(
+                customers,
+                "Id",
+                "CustomerInfo",
+                selectedCustomer?.Id
+            );
+
+            // 👉 Wenn kein Kunde gewählt → nur leeres ViewModel zurückgeben
             if (!customerId.HasValue)
             {
                 return View(documentViewModel);
             }
 
-            ViewBag.Customers = new SelectList(
-                customers,
-                "Id",
-                "CustomerInfo",
-                customerId ?? customers.FirstOrDefault()?.Id
-            );
+            // =========================
+            // Customer inkl. Building laden
+            // =========================
+            var customer = _unitOfWork.Customers
+                .GetAll(include: inc => inc
+                    .Include(x => x.Building)
+                    .ThenInclude(x => x.BuildingProducts))
+                .FirstOrDefault(x => x.Id == customerId);
 
-            if (customerId.HasValue)
+            if (customer == null)
             {
-                var customer = _unitOfWork.Customers
-                 .GetAll(include: inc => inc
-                     .Include(x => x.Building)
-                     .ThenInclude(x => x.BuildingProducts))
-                 .FirstOrDefault(x => x.Id == customerId);
+                // optional: Fehler anzeigen oder einfach leeres View zurück
+                return View(documentViewModel);
+            }
 
-                if (customer != null)
+            documentViewModel.CustomerId = customerId;
+
+            // =========================
+            // Building mappen
+            // =========================
+            if (customer.Building != null)
+            {
+                documentViewModel.Building =
+                    App.FullMapper.Map<BuildingViewModel>(customer.Building);
+            }
+
+            // 👉 ABSICHERUNG (sehr wichtig!)
+            documentViewModel.Building ??= new BuildingViewModel();
+
+            // =========================
+            // Products laden wenn leer
+            // =========================
+            if (!(documentViewModel.Building.BuildingProducts?.Any() ?? false))
+            {
+                var products = await _unitOfWork.Products.GetAllAsync();
+
+                documentViewModel.Building.BuildingProducts =
+                    App.FullMapper.Map<List<BuildingProductViewModel>>(products);
+            }
+
+            // 👉 ReserveFund anwenden
+            var reserveFund = documentViewModel.Building.ReserveFund;
+
+            if (reserveFund != null)
+            {
+                foreach (var product in documentViewModel.Building.BuildingProducts
+                             .Where(p => p.ArticleNotes?.Contains("Резервен") == true))
                 {
-                    documentViewModel.CustomerId = customerId;
-                    //ЕКОНОМИЈА ДОО
-                    if (customer.Building != null)
-                    {
-                        documentViewModel.Building = App.FullMapper.Map<BuildingViewModel>(customer.Building);
-                        documentViewModel.BuildingId = documentViewModel.Building.Id;
-                    }
-                  
-                    if (!documentViewModel.Building?.BuildingProducts?.Any() == true)
-                    {
-                        documentViewModel.Building.BuildingProducts =
-                            App.FullMapper.Map<List<BuildingProductViewModel>>(await _unitOfWork.Products.GetAllAsync());
-                        foreach (var product in documentViewModel.Building.BuildingProducts.Where(p =>
-                                     p.ArticleNotes != null && p.ArticleNotes.Contains("Резервен")))
-                        {
-                            if (documentViewModel.Building.ReserveFund != null)
-                                product.Price = documentViewModel.Building.ReserveFund.Value;
-                        }
-                    }
+                    product.Price = reserveFund.Value;
                 }
             }
 
-            ViewBag.SelectedCustomerName =
-                customers.FirstOrDefault(x => x.Id == (customerId ?? customers.First().Id))?.CustomerInfo;
-
-            documentViewModel.Company = _config.Value;
+            // =========================
+            // BuildingId setzen
+            // =========================
+            documentViewModel.BuildingId = documentViewModel.Building.Id;
 
             return View(documentViewModel);
         }
@@ -579,7 +614,6 @@ namespace CleanHub.Controllers
              " " +
              documentViewModel.Date.Value.Year;
 
-
             var exists = _unitOfWork.Documents
                 .GetAll()
                 .Any(d => d.CustomerId == customer.Id && d.ToDocument == toDocument);
@@ -592,6 +626,7 @@ namespace CleanHub.Controllers
                 return RedirectToAction(nameof(CreateForCustomer),
                     new { customerId = customer.Id });
             }
+            documentViewModel.BuildingId = customer.BuildingId;
             var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(documentViewModel.BuildingId.Value).ToList();
             var buildingProdutsToRemove = documentViewModel.Building?.BuildingProducts
                 .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
@@ -689,7 +724,7 @@ namespace CleanHub.Controllers
             bool send = actionType == "send";
             return await PrintDocuments(new List<Document> { docEntity }, building, send);
         }
-        [HttpGet] 
+        [HttpGet]
         public async Task<IActionResult> CreateWithDate(int? id, int? buildingId, DateTime? date)
         {
             var formattedDate = date?.ToString("yyyy-MM-dd");
@@ -708,7 +743,7 @@ namespace CleanHub.Controllers
         /// <param name="buildingId"></param>
         /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> Create(int? id, int? buildingId,DateTime? date)
+        public async Task<IActionResult> Create(int? id, int? buildingId, DateTime? date)
         {
             var documentViewModel = new DocumentViewModel();
             ViewBag.RouteId = id;
@@ -824,7 +859,7 @@ namespace CleanHub.Controllers
                 }
             }
             ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", documentViewModel.Building.Id);
-            ViewBag.SelectedBuildingName = Buildings.FirstOrDefault(x=>x.Id == documentViewModel.Building.Id).Name;
+            ViewBag.SelectedBuildingName = Buildings.FirstOrDefault(x => x.Id == documentViewModel.Building.Id).Name;
             ViewBag.BuildingId = documentViewModel.Building.Id;
             var results = GetFilteredBookFinancials(1201, documentViewModel.Building.Id).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
@@ -1662,7 +1697,7 @@ namespace CleanHub.Controllers
             var startDate = new DateOnly();
             var endDate = new DateOnly();
 
-           
+
             var results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
             var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);

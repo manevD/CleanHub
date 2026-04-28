@@ -27,14 +27,13 @@
         result = message + "-" + difference;
     }
 }
+<link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet" />
 
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
             <div class="doc-container">
                 <form asp-action="CreateForCustomer" asp-controller="Documents" method="post" class="row" novalidate onsubmit="disableButtonTemporarily(this)">
-                    <input type="hidden" name="CustomerId" asp-for="@Model.CustomerId" />
-                    <input type="hidden" asp-for="@Model.BuildingId" />
                     <input type="hidden" id="actionTypeHidden" name="actionType" />
                     <div class="col-xl-9">
                         <div class="invoice-content">
@@ -89,7 +88,6 @@
 
                                     <div class="row justify-content-between">
                                         <div class="col-md-3">
-
                                             <div class="form-group mb-4">
                                                 <label for="date">Invoice Date</label>
                                                 <input type="text" class="form-control form-control-sm" id="date">
@@ -167,49 +165,63 @@
                                                     }
                                                 </tbody>
                                                 <tfoot>
-                                            </table>
-                                        </div>
-                                    </div>
-                                    @if (Model?.Building?.BuildingProducts?.Any() == true)
-                                    {
-                                        <div class="invoice-detail-total" style="text-align: right;">
-                                            <div class="invoice-summary-label" style="color:black;">Вкупно</div>
-                                            <div class="invoice-summary-value">
-                                                <div class="balance-due-amount">
-                                                    <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>
+                                                </table>
+                                                <div class="mt-2">
+                                                    <button type="button" class="btn btn-success" onclick="addRow()">
+                                                        ➕ Додај поле
+                                                    </button>
                                                 </div>
                                             </div>
                                         </div>
+                                        @if (Model?.Building?.BuildingProducts?.Any() == true)
+                                        {
+                                            <div class="invoice-detail-total" style="text-align: right;">
+                                                <div class="invoice-summary-label" style="color:black;">Вкупно</div>
+                                                <div class="invoice-summary-value">
+                                                    <div class="balance-due-amount">
+                                                        <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
                                     }
-                                }
-                                <div class="invoice-detail-note">
+                                    <div class="invoice-detail-note">
 
-                                    <div class="row">
+                                        <div class="row">
 
-                                        <div class="col-md-12 align-self-center">
+                                            <div class="col-md-12 align-self-center">
 
-                                            <div class="form-group row invoice-note">
-                                                <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Забелешки:</label>
-                                                <div class="col-sm-12">
-                                                    <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
+                                                <div class="form-group row invoice-note">
+                                                    <label for="invoice-detail-notes" class="col-sm-12 col-form-label col-form-label-sm">Забелешки:</label>
+                                                    <div class="col-sm-12">
+                                                        <textarea class="form-control" id="invoice-detail-notes" style="height: 200px;">
                                                         @plainTextNotice
                                                      </textarea>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
+                                        @Html.Raw("<b>" + @result + "</b>")
                                     </div>
-                                    @Html.Raw("<b>" + @result + "</b>")
                                 </div>
                             </div>
                         </div>
-                    </div>
-                    <div class="col-xl-3">
-                        <div class="invoice-actions">
-                            <div class="invoice-action-currency">
-                                <div class="form-group mb-0">
-                                    <label>Станар</label>
-                                    <div class="dropdown selectable-dropdown invoice-select">
-                                        <input class="form-control" list="customerOptions" id="customerSearch" name="customerName" placeholder="Пребарувај" value="@ViewBag.SelectedCustomerName">
+                        <div class="col-xl-3">
+                            <div class="invoice-actions">
+                                <div class="invoice-action-currency">
+                                    <div class="form-group mb-0">
+                                        <label>Станар</label>
+
+                                        <!-- sichtbares Suchfeld -->
+                                        <input class="form-control"
+                                               list="customerOptions"
+                                               id="customerSearch"
+                                               value="@ViewBag.SelectedCustomerName"
+                                               placeholder="Пребарувај..." />
+
+                                        <!-- echte ID (wird gepostet!) -->
+                                        <input type="hidden" asp-for="CustomerId" id="CustomerIdHidden" />
+
                                         <datalist id="customerOptions">
                                             @foreach (var customer in (IEnumerable<SelectListItem>)ViewBag.Customers)
                                             {
@@ -217,76 +229,113 @@
                                             }
                                         </datalist>
                                     </div>
-                                </div>
 
-                                <div class="invoice-action-discount">
-                                    <h5>За месец :</h5>
-                                    <div class="invoice-action-discount-fields">
-                                        <div class="row">
-                                            <div class="col-12">
-                                                <div class="form-group mb-0">
-                                                    <input asp-for="Date" id="invoiceDate" class="form-control form-control-sm" type="date" />
+                                    <div class="invoice-action-discount">
+                                        <h5>За месец :</h5>
+                                        <div class="invoice-action-discount-fields">
+                                            <div class="row">
+                                                <div class="col-12">
+                                                    <div class="form-group mb-0">
+                                                        <input asp-for="Date" id="invoiceDate" class="form-control form-control-sm" type="date" />
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
 
-                                <div class="invoice-actions-btn">
-                                    <div class="invoice-action-btn">
-                                        <div class="row">
-                                            <div class="col-xl-12 col-md-4">
-                                                <button type="submit"
-                                                        data-action="print"
-                                                        class="btn btn-primary submit-btn"
-                                                        disabled>
-                                                    Зачувај и принтај
-                                                </button>
+                                    <div class="invoice-actions-btn">
+                                        <div class="invoice-action-btn">
+                                            <div class="row">
+                                                <div class="col-xl-12 col-md-4">
+                                                    <button type="submit"
+                                                            data-action="print"
+                                                            class="btn btn-primary submit-btn"
+                                                            disabled>
+                                                        Зачувај и принтај
+                                                    </button>
 
-                                                <button type="submit"
-                                                        data-action="send"
-                                                        class="btn btn-primary submit-btn"
-                                                        disabled>
-                                                    Зачувај, прати и принтај
-                                                </button>
+                                                    <button type="submit"
+                                                            data-action="send"
+                                                            class="btn btn-primary submit-btn"
+                                                            disabled>
+                                                        Зачувај, прати и принтај
+                                                    </button>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                </form>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-</div>
-<div class="modal fade" id="invoiceExistsModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Известување</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p id="invoiceExistsMessage"></p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+    <div class="modal fade" id="invoiceExistsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Известување</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p id="invoiceExistsMessage"></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Затвори</button>
+                </div>
             </div>
         </div>
     </div>
-</div>
-@section Scripts {
-    @{
-        await Html.RenderPartialAsync("_ValidationScriptsPartial");
-    }
+    @section Scripts {
+        @{
+            await Html.RenderPartialAsync("_ValidationScriptsPartial");
+        }
+        <script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
         <script>
+            document.addEventListener('DOMContentLoaded', function () {
 
-            // ================= GLOBAL =================
+                // ===== PRICE CALC INIT =====
+                const rows = document.querySelectorAll('.item-table tbody tr');
+                rows.forEach(row => attachEvents(row));
+                updatePriceWithTaxTotal();
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
 
-            function calculatePrice(row) {
+                new TomSelect("#customerSelect", {
+                    placeholder: "Пребарувај станар...",
+                    allowEmptyOption: true,
+                    create: false,
+                    maxOptions: 500,
+                    searchField: ['text'],
+                    sortField: {
+                        field: "text",
+                        direction: "asc"
+                    }
+                });
+
+            });
+        </script>
+        <script>
+            // ================= HELPERS =================
+
+            function parseNumber(val) {
+                if (!val) return 0;
+                return parseFloat(val.toString().replace(',', '.')) || 0;
+            }
+
+            function formatNumber(val) {
+                return (val || 0).toFixed(2).replace('.', ',');
+            }
+
+
+            // ================= CALCULATE =================
+
+                       function calculatePrice(row, source) {
 
                 const priceInput = row.querySelector('input[id^="Price_"]');
                 const taxInput = row.querySelector('input[id^="Tax_"]');
@@ -296,27 +345,27 @@
 
                 const customerCount = @(Model?.Building?.Customers?.Count ?? 0);
 
-                let total = parseFloat((totalInput?.value || "0").replace(',', '.')) || 0;
+                let total = parseNumber(totalInput?.value);
+                let price = parseNumber(priceInput?.value);
+                let tax = parseNumber(taxInput?.value);
 
-                if (total > 0) {
-                    let pricePerCustomer = customerCount > 0 ? total / customerCount : total;
-                    priceInput.value = pricePerCustomer.toFixed(2);
+                if (source === "total" && total > 0) {
+                    price = customerCount > 0 ? total / customerCount : total;
+                    priceInput.value = formatNumber(price);
                 }
 
-                let price = parseFloat((priceInput?.value || "0").replace(',', '.')) || 0;
-                let tax = parseFloat((taxInput?.value || "0").replace(',', '.')) || 0;
-
                 let priceWithTax = tax === 0 ? price : price + (price * tax / 100);
+                            if (priceWithTaxInput)
+                priceWithTaxInput.value = formatNumber(priceWithTax);
 
-                if (priceWithTaxInput)
-                    priceWithTaxInput.value = priceWithTax.toFixed(2);
-
-                if (priceWithTaxTotal)
-                    priceWithTaxTotal.value = priceWithTax.toFixed(2);
+            if (priceWithTaxTotal)
+                priceWithTaxTotal.value = formatNumber(priceWithTax);
 
                 updatePriceWithTaxTotal();
             }
 
+
+            // ================= TOTAL =================
 
             function updatePriceWithTaxTotal() {
 
@@ -328,24 +377,13 @@
                     const el = row.querySelector('input[id^="PriceWithTaxTotal_"]');
                     if (!el) return;
 
-                    let val = parseFloat((el.value || "0").replace(',', '.')) || 0;
+                    let val = parseNumber(el.value);
                     totalSum += val;
                 });
 
-                document.querySelector('#totalPriceWithTax').innerText = totalSum.toFixed(2);
+                document.querySelector('#totalPriceWithTax').innerText =
+                    totalSum.toFixed(2).replace('.', ',');
             }
-
-
-            // ================= INIT =================
-
-            document.addEventListener('DOMContentLoaded', function () {
-
-                const rows = document.querySelectorAll('.item-table tbody tr');
-
-                rows.forEach(row => attachEvents(row));
-
-                updatePriceWithTaxTotal();
-            });
 
 
             // ================= EVENTS =================
@@ -356,17 +394,25 @@
                 const totalInput = row.querySelector('input[id^="Total_"]');
                 const taxInput = row.querySelector('input[id^="Tax_"]');
 
-                priceInput?.addEventListener('input', () => calculatePrice(row));
-                totalInput?.addEventListener('input', () => calculatePrice(row));
-                taxInput?.addEventListener('input', () => calculatePrice(row));
+                priceInput?.addEventListener('input', () => calculatePrice(row, "price"));
+                totalInput?.addEventListener('input', () => calculatePrice(row, "total"));
+                taxInput?.addEventListener('input', () => calculatePrice(row, "tax"));
 
-                calculatePrice(row);
-            }
+                // 👉 FORMAT само на blur
+                [priceInput, totalInput, taxInput].forEach(input => {
+                    input?.addEventListener('blur', () => {
+                        let val = parseNumber(input.value);
+                        input.value = formatNumber(val);
+                    });
+                });
+
+                calculatePrice(row, "init");
+                }
 
 
             // ================= ADD ROW =================
 
-            let rowIndex = @(Model?.Building?.BuildingProducts.Count);
+            let rowIndex = document.querySelectorAll('.item-table tbody tr').length;
 
             function addRow() {
 
@@ -375,235 +421,189 @@
                 const newRow = document.createElement("tr");
 
                 newRow.innerHTML = `
+
                     <td class="description">
+                        <input type="hidden"
+                               name="Building.BuildingProducts[${rowIndex}].IsNew"
+                               value="true" />
+
                         <input type="text"
                                name="Building.BuildingProducts[${rowIndex}].ArticleNotes"
-                               class="form-control form-control-sm" />
+                               class="form-control form-control-sm article-notes" />
                     </td>
 
-                    <td class="rate">
+                    <td>
                         <input type="text"
                                name="Building.BuildingProducts[${rowIndex}].UnitOfMeasurement"
-                               class="form-control form-control-sm" />
+                               class="form-control form-control-sm" value="бр."/>
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                name="Building.BuildingProducts[${rowIndex}].Quantity"
-                               class="form-control form-control-sm" />
+                               class="form-control form-control-sm" value="1" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="Price_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Price"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="Tax_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Tax"
-                               value="18"
+                               value="0"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="PriceWithTax_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].PriceWithTax"
                                class="form-control form-control-sm"
                                readonly />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="Total_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].Total"
                                class="form-control form-control-sm" />
                     </td>
 
-                    <td class="rate">
-                        <input type="number"
+                    <td>
+                        <input type="text"
                                id="PriceWithTaxTotal_${rowIndex}"
                                name="Building.BuildingProducts[${rowIndex}].PriceWithTaxTotal"
                                class="form-control form-control-sm"
                                readonly />
                     </td>
-                                <td>
-                 <button type="button" class="btn btn-danger btn-sm" onclick="deleteRow(this)">
-                    ❌
-                </button>
-                </td>
                 `;
 
                 tbody.appendChild(newRow);
-
                 attachEvents(newRow);
-
                 rowIndex++;
             }
 
         </script>
-        <script>
-            function deleteRow(button) {
+        <script id="showInvoiceExistsModal">
+            document.addEventListener("DOMContentLoaded", function () {
 
-                const row = button.closest("tr");
+                const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["InvoiceExists"]));
 
-                if (!row) return;
+                if (message) {
 
-                row.remove();
+                    const messageElement = document.getElementById("invoiceExistsMessage");
+                    if (messageElement) {
+                        messageElement.innerText = message;
+                    }
 
-                // update total after delete
-                updatePriceWithTaxTotal();
-            }
-        </script>
-        <script>
-               document.getElementById("customerSearch").addEventListener("input", function () {
+                    const modalElement = document.getElementById("invoiceExistsModal");
+                    const modal = new bootstrap.Modal(modalElement);
 
-            const customerSearchValue = this.value;
-            let selectedId = null;
-
-            const options = document.querySelectorAll('#customerOptions option');
-
-            options.forEach(option => {
-                if (option.value === customerSearchValue) {
-                    selectedId = option.getAttribute('data-id');
+                    modal.show();
                 }
+
             });
+        </script>
 
-            // wenn kein Kunde gewählt → nichts machen
-            if (!selectedId) return;
+        <script>
+                         document.addEventListener("DOMContentLoaded", function () {
 
-            // GET Methode erneut aufrufen
-            const url = '@Url.Action("CreateForCustomer", "Documents")' + '?customerId=' + selectedId;
+                const dateInput = document.getElementById("invoiceDate");
 
-            window.location.href = url;
-        });
+                if (!dateInput) return;
 
-    </script>
+                dateInput.addEventListener("change", function () {
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            // Alle Formulare beobachten
-            document.querySelectorAll("form").forEach(form => {
-                form.addEventListener("submit", () => {
-                    // Alle Submit-Buttons in diesem Formular deaktivieren
-                    const buttons = form.querySelectorAll('[type="submit"]');
-                    buttons.forEach(btn => {
-                        btn.disabled = true;
-                        const originalText = btn.innerText || btn.value;
-                        btn.dataset.originalText = originalText; // speichern
+                    const dateValue = this.value;
+                    if (!dateValue) return;
 
-                        if (btn.tagName.toLowerCase() === "button") {
-                            btn.innerText = "⏳ Ве молиме почекајте...";
-                        } else {
-                            btn.value = "⏳ Ве молиме почекајте...";
-                        }
-                        btn.classList.add("opacity-50");
+                    const date = new Date(dateValue);
+
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const year = date.getFullYear();
+
+                    const formatted = month + "." + year;
+
+                    document.querySelectorAll(".article-notes").forEach(function (input) {
+
+                        let baseText = input.value.split(" ").slice(0, -1).join(" ");
+
+                        if (baseText === "")
+                            baseText = input.value;
+
+                        input.value = baseText + " " + formatted;
                     });
 
-                    // Nach 15 Sekunden wieder aktivieren
-                    setTimeout(() => {
-                        buttons.forEach(btn => {
-                            btn.disabled = false;
-                            if (btn.tagName.toLowerCase() === "button") {
-                                btn.innerText = btn.dataset.originalText;
-                            } else {
-                                btn.value = btn.dataset.originalText;
-                            }
-                            btn.classList.remove("opacity-50");
-                        });
-                    }, 15000);
-                });
-            });
-        });
-
-    </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const invoiceDate = document.getElementById("invoiceDate");
-
-            if (!invoiceDate) return;
-
-            invoiceDate.addEventListener("change", function () {
-
-                const dateValue = this.value;
-                if (!dateValue) return;
-
-                const date = new Date(dateValue);
-
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const year = date.getFullYear();
-
-                const formatted = month + "." + year;
-
-                document.querySelectorAll(".article-notes").forEach(function (input) {
-
-                    let baseText = input.value.replace(/\d{2}\.\d{4}$/, "").trim();
-
-                    input.value = baseText + " " + formatted;
-
                 });
 
             });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
 
-        });
-    </script>
+                           const hidden = document.getElementById("actionTypeHidden");
 
-    <script id="toggleSubmitButtons">
-        document.addEventListener("DOMContentLoaded", function () {
+                       document.querySelectorAll(".submit-btn").forEach(btn => {
+                btn.addEventListener("click", function () {
+                    const hidden = document.getElementById("actionTypeHidden");
+                    if (hidden) {
+                        hidden.value = this.dataset.action;
+                    }
+                });
+            });
 
-            const dateInput = document.getElementById("invoiceDate");
-            const buttons = document.querySelectorAll(".submit-btn");
+            });
+        </script>
+        <script id="toggleSubmitButtons">
+            document.addEventListener("DOMContentLoaded", function () {
 
-            function toggleButtons() {
-                if (dateInput.value) {
-                    buttons.forEach(btn => btn.disabled = false);
-                } else {
-                    buttons.forEach(btn => btn.disabled = true);
-                }
-            }
+                const dateInput = document.getElementById("invoiceDate");
+                const buttons = document.querySelectorAll(".submit-btn");
 
-            // beim Laden prüfen
-            toggleButtons();
-
-            // wenn Datum geändert wird
-            dateInput.addEventListener("change", toggleButtons);
-
-        });
-    </script>
-    <script id="showInvoiceExistsModal">
-        document.addEventListener("DOMContentLoaded", function () {
-
-            const message = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(TempData["InvoiceExists"]));
-
-            if (message) {
-
-                const messageElement = document.getElementById("invoiceExistsMessage");
-                if (messageElement) {
-                    messageElement.innerText = message;
+                function toggleButtons() {
+                    if (dateInput.value) {
+                        buttons.forEach(btn => btn.disabled = false);
+                    } else {
+                        buttons.forEach(btn => btn.disabled = true);
+                    }
                 }
 
-                const modalElement = document.getElementById("invoiceExistsModal");
-                const modal = new bootstrap.Modal(modalElement);
+                // beim Laden prüfen
+                toggleButtons();
 
-                modal.show();
+                // wenn Datum geändert wird
+                dateInput.addEventListener("change", toggleButtons);
+
+            });
+        </script>
+        <script>
+            document.addEventListener("DOMContentLoaded", function () {
+
+            const input = document.getElementById("customerSearch");
+            const hidden = document.getElementById("CustomerIdHidden");
+
+            input.addEventListener("input", function () {
+
+            let selectedId = null;
+
+            document.querySelectorAll('#customerOptions option').forEach(option => {
+            if (option.value === this.value) {
+            selectedId = option.getAttribute('data-id');
             }
+            });
 
-        });
-    </script>
-    <script>
-document.addEventListener("DOMContentLoaded", function () {
-    const hidden = document.getElementById("actionTypeHidden");
+            if (selectedId) {
+            hidden.value = selectedId;
+            } else {
+            hidden.value = ""; // wichtig!
+            }
+            });
 
-    document.querySelectorAll(".submit-btn").forEach(btn => {
-        btn.addEventListener("click", function () {
-            hidden.value = this.dataset.action;
-        });
-    });
-});
-</script>s
-  
-}
+            });
+        </script>
+    }
