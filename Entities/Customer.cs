@@ -38,6 +38,6 @@ public partial class Customer
     public List<Document>? Documents { get; set; }
     public bool SetCost { get; set; }
     public int? Saldo { get; set; }
+    public int? Saldo1201 { get; set; }
     public string? SubscriptionDescription { get; set; }
-
 }

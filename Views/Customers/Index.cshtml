@@ -60,10 +60,8 @@
                                 @Html.DisplayFor(modelItem => item.Subscription)
                             </td>
                             <td>
-                                @{
-                                    bool garageChecked = item?.Garage ?? false; // Standardwert false, falls null
-                                }
-                                @Html.CheckBoxFor(modelItem => garageChecked)                            </td>
+                                     @Html.CheckBoxFor(modelItem => item.Garage, new { @disabled = "disabled" })
+                           </td>
                             <td>
                                 @Html.CheckBoxFor(modelItem => item.Inactive, new { @disabled = "disabled" })
                             </td>
