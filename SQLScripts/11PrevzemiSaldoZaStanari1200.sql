@@ -1,7 +1,5 @@
-
-
 UPDATE c
-SET c.Saldo = ISNULL(d.SumVkupnoIz, 0) - ISNULL(k.SumPobaruva, 0)
+SET c.Saldo = ISNULL(k.SumPobaruva, 0) - ISNULL(d.SumVkupnoIz, 0)
 FROM [2026MartiNew].dbo.Customers c
 OUTER APPLY (
     SELECT SUM(VkupnoIz) AS SumVkupnoIz

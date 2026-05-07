@@ -78,13 +78,13 @@ namespace CleanHub.Controllers
             if (buildingId.HasValue)
             {
                 ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", buildingId.Value);
-                ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault(x=>x.Id == buildingId.Value).Name;
+                ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault(x => x.Id == buildingId.Value).Name;
 
                 ViewBag.BuildingId = buildingId.Value;
-                customers =  _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == buildingId.Value)).ToList();
+                customers = _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == buildingId.Value)).ToList();
                 return View(customers);
             }
-            ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name",1);
+            ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", 1);
             ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault().Name;
 
             ViewBag.BuildingId = 1;
@@ -223,21 +223,48 @@ namespace CleanHub.Controllers
                         Owes = filteredDocuments.Sum(bf => bf.TotalOutput ?? 0),
                         Demands = filteredFinancials.Sum(bf => bf.Demands)
                     };
-
+                    if (customer.Saldo.HasValue )
+                    {
+                        if (customer.Saldo.Value < 0)
+                        {
+                            buildingFinanceCard.Owes += Math.Abs(customer.Saldo.Value);
+                        }
+                        else
+                        {
+                            buildingFinanceCard.Demands += Math.Abs(customer.Saldo.Value);
+                        }
+                    }
+                   
                     cardsViewModel.BuildingFinanceCardViewModels.Add(buildingFinanceCard);
                 }
 
-                cardsViewModel.CustomerOwesTotal = customers
-                    .SelectMany(x => x.Documents)
-                    .Where(d => (!DateFrom.HasValue || d.Date >= DateFrom.Value) &&
-                                (!DateTo.HasValue || d.Date <= DateTo.Value))
-                    .Sum(d => d.TotalOutput ?? 0);
+                cardsViewModel.CustomerOwesTotal =
+     customers
+         .SelectMany(x => x.Documents)
+         .Where(d => (!DateFrom.HasValue || d.Date >= DateFrom.Value) &&
+                     (!DateTo.HasValue || d.Date <= DateTo.Value))
+         .Sum(d => d.TotalOutput ?? 0)
 
-                cardsViewModel.CustomerDemandsTotal = (float)customers
-                    .SelectMany(x => x.BookFinancials)
-                    .Where(d => (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
-                                (!DateTo.HasValue || d.DatumF <= DateTo.Value))
-                    .Sum(d => d.Demands);
+     +
+
+     customers
+         .Where(c => c.Saldo.HasValue && c.Saldo.Value < 0)
+         .Sum(c => Math.Abs(c.Saldo.Value));
+
+
+
+                cardsViewModel.CustomerDemandsTotal =
+                    customers
+                        .SelectMany(x => x.BookFinancials)
+                        .Where(d => (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
+                                    (!DateTo.HasValue || d.DatumF <= DateTo.Value))
+                        .Sum(d => d.Demands)
+
+                    +
+
+                    customers
+                        .Where(c => c.Saldo.HasValue && c.Saldo.Value > 0)
+                        .Sum(c => Math.Abs(c.Saldo.Value));
             }
 
             if (cardsViewModel.BuildingFinancial != null && cardsViewModel.BuildingFinancial.Any())
@@ -317,7 +344,44 @@ namespace CleanHub.Controllers
                         NumberNalog = cc.OrderN ?? 0
                     })
                     .ToList();
+                if (customer.Saldo.HasValue && customer.Saldo != 0)
+                {
+                    if (customer.Saldo < 0)
+                    {
+                        dataBookFinancial.Add(new CustomerDataDTO
+                        {
+                            Description = "салдо",
+                            Owes = Math.Abs(customer.Saldo.Value),
+                            Demands = 0,
+                            DocumentTyp = "затварање",
+                            Date = new DateOnly(2026, 1, 1),
+                            Number = 0,
+                            DontSum = true
+                        });
+                    }
+                    else
+                    {
+                        dataBookFinancial.Add(new CustomerDataDTO
+                        {
+                            Description = "салдо",
+                            Owes = 0,
+                            Demands = customer.Saldo.Value,
+                            DocumentTyp = "затварање",
+                            Date = new DateOnly(2021, 1, 1),
+                            Number = 0,
+                            DontSum = true
+                        });
+                    }
+                }
 
+                //if (newBookFinancialFromSaldo.Demands > 0)
+                //{
+                //    cardsViewModel.CustomerDemandsTotal += newBookFinancialFromSaldo.Demands;
+                //}
+                //else
+                //{
+                //    cardsViewModel.CustomerOwesTotal += (float)newBookFinancialFromSaldo.Owes;
+                //}
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
                 cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum && x.Date >= new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
@@ -380,7 +444,6 @@ namespace CleanHub.Controllers
                     DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                     ViewBag.DateTo = DateTo;
                 }
-
                 var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
                     .Where(x =>
                         x.CustomerId == customerId &&
@@ -388,12 +451,27 @@ namespace CleanHub.Controllers
                         (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                     .ToList();
+                var newBookFinancialFromSaldo =
+                    new BookFinancial
+                    {
+                        Description = "салдо",
+                        InvoiceId = (int)InvoiceTyp.Reserve,
+
+                        Demands = customer.Saldo1201.HasValue && customer.Saldo1201 < 0
+                    ? Math.Abs(customer.Saldo1201.Value)
+                      : 0,
+
+
+                        Owes = customer.Saldo1201.HasValue && customer.Saldo1201 > 0
+                    ? customer.Saldo1201.Value : 0
+                    };
+                rawFinancials.Add(newBookFinancialFromSaldo);
 
                 bookFinancials = rawFinancials
                     .Select(bf => new BookFinancialViewModel
                     {
                         Description = bf.Description,
-                        InvoiceId = (int)InvoiceTyp.Reserve,
+                        InvoiceId = bf.InvoiceId,
                         Owes = bf.Owes,
                         Demands = bf.Demands,
                         DatumF = bf.DatumF
@@ -410,6 +488,15 @@ namespace CleanHub.Controllers
                     .GetAllNoTrakcing()
                     .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
                     .Sum(x => x.Owes);
+
+                if (newBookFinancialFromSaldo.Demands > 0)
+                {
+                    cardsViewModel.CustomerDemandsTotal += newBookFinancialFromSaldo.Demands;
+                }
+                else
+                {
+                    cardsViewModel.CustomerOwesTotal += (float)newBookFinancialFromSaldo.Owes;
+                }
             }
 
             cardsViewModel.CustomerFinanfical = bookFinancials;
