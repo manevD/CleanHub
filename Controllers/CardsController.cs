@@ -129,7 +129,20 @@ namespace CleanHub.Controllers
                             (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                             (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                         .ToList();
+           //         var newBookFinancialFromSaldo = new BookFinancial
+           //         {
+           //             Description = "салдо",
+           //             InvoiceId = (int)InvoiceTyp.Reserve,
 
+           //             Demands = building.Customers
+           //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 < 0)
+           //.Sum(x => Math.Abs(x.Saldo1201.Value)),
+
+           //             Owes = building.Customers
+           //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 > 0)
+           //.Sum(x => x.Saldo1201.Value)
+           //         };
+           //         rawFinancials.Add(newBookFinancialFromSaldo);
                     bookFinancials = rawFinancials
                         .Select(bf => new BookFinancialViewModel
                         {
@@ -161,7 +174,6 @@ namespace CleanHub.Controllers
                         .OrderBy(x => x.DatumF)
                         .ToList();
                 }
-
             }
             return View(cardsViewModel);
         }

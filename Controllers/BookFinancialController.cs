@@ -100,7 +100,7 @@ namespace CleanHub.Controllers
                 ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
                 ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
                 ViewBag.SelectedBuildingName = building.Name;
-              
+
                 ViewBag.BuildingId = building.Id;
                 return View(results.OrderBy(x => x.DatumF));
             }
@@ -161,10 +161,34 @@ namespace CleanHub.Controllers
                     return RedirectToAction(nameof(Index));
                 }
 
-                building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+                building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value, inc => inc.Include(cs=> cs.Customers));
                 if (building != null)
                 {
+
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
+                    var resultToAdd = new BookFinancialInfoViewModel();
+                    var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == building.CustomerRefId);
+
+                    if (building.CustomerRefId != null && invoiceId == (int)InvoiceTyp.Reserve)
+                    {
+                        resultToAdd.InvoiceId = 1201;
+                        resultToAdd.Description = "салдо";
+                        resultToAdd.Owes = (customer?.Saldo1201 ?? 0) < 0? Math.Abs((double)(customer?.Saldo1201 ?? 0)): 0;
+
+                        resultToAdd.Demands = (customer?.Saldo1201 ?? 0) > 0 ? (double)(customer?.Saldo1201 ?? 0): 0;
+                        resultToAdd.DatumF = new DateOnly(2026, 1, 1);
+                        results.Add(resultToAdd);
+                    }
+                    else if(building.CustomerRefId != null)
+                    {
+                        resultToAdd.InvoiceId = 1200;
+                        resultToAdd.Description = "салдо";
+                        resultToAdd.Owes = (customer?.Saldo ?? 0) < 0 ? Math.Abs((double)(customer?.Saldo ?? 0)) : 0;
+
+                        resultToAdd.Demands = (customer?.Saldo ?? 0) > 0 ? (double)(customer?.Saldo ?? 0) : 0;
+                        resultToAdd.DatumF = new DateOnly(2026, 1, 1);
+                        results.Add(resultToAdd);
+                    }
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
@@ -172,203 +196,203 @@ namespace CleanHub.Controllers
                     //{
                     //    CalculateOverdueStatus(results);
                     //}
-                }
-                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
-                ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
-                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
-                ViewBag.SelectedBuildingName = building.Name;
-                ViewBag.BuildingId = building.Id;
-                return View("Index", results.OrderBy(x => x.DatumF));
             }
+                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+            ViewBag.InvoiceTypList = GetEnumSelectList<InvoiceTyp>().Where(x => x.Text != "Струја").ToList();
+            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+            ViewBag.SelectedBuildingName = building.Name;
+            ViewBag.BuildingId = building.Id;
+            return View("Index", results.OrderBy(x => x.DatumF));
+        }
             catch (Exception e)
             {
                 throw e;
             }
-        }
+}
 
-        private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
+private void FilterResultsByDate(ref List<BookFinancialInfoViewModel> results, string dateFrom, string dateTo, int invoiceId, int? paymentStatusId)
+{
+    DateOnly? DateFrom = null;
+    DateOnly? DateTo = null;
+
+    if (!string.IsNullOrEmpty(dateFrom))
+    {
+        DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
+        ViewBag.DateFrom = DateFrom;
+    }
+
+    if (!string.IsNullOrEmpty(dateTo))
+    {
+        DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+        ViewBag.DateTo = DateTo;
+    }
+
+    if (invoiceId == (int)InvoiceTyp.Reserve)
+    {
+        results = results
+            .Where(x =>
+                (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                (!DateTo.HasValue || x.DatumF <= DateTo.Value)).ToList();
+    }
+    else
+    {
+        results = results
+            .Where(x =>
+                (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
+                (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
+                (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
+            .ToList();
+    }
+
+}
+
+//private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
+//{
+//    var today = DateOnly.FromDateTime(DateTime.Now);
+//    var resultFiltered =
+//        results.Where(x => x.Status == PaymentStatus.Неплатено || x.Status == PaymentStatus.Задоцнето);
+//    foreach (var doc in resultFiltered)
+//    {
+//        doc.Delay = today.DayNumber - doc.DatumF.DayNumber;
+//        doc.Status = doc.Delay > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
+
+//        double percentage = doc.Delay switch
+//        {
+//            < 0 => 0,
+//            < 30 => 0.02,
+//            <= 60 => 0.04,
+//            <= 90 => 0.06,
+//            <= 180 => 0.08,
+//            <= 360 => 0.10,
+//            <= 730 => 0.13,
+//            _ => 0.16
+//        };
+//        doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
+//    }
+//}
+
+[Route("Trosoci")]
+[HttpGet]
+public async Task<IActionResult> Costs()
+{
+    ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+    ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
+    return View();
+}
+public async Task<IActionResult> DeleteCosts(int id)
+{
+    var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == id);
+    if (cost != null)
+    {
+        _unitOfWork.BookFinancials.Delete(cost);
+        await _unitOfWork.SaveChangesAsync();
+    }
+
+    return RedirectToAction(nameof(Costs));
+}
+
+[Route("Trosoci")]
+[HttpPost]
+public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
+{
+    List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+    var building = new Building();
+    if (!buildingId.HasValue)
+    {
+        ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+        return RedirectToAction(nameof(Costs));
+    }
+
+    building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+    if (building != null)
+    {
+        results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
+        FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+        results = results.Where(x => x.Owes != 0).ToList();
+    }
+    else
+    {
+        return RedirectToAction(nameof(Costs));
+    }
+    ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+    ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+    ViewBag.SelectedBuildingName = building.Name;
+    if (!string.IsNullOrWhiteSpace(dateFrom))
+    {
+        if (DateOnly.TryParseExact(dateFrom, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedFrom))
         {
-            DateOnly? DateFrom = null;
-            DateOnly? DateTo = null;
-
-            if (!string.IsNullOrEmpty(dateFrom))
-            {
-                DateFrom = DateOnly.ParseExact(dateFrom, "dd.MM.yyyy", null);
-                ViewBag.DateFrom = DateFrom;
-            }
-
-            if (!string.IsNullOrEmpty(dateTo))
-            {
-                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
-                ViewBag.DateTo = DateTo;
-            }
-
-            if (invoiceId == (int)InvoiceTyp.Reserve)
-            {
-                results = results
-                    .Where(x =>
-                        (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                        (!DateTo.HasValue || x.DatumF <= DateTo.Value)).ToList();
-            }
-            else
-            {
-                results = results
-                    .Where(x =>
-                        (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
-                        (!paymentStatusId.HasValue || paymentStatusId == (int)PaymentStatus.Сите || (int)x.Status == paymentStatusId))
-                    .ToList();
-            }
-
+            ViewBag.DateFrom = parsedFrom;
         }
+    }
 
-        //private void CalculateOverdueStatus(List<BookFinancialInfoViewModel> results)
-        //{
-        //    var today = DateOnly.FromDateTime(DateTime.Now);
-        //    var resultFiltered =
-        //        results.Where(x => x.Status == PaymentStatus.Неплатено || x.Status == PaymentStatus.Задоцнето);
-        //    foreach (var doc in resultFiltered)
-        //    {
-        //        doc.Delay = today.DayNumber - doc.DatumF.DayNumber;
-        //        doc.Status = doc.Delay > 30 ? PaymentStatus.Задоцнето : PaymentStatus.Неплатено;
-
-        //        double percentage = doc.Delay switch
-        //        {
-        //            < 0 => 0,
-        //            < 30 => 0.02,
-        //            <= 60 => 0.04,
-        //            <= 90 => 0.06,
-        //            <= 180 => 0.08,
-        //            <= 360 => 0.10,
-        //            <= 730 => 0.13,
-        //            _ => 0.16
-        //        };
-        //        doc.NewTotal = (int)Math.Round(doc.Owes * (1 + percentage), MidpointRounding.AwayFromZero);
-        //    }
-        //}
-
-        [Route("Trosoci")]
-        [HttpGet]
-        public async Task<IActionResult> Costs()
+    if (!string.IsNullOrWhiteSpace(dateTo))
+    {
+        if (DateOnly.TryParseExact(dateTo, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedTo))
         {
-            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
-            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
-            return View();
+            ViewBag.DateTo = parsedTo;
         }
-        public async Task<IActionResult> DeleteCosts(int id)
-        {
-            var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == id);
-            if (cost != null)
-            {
-               _unitOfWork.BookFinancials.Delete(cost);
-               await _unitOfWork.SaveChangesAsync();
-            }
+    }
+    ViewBag.BuildingId = building.Id;
+    return View(results.OrderBy(x => x.DatumF));
+}
 
-            return RedirectToAction(nameof(Costs));
-        }
-        
-        [Route("Trosoci")]
-        [HttpPost]
-        public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, string? dateFrom, string? dateTo)
-        {
-            List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
-            var building = new Building();
-            if (!buildingId.HasValue)
-            {
-                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
-                return RedirectToAction(nameof(Costs));
-            }
+[HttpGet]
+public async Task<IActionResult> EditCosts(long? id)
+{
+    var cost = await _unitOfWork.BookFinancials
+.GetByIdAsync(x => x.Id == id);
 
-            building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
-            if (building != null)
-            {
-                results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
-                FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
-                results = results.Where(x => x.Owes != 0).ToList();
-            }
-            else
-            {
-                return RedirectToAction(nameof(Costs));
-            }
-            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
-            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
-            ViewBag.SelectedBuildingName = building.Name;
-            if (!string.IsNullOrWhiteSpace(dateFrom))
-            {
-                if (DateOnly.TryParseExact(dateFrom, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedFrom))
-                {
-                    ViewBag.DateFrom = parsedFrom;
-                }
-            }
-
-            if (!string.IsNullOrWhiteSpace(dateTo))
-            {
-                if (DateOnly.TryParseExact(dateTo, "dd.MM.yyyy", null, System.Globalization.DateTimeStyles.None, out var parsedTo))
-                {
-                    ViewBag.DateTo = parsedTo;
-                }
-            }
-            ViewBag.BuildingId = building.Id;
-            return View(results.OrderBy(x => x.DatumF));
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> EditCosts(long? id)
-        {
-            var cost = await _unitOfWork.BookFinancials
-        .GetByIdAsync(x => x.Id == id);
-
-            if (cost == null)
-                return NotFound();
+    if (cost == null)
+        return NotFound();
 
 
-            return PartialView("_EditCostModal", cost);
-        }
+    return PartialView("_EditCostModal", cost);
+}
 
-        // POST: customers/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> EditCosts(BookFinancial model)
-        {
-            if (model.Id == null || model.Id == 0)
-                return PartialView("_EditCostModal", model);
+// POST: customers/Edit/5
+// To protect from overposting attacks, enable the specific properties you want to bind to.
+// For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> EditCosts(BookFinancial model)
+{
+    if (model.Id == null || model.Id == 0)
+        return PartialView("_EditCostModal", model);
 
-            var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == model.Id);
-            if (cost == null)
-                return NotFound();
+    var cost = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.Id == model.Id);
+    if (cost == null)
+        return NotFound();
 
-            cost.Description = model.Description;
-            cost.Owes = model.Owes;
+    cost.Description = model.Description;
+    cost.Owes = model.Owes;
 
-            await _unitOfWork.SaveChangesAsync();
+    await _unitOfWork.SaveChangesAsync();
 
-            return Json(new { success = true });
-        }
+    return Json(new { success = true });
+}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetStatusPayment(int? id)
-        {
-            if (id == null || id == 0) return NotFound();
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<IActionResult> SetStatusPayment(int? id)
+{
+    if (id == null || id == 0) return NotFound();
 
-            var bookFinancialToUpdate = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.DocumentId == id);
-            if (bookFinancialToUpdate == null) return NotFound();
+    var bookFinancialToUpdate = await _unitOfWork.BookFinancials.GetByIdAsync(x => x.DocumentId == id);
+    if (bookFinancialToUpdate == null) return NotFound();
 
-            try
-            {
-                bookFinancialToUpdate.Status = PaymentStatus.Платено;
-                _unitOfWork.BookFinancials.Update(bookFinancialToUpdate);
-                await _unitOfWork.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_unitOfWork.BookFinancials.GetAll().Any(x => x.DocumentId == id)) return NotFound();
-                throw;  
-            }
+    try
+    {
+        bookFinancialToUpdate.Status = PaymentStatus.Платено;
+        _unitOfWork.BookFinancials.Update(bookFinancialToUpdate);
+        await _unitOfWork.SaveChangesAsync();
+    }
+    catch (DbUpdateConcurrencyException)
+    {
+        if (!_unitOfWork.BookFinancials.GetAll().Any(x => x.DocumentId == id)) return NotFound();
+        throw;
+    }
 
-            return RedirectToAction(nameof(Index));
-        }
+    return RedirectToAction(nameof(Index));
+}
     }
 }

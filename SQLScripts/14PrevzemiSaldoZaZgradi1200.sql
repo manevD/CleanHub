@@ -1,34 +1,12 @@
-
---UPDATE c
---SET c.Saldo1201 = -ISNULL(p.Dolzi, 0)
---FROM [2026MartiNew].dbo.Customers c
-
---INNER JOIN Partneri pr 
---    ON pr.PartnerID = c.Id
-
---LEFT JOIN
---(
---    SELECT 
---        PartnerID,
---        SUM(Dolzi) AS Dolzi
---    FROM KnigaF
---    WHERE SmetkaID = 1201
---    GROUP BY PartnerID
---) p 
---    ON p.PartnerID = pr.PartnerID
-
---WHERE pr.DejnostID = 2;
-
-
 UPDATE c
-SET c.Saldo1201 =
+SET c.Saldo =
 
     ISNULL
     (
         (
             SELECT SUM(k1.Pobaruva)
             FROM KnigaF k1
-            WHERE k1.SmetkaID = 1201
+            WHERE k1.SmetkaID = 1200
             AND k1.PartnerID IN
             (
                 SELECT p.PartnerID
@@ -46,8 +24,13 @@ SET c.Saldo1201 =
         (
             SELECT SUM(k2.Dolzi)
             FROM KnigaF k2
-            WHERE k2.SmetkaID = 1201
-            AND k2.PartnerID = po.OddelPartnerID
+            WHERE k2.SmetkaID = 1200
+            AND k2.PartnerID IN
+            (
+                SELECT p2.PartnerID
+                FROM Partneri p2
+                WHERE p2.OddelID = po.OddelID
+            )
         ),
         0
     )

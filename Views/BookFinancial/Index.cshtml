@@ -122,7 +122,7 @@
                 <tbody>
                     @if (Model != null && Model.Any())
                     {
-                        foreach (var invoice in Model.Where(x=> !x.Description.Contains("салдо")))
+                        foreach (var invoice in Model)
                         {
                             <tr role="row">
                                 <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>

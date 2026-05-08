@@ -7,23 +7,37 @@
 }
 
 <hr />
+
 <form asp-action="BuildingInvoice1200" asp-controller="Cards" method="get">
     <div class="row">
+
         @if (ViewBag.Buildings != null)
         {
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
+
                     <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
-                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
-                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
+                    <input class="form-control"
+                           list="buildingOptions"
+                           id="buildingSearch"
+                           name="buildingName"
+                           placeholder="Пребарувај"
+                           value="@ViewBag.SelectedBuildingName">
+
+                    <input type="hidden"
+                           id="buildingId"
+                           name="buildingId"
+                           value="@ViewBag.BuildingId">
 
                     <datalist id="buildingOptions">
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
-                            <option value="@building.Text" data-id="@building.Value"></option>
+                            <option value="@building.Text"
+                                    data-id="@building.Value"></option>
                         }
                     </datalist>
+
                 </div>
             </div>
         }
@@ -33,103 +47,197 @@
         }
 
     </div>
+
     <br />
+
     <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
         <div class="form-group mb-0">
-            <button type="submit" class="btn btn-primary">Пребарувај</button>
+            <button type="submit" class="btn btn-primary">
+                Пребарувај
+            </button>
         </div>
     </div>
 </form>
+
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-</br>
-<div class="statbox widget box box-shadow">
-    <div class="widget-content widget-content-area">
-        <table id="html5-extension" class="table dt-table-hover" style="width:100%">
-            <thead>
-                <th data-sorter="false">Бр.</th>
-                <th data-sorter="false">Партнер</th>
-                <th data-sorter="false">Побарува</th>
-                <th data-sorter="false">Должи</th>
-                <th data-sorter="false">Салдо</th>
-            </thead>
-            <tbody>
-                @if (Model != null && Model.Any())
-                {
-                    var allDocs = Model
-                        .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>());
 
-                    var totalDemands = allDocs
-                        .Where(x => x.PaymentStatus == PaymentStatus.Платено)
-                        .Sum(x => x.TotalOutput ?? 0);
+    <br />
 
-                    var totalOwes = allDocs
-                        .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
-                        .Sum(x => x.TotalOutput ?? 0);
+    <div class="statbox widget box box-shadow">
 
-                    var counter = 0;
+        <div class="widget-content widget-content-area">
 
-                    @foreach (var customer in Model.OrderBy(x => x.Id))
+            <table id="html5-extension"
+                   class="table dt-table-hover"
+                   style="width:100%">
+
+                <thead>
+                    <tr>
+                        <th data-sorter="false">Бр.</th>
+                        <th data-sorter="false">Партнер</th>
+                        <th data-sorter="false">Побарува</th>
+                        <th data-sorter="false">Должи</th>
+                        <th data-sorter="false">Салдо</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+
+                    @if (Model != null && Model.Any())
                     {
-                        var docs = customer.Documents ?? Enumerable.Empty<Document>();
+                        var allDocs = Model
+                            .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>());
 
-                        var dolzi = docs
-                            .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
-                            .Sum(x => x.TotalOutput ?? 0);
-
-                        var pobaruva = docs
+                        // Вкупно Побарува
+                        var totalDemands = allDocs
                             .Where(x => x.PaymentStatus == PaymentStatus.Платено)
                             .Sum(x => x.TotalOutput ?? 0);
 
-                        var saldo = pobaruva - dolzi;
+                        totalDemands += Model
+                            .Where(x => x.Saldo > 0)
+                            .Sum(x => Math.Abs((float)x.Saldo));
 
-                        counter++;
+                        // Вкупно Должи
+                        var totalOwes = allDocs
+                            .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                            .Sum(x => x.TotalOutput ?? 0);
 
+                        totalOwes += Model
+                            .Where(x => x.Saldo < 0)
+                            .Sum(x => Math.Abs((float)x.Saldo));
+
+                        // Разлика
+                        var totalDifference = totalDemands - totalOwes;
+
+                        var counter = 0;
+
+                        @foreach (var customer in Model.OrderBy(x => x.Id))
+                        {
+                            var docs = customer.Documents
+                                ?? Enumerable.Empty<Document>();
+
+                            // Должи
+                            var dolzi = docs
+                                .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                                .Sum(x => x.TotalOutput ?? 0);
+
+                            if (customer.Saldo < 0)
+                            {
+                                dolzi += Math.Abs((float)customer.Saldo);
+                            }
+
+                            // Побарува
+                            var pobaruva = docs
+                                .Where(x => x.PaymentStatus == PaymentStatus.Платено)
+                                .Sum(x => x.TotalOutput ?? 0);
+
+                            if (customer.Saldo > 0)
+                            {
+                                pobaruva += Math.Abs((float)customer.Saldo);
+                            }
+
+                            // Салдо
+                            var saldo = pobaruva - dolzi;
+
+                            counter++;
+
+                            <tr>
+
+                                <td>@counter</td>
+
+                                <td>
+                                    @customer.CustomerInfo
+                                </td>
+
+                                <td>
+                                    @pobaruva.ToString("0.00") МКД
+                                </td>
+
+                                <td>
+                                    @dolzi.ToString("0.00") МКД
+                                </td>
+
+                                <td style="color:@(saldo < 0 ? "red" : "green");
+                                    font-weight:bold;">
+
+                                    @saldo.ToString("+0.00;-0.00;0.00")
+
+                                </td>
+
+                            </tr>
+                        }
+
+                        <tr style="font-weight:bold;
+                            background:#f1f1f1;">
+
+                            <td>Вкупно</td>
+
+                            <td></td>
+
+                            <td>
+                                Побарува :
+                                @totalDemands.ToString("0.00") МКД
+                            </td>
+
+                            <td>
+                                Должи :
+                                @totalOwes.ToString("0.00") МКД
+                            </td>
+
+                            <td style="color:@(totalDifference < 0 ? "red" : "green");
+                                font-weight:bold;">
+
+                                Разлика :
+                                @totalDifference.ToString("+0.00;-0.00;0.00")
+
+                            </td>
+
+                        </tr>
+                    }
+                    else
+                    {
                         <tr>
-                            <td>@counter</td>
-                            <td>@customer.CustomerInfo</td>
-                            <td>@pobaruva МКД</td>
-                            <td>@dolzi МКД</td>
-                            <td style="color:@(saldo < 0 ? "red" : "green")">
-                                @(saldo.ToString("+0.00;-0.00;0"))
+                            <td colspan="5"
+                                class="text-center">
+                                Нема пронајдени податоци
                             </td>
                         </tr>
                     }
 
-                    <tr style="font-weight:bold; background:#f1f1f1">
-                        <td>Вкупно</td>
-                        <td></td>
-                        <td>Побарува : @totalDemands МКД</td>
-                        <td>Должи : @totalOwes МКД</td>
-                        <td style="color:@((totalDemands - totalOwes) < 0 ? "red" : "green")">
-                            Разлика : @( (totalDemands - totalOwes).ToString("+0.00;-0.00;0") )
-                        </td>
-                    </tr>
-                }
-                else
-                {
-                    <tr>
-                        <td colspan="5" class="text-center">Нема пронајдени податоци</td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
-</div>
-</div>
-<script>
-    document.getElementById('buildingSearch').addEventListener('input', function () {
-        const selectedValue = this.value;
-        const options = document.querySelectorAll('#buildingOptions option');
-        let selectedId = '';
+                </tbody>
 
-        // Find the matching option and get its data-id
-        options.forEach(option => {
-            if (option.value === selectedValue) {
-                selectedId = option.getAttribute('data-id');
-            }
+            </table>
+
+        </div>
+
+    </div>
+
+</div>
+
+<script>
+
+    document.getElementById('buildingSearch')
+        .addEventListener('input', function () {
+
+            const selectedValue = this.value;
+
+            const options = document.querySelectorAll(
+                '#buildingOptions option'
+            );
+
+            let selectedId = '';
+
+            options.forEach(option => {
+
+                if (option.value === selectedValue) {
+
+                    selectedId =
+                        option.getAttribute('data-id');
+                }
+            });
+
+            document.getElementById('buildingId').value =
+                selectedId || '';
         });
 
-        // Set the hidden input's value
-        document.getElementById('buildingId').value = selectedId || '';
-    });
 </script>
