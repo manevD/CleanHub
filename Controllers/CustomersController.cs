@@ -203,9 +203,10 @@ namespace CleanHub.Controllers
                 if (ModelState.IsValid)
                 {
                     var existingCustomer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
+                    
                     if (existingCustomer == null)
                         return NotFound();
-
+                   
                     // Prüfe Inaktivitätslogik
                     var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
                                            || (existingCustomer.Inactive == false && customer.Inactive == true);
@@ -218,6 +219,30 @@ namespace CleanHub.Controllers
 
                     existingCustomer.ActivityId = customer.ActivityId;
                     existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
+                    if (customer.Building != null && customer.Building.CustomerRefId.HasValue)
+                    {
+                        var buildingCustomer = await _unitOfWork.Customers
+                            .GetByIdAsync(x => x.Id == customer.Building.CustomerRefId);
+
+                        if (buildingCustomer != null)
+                        {
+                            if (customer.Saldo1201 != existingCustomer.Saldo1201)
+                            {
+                                var diff1201 = customer.Saldo1201 - existingCustomer.Saldo1201;
+
+                                buildingCustomer.Saldo1201 -= diff1201;
+                            }
+
+                            if (customer.Saldo != existingCustomer.Saldo)
+                            {
+                                var diffSaldo = customer.Saldo - existingCustomer.Saldo;
+
+                                buildingCustomer.Saldo -= diffSaldo;
+                            }
+                            _unitOfWork.Customers.Update(buildingCustomer);
+                        }
+                    }
+
                     _unitOfWork.Customers.Update(existingCustomer);
                     //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
                     await _unitOfWork.SaveChangesAsync();

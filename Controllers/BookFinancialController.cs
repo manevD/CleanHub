@@ -168,27 +168,30 @@ namespace CleanHub.Controllers
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     var resultToAdd = new BookFinancialInfoViewModel();
                     var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == building.CustomerRefId);
-
-                    if (building.CustomerRefId != null && invoiceId == (int)InvoiceTyp.Reserve)
+                    foreach (var cust in building.Customers)
                     {
-                        resultToAdd.InvoiceId = 1201;
-                        resultToAdd.Description = "салдо";
-                        resultToAdd.Owes = (customer?.Saldo1201 ?? 0) < 0? Math.Abs((double)(customer?.Saldo1201 ?? 0)): 0;
+                        if (invoiceId == (int)InvoiceTyp.Reserve)
+                        {
+                            resultToAdd.InvoiceId = 1201;
+                            resultToAdd.Description = "салдо";
+                            resultToAdd.Owes = (cust?.Saldo1201 ?? 0) < 0 ? Math.Abs((double)(cust?.Saldo1201 ?? 0)) : 0;
 
-                        resultToAdd.Demands = (customer?.Saldo1201 ?? 0) > 0 ? (double)(customer?.Saldo1201 ?? 0): 0;
-                        resultToAdd.DatumF = new DateOnly(2026, 1, 1);
-                        results.Add(resultToAdd);
-                    }
-                    else if(building.CustomerRefId != null)
-                    {
-                        resultToAdd.InvoiceId = 1200;
-                        resultToAdd.Description = "салдо";
-                        resultToAdd.Owes = (customer?.Saldo ?? 0) < 0 ? Math.Abs((double)(customer?.Saldo ?? 0)) : 0;
+                            resultToAdd.Demands = (cust?.Saldo1201 ?? 0) > 0 ? (double)(cust?.Saldo1201 ?? 0) : 0;
+                            resultToAdd.DatumF = new DateOnly(2026, 1, 1);
+                            results.Add(resultToAdd);
+                        }
+                        else
+                        {
+                            resultToAdd.InvoiceId = 1200;
+                            resultToAdd.Description = "салдо";
+                            resultToAdd.Owes = (cust?.Saldo ?? 0) < 0 ? Math.Abs((double)(cust?.Saldo ?? 0)) : 0;
 
-                        resultToAdd.Demands = (customer?.Saldo ?? 0) > 0 ? (double)(customer?.Saldo ?? 0) : 0;
-                        resultToAdd.DatumF = new DateOnly(2026, 1, 1);
-                        results.Add(resultToAdd);
+                            resultToAdd.Demands = (cust?.Saldo ?? 0) > 0 ? (double)(cust?.Saldo ?? 0) : 0;
+                            resultToAdd.DatumF = new DateOnly(2026, 1, 1);
+                            results.Add(resultToAdd);
+                        }
                     }
+                    
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);

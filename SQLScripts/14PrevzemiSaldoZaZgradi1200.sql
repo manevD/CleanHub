@@ -1,46 +1,45 @@
 UPDATE c
-SET c.Saldo =
-
-    ISNULL
-    (
-        (
-            SELECT SUM(k1.Pobaruva)
-            FROM KnigaF k1
-            WHERE k1.SmetkaID = 1200
-            AND k1.PartnerID IN
-            (
-                SELECT p.PartnerID
-                FROM Partneri p
-                WHERE p.OddelID = po.OddelID
-            )
-        ),
-        0
-    )
-
-    -
-
-    ISNULL
-    (
-        (
-            SELECT SUM(k2.Dolzi)
-            FROM KnigaF k2
-            WHERE k2.SmetkaID = 1200
-            AND k2.PartnerID IN
-            (
-                SELECT p2.PartnerID
-                FROM Partneri p2
-                WHERE p2.OddelID = po.OddelID
-            )
-        ),
-        0
-    )
-
+SET c.Saldo = x.TotalSaldo
 FROM [2026MartiNew].dbo.Customers c
 
-INNER JOIN Partneri_Oddeli po
-    ON po.OddelPartnerID = c.Id
+INNER JOIN
+(
+    SELECT 
+        po.OddelPartnerID,
+        SUM(
+            ISNULL(kf.Pobaruva, 0) - ISNULL(d.VkupnoIz, 0)
+        ) AS TotalSaldo
+    FROM Partneri_Oddeli po
 
-INNER JOIN Partneri pr
-    ON pr.PartnerID = c.Id
+    INNER JOIN Partneri pr
+        ON pr.OddelID = po.OddelID
 
-WHERE pr.DejnostID = 2;
+    LEFT JOIN
+    (
+        SELECT PartnerID,
+               SUM(VkupnoIz) AS VkupnoIz
+        FROM Dokumenti
+        GROUP BY PartnerID
+    ) d
+        ON d.PartnerID = pr.PartnerID
+
+    LEFT JOIN
+    (
+        SELECT PartnerID,
+               SUM(Pobaruva) AS Pobaruva
+        FROM KnigaF
+        WHERE SmetkaID = 1200
+        GROUP BY PartnerID
+    ) kf
+        ON kf.PartnerID = pr.PartnerID
+
+    WHERE po.OddelPartnerID IN
+    (
+        SELECT PartnerID
+        FROM Partneri
+        WHERE DejnostID = 2
+    )
+
+    GROUP BY po.OddelPartnerID
+) x
+    ON x.OddelPartnerID = c.Id;
