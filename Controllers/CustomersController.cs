@@ -198,74 +198,117 @@ namespace CleanHub.Controllers
             if (id != customer.Id)
                 return NotFound();
 
+            if (!ModelState.IsValid)
+                return View(customer);
+
             try
             {
-                if (ModelState.IsValid)
+                // TRACKED ENTITY LADEN
+                var existingCustomer = await _unitOfWork.Customers
+                    .GetByIdAsync(x => x.Id == id);
+
+                if (existingCustomer == null)
+                    return NotFound();
+
+                // Prüfen ob Inaktiv gesetzt wurde
+                var navigateToCreate =
+                    (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
+                    || (existingCustomer.Inactive == false && customer.Inactive == true);
+
+                // Building laden
+                var building =  BuildingsList
+                    .FirstOrDefault(x => x.Id == customer.BuildingId);
+
+                // Hauptkunde des Gebäudes anpassen
+                if (building?.CustomerRefId != null)
                 {
-                    var existingCustomer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
-                    
-                    if (existingCustomer == null)
-                        return NotFound();
-                   
-                    // Prüfe Inaktivitätslogik
-                    var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
-                                           || (existingCustomer.Inactive == false && customer.Inactive == true);
-                    customer.Building = App.FullMapper.Map<BuildingViewModel>(BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId));
-                    if (customer.Building != null && customer.Building.CustomerRefId.HasValue)
-                    {
-                        var buildingCustomer = await _unitOfWork.Customers
-                            .GetByIdAsync(x => x.Id == customer.Building.CustomerRefId);
+                    var buildingCustomer = await _unitOfWork.Customers
+                    .GetByIdAsync(x => x.Id == building.CustomerRefId);
 
-                        if (buildingCustomer != null)
+                    if (buildingCustomer != null)
+                    {
+                        var oldSaldo = existingCustomer.Saldo ?? 0;
+                        var newSaldo = customer.Saldo ?? 0;
+
+                        var oldSaldo1201 = existingCustomer.Saldo1201 ?? 0;
+                        var newSaldo1201 = customer.Saldo1201 ?? 0;
+
+                        var diffSaldo = newSaldo - oldSaldo;
+                        var diffSaldo1201 = newSaldo1201 - oldSaldo1201;
+
+                        buildingCustomer.Saldo =
+                            (buildingCustomer.Saldo ?? 0) - diffSaldo;
+
+                        buildingCustomer.Saldo1201 =
+                            (buildingCustomer.Saldo1201 ?? 0) - diffSaldo1201;
+                    }
+                }
+
+                // =========================
+                // NUR SCALAR VALUES SETZEN
+                // =========================
+
+                existingCustomer.CustomerInfo = customer.CustomerInfo;
+                existingCustomer.ApartmentUnit = customer.ApartmentUnit;
+                existingCustomer.Adress = customer.Adress;
+                existingCustomer.PhoneNumber = customer.PhoneNumber;
+                existingCustomer.Email = customer.Email;
+                existingCustomer.PartnerOpis = customer.PartnerOpis;
+                existingCustomer.Hide = customer.Hide;
+                existingCustomer.Web = customer.Web;
+                existingCustomer.Inactive = customer.Inactive;
+                existingCustomer.Garage = customer.Garage;
+                existingCustomer.InactiveDatum = customer.InactiveDatum;
+                existingCustomer.ActiveDatum = customer.ActiveDatum;
+                existingCustomer.SubscriptionDate = customer.SubscriptionDate;
+                existingCustomer.BuildingId = customer.BuildingId;
+                existingCustomer.ActivityId = customer.ActivityId;
+                existingCustomer.PhysicalPerson = customer.PhysicalPerson;
+                existingCustomer.Subscription = customer.Subscription;
+                existingCustomer.SetCost = customer.SetCost;
+                existingCustomer.Saldo = customer.Saldo;
+                existingCustomer.Saldo1201 = customer.Saldo1201;
+                existingCustomer.SubscriptionDescription = customer.SubscriptionDescription;
+
+                // WICHTIG:
+                // KEIN Update(existingCustomer)
+                // KEIN Attach(existingCustomer)
+                // KEIN AutoMapper auf Navigation Properties
+
+                await _unitOfWork.SaveChangesAsync();
+
+                // Partner Tabelle updaten
+                var partner = await _context.PartneriTest
+                    .FirstOrDefaultAsync(x => x.PartnerID == existingCustomer.Id);
+
+                if (partner != null)
+                {
+                    partner.Partner = existingCustomer.CustomerInfo;
+                    partner.parAdresa = existingCustomer.Adress;
+
+                    await _context.SaveChangesAsync();
+                }
+
+                if (navigateToCreate)
+                {
+                    return RedirectToAction(
+                        nameof(CreateWithModel),
+                        new CustomerViewModel
                         {
-                            if (customer.Saldo1201 != existingCustomer.Saldo1201)
-                            {
-                                var diff1201 = customer.Saldo1201 - existingCustomer.Saldo1201;
-
-                                buildingCustomer.Saldo1201 -= diff1201;
-                            }
-
-                            if (customer.Saldo != existingCustomer.Saldo)
-                            {
-                                var diffSaldo = customer.Saldo - existingCustomer.Saldo;
-
-                                buildingCustomer.Saldo -= diffSaldo;
-                            }
-                            _unitOfWork.Customers.Update(buildingCustomer);
-                        }
-                    }
-                    // Aktualisiere NUR die Eigenschaften von existingCustomer
-                    App.FullMapper.Map(customer, existingCustomer);
-
-                    existingCustomer.BuildingId = customer.BuildingId;
-
-                    existingCustomer.ActivityId = customer.ActivityId;
-                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
-                   
-
-                    _unitOfWork.Customers.Update(existingCustomer);
-                    //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
-                    await _unitOfWork.SaveChangesAsync();
-                    var partner = _context.PartneriTest.FirstOrDefault(x => x.PartnerID == existingCustomer.Id);
-                    if (partner != null)
-                    {
-                        partner.Partner = existingCustomer.CustomerInfo;
-                        partner.parAdresa = existingCustomer.Adress;
-                        _context.PartneriTest.Update(partner);
-                        _context.SaveChanges();
-                    }
-                    if (navigateToCreate)
-                    {
-                        return RedirectToAction(nameof(CreateWithModel), new CustomerViewModel { BuildingId = customer.BuildingId });
-                    }
+                            BuildingId = customer.BuildingId
+                        });
                 }
 
                 return RedirectToAction(nameof(Index));
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!CustomertExists(customer.Id))
+                if (await _unitOfWork.Customers
+                    .GetByIdAsync(e => e.Id == customer.Id) == null)
+                {
                     return NotFound();
+                }
+
                 throw;
             }
         }
