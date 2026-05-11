@@ -210,15 +210,7 @@ namespace CleanHub.Controllers
                     // Prüfe Inaktivitätslogik
                     var navigateToCreate = (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
                                            || (existingCustomer.Inactive == false && customer.Inactive == true);
-
-                    // Aktualisiere NUR die Eigenschaften von existingCustomer
-                    App.FullMapper.Map(customer, existingCustomer);
-
-                    existingCustomer.BuildingId = customer.BuildingId;
-                    existingCustomer.Building = BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId);
-
-                    existingCustomer.ActivityId = customer.ActivityId;
-                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
+                    customer.Building = App.FullMapper.Map<BuildingViewModel>(BuildingsList.FirstOrDefault(b => b.Id == customer.BuildingId));
                     if (customer.Building != null && customer.Building.CustomerRefId.HasValue)
                     {
                         var buildingCustomer = await _unitOfWork.Customers
@@ -242,6 +234,14 @@ namespace CleanHub.Controllers
                             _unitOfWork.Customers.Update(buildingCustomer);
                         }
                     }
+                    // Aktualisiere NUR die Eigenschaften von existingCustomer
+                    App.FullMapper.Map(customer, existingCustomer);
+
+                    existingCustomer.BuildingId = customer.BuildingId;
+
+                    existingCustomer.ActivityId = customer.ActivityId;
+                    existingCustomer.Activity = ActivitiesList.FirstOrDefault(b => b.Id == customer.ActivityId);
+                   
 
                     _unitOfWork.Customers.Update(existingCustomer);
                     //_context.Entry(existingCustomer).CurrentValues.SetValues(App.FullMapper.Map<Customer>(customer));
