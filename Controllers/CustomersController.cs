@@ -215,35 +215,6 @@ namespace CleanHub.Controllers
                     (!existingCustomer.Inactive.HasValue && customer.Inactive == true)
                     || (existingCustomer.Inactive == false && customer.Inactive == true);
 
-                // Building laden
-                var building =  BuildingsList
-                    .FirstOrDefault(x => x.Id == customer.BuildingId);
-
-                // Hauptkunde des Gebäudes anpassen
-                if (building?.CustomerRefId != null)
-                {
-                    var buildingCustomer = await _unitOfWork.Customers
-                    .GetByIdAsync(x => x.Id == building.CustomerRefId);
-
-                    if (buildingCustomer != null)
-                    {
-                        var oldSaldo = existingCustomer.Saldo ?? 0;
-                        var newSaldo = customer.Saldo ?? 0;
-
-                        var oldSaldo1201 = existingCustomer.Saldo1201 ?? 0;
-                        var newSaldo1201 = customer.Saldo1201 ?? 0;
-
-                        var diffSaldo = newSaldo - oldSaldo;
-                        var diffSaldo1201 = newSaldo1201 - oldSaldo1201;
-
-                        buildingCustomer.Saldo =
-                            (buildingCustomer.Saldo ?? 0) - diffSaldo;
-
-                        buildingCustomer.Saldo1201 =
-                            (buildingCustomer.Saldo1201 ?? 0) - diffSaldo1201;
-                    }
-                }
-
                 // =========================
                 // NUR SCALAR VALUES SETZEN
                 // =========================
@@ -266,8 +237,6 @@ namespace CleanHub.Controllers
                 existingCustomer.PhysicalPerson = customer.PhysicalPerson;
                 existingCustomer.Subscription = customer.Subscription;
                 existingCustomer.SetCost = customer.SetCost;
-                existingCustomer.Saldo = customer.Saldo;
-                existingCustomer.Saldo1201 = customer.Saldo1201;
                 existingCustomer.SubscriptionDescription = customer.SubscriptionDescription;
 
                 // WICHTIG:

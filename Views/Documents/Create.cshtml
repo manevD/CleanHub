@@ -384,17 +384,6 @@
                                         <div class="invoice-action-btn">
                                             <div class="row">
                                                 <div class="col-xl-12 col-md-4">
-                                                    @if (routeId == 2)
-                                                    {
-                                                        <input type="hidden" name="submitCost" id="submitCostHidden" value="false" />
-                                                        <button type="submit" formnovalidate
-                                                                class="btn btn-primary"
-                                                                onclick="document.getElementById('submitCostHidden').value='true'">
-                                                            Зачувај
-                                                        </button>
-                                                    }
-                                                    else
-                                                    {
                                                         <input type="hidden" id="actionTypeHidden" name="actionType" />
                                                         <button type="submit" formnovalidate
                                                                 data-action="print"
@@ -409,7 +398,6 @@
                                                                 >
                                                             Зачувај, прати и принтај
                                                         </button>
-                                                    }
                                                 </div>
                                             </div>
                                         </div>

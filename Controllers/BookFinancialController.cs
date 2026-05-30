@@ -168,29 +168,6 @@ namespace CleanHub.Controllers
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     var resultToAdd = new BookFinancialInfoViewModel();
                     var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == building.CustomerRefId);
-                    foreach (var cust in building.Customers)
-                    {
-                        if (invoiceId == (int)InvoiceTyp.Reserve)
-                        {
-                            resultToAdd.InvoiceId = 1201;
-                            resultToAdd.Description = "салдо";
-                            resultToAdd.Owes = (cust?.Saldo1201 ?? 0) < 0 ? Math.Abs((double)(cust?.Saldo1201 ?? 0)) : 0;
-
-                            resultToAdd.Demands = (cust?.Saldo1201 ?? 0) > 0 ? (double)(cust?.Saldo1201 ?? 0) : 0;
-                            resultToAdd.DatumF = new DateOnly(2026, 1, 1);
-                            results.Add(resultToAdd);
-                        }
-                        else
-                        {
-                            resultToAdd.InvoiceId = 1200;
-                            resultToAdd.Description = "салдо";
-                            resultToAdd.Owes = (cust?.Saldo ?? 0) < 0 ? Math.Abs((double)(cust?.Saldo ?? 0)) : 0;
-
-                            resultToAdd.Demands = (cust?.Saldo ?? 0) > 0 ? (double)(cust?.Saldo ?? 0) : 0;
-                            resultToAdd.DatumF = new DateOnly(2026, 1, 1);
-                            results.Add(resultToAdd);
-                        }
-                    }
                     
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
@@ -309,7 +286,7 @@ public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, st
     building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
     if (building != null)
     {
-        results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
+        results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, building.CustomerRefId.Value).ToList();
         FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
         results = results.Where(x => x.Owes != 0).ToList();
     }

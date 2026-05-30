@@ -129,20 +129,20 @@ namespace CleanHub.Controllers
                             (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                             (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                         .ToList();
-           //         var newBookFinancialFromSaldo = new BookFinancial
-           //         {
-           //             Description = "салдо",
-           //             InvoiceId = (int)InvoiceTyp.Reserve,
+                    //         var newBookFinancialFromSaldo = new BookFinancial
+                    //         {
+                    //             Description = "салдо",
+                    //             InvoiceId = (int)InvoiceTyp.Reserve,
 
-           //             Demands = building.Customers
-           //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 < 0)
-           //.Sum(x => Math.Abs(x.Saldo1201.Value)),
+                    //             Demands = building.Customers
+                    //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 < 0)
+                    //.Sum(x => Math.Abs(x.Saldo1201.Value)),
 
-           //             Owes = building.Customers
-           //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 > 0)
-           //.Sum(x => x.Saldo1201.Value)
-           //         };
-           //         rawFinancials.Add(newBookFinancialFromSaldo);
+                    //             Owes = building.Customers
+                    //.Where(x => x.Saldo1201.HasValue && x.Saldo1201 > 0)
+                    //.Sum(x => x.Saldo1201.Value)
+                    //         };
+                    //         rawFinancials.Add(newBookFinancialFromSaldo);
                     bookFinancials = rawFinancials
                         .Select(bf => new BookFinancialViewModel
                         {
@@ -235,18 +235,7 @@ namespace CleanHub.Controllers
                         Owes = filteredDocuments.Sum(bf => bf.TotalOutput ?? 0),
                         Demands = filteredFinancials.Sum(bf => bf.Demands)
                     };
-                    if (customer.Saldo.HasValue )
-                    {
-                        if (customer.Saldo.Value < 0)
-                        {
-                            buildingFinanceCard.Owes += Math.Abs(customer.Saldo.Value);
-                        }
-                        else
-                        {
-                            buildingFinanceCard.Demands += Math.Abs(customer.Saldo.Value);
-                        }
-                    }
-                   
+
                     cardsViewModel.BuildingFinanceCardViewModels.Add(buildingFinanceCard);
                 }
 
@@ -255,13 +244,9 @@ namespace CleanHub.Controllers
          .SelectMany(x => x.Documents)
          .Where(d => (!DateFrom.HasValue || d.Date >= DateFrom.Value) &&
                      (!DateTo.HasValue || d.Date <= DateTo.Value))
-         .Sum(d => d.TotalOutput ?? 0)
+         .Sum(d => d.TotalOutput ?? 0);
 
-     +
 
-     customers
-         .Where(c => c.Saldo.HasValue && c.Saldo.Value < 0)
-         .Sum(c => Math.Abs(c.Saldo.Value));
 
 
 
@@ -270,13 +255,8 @@ namespace CleanHub.Controllers
                         .SelectMany(x => x.BookFinancials)
                         .Where(d => (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                                     (!DateTo.HasValue || d.DatumF <= DateTo.Value))
-                        .Sum(d => d.Demands)
-
-                    +
-
-                    customers
-                        .Where(c => c.Saldo.HasValue && c.Saldo.Value > 0)
-                        .Sum(c => Math.Abs(c.Saldo.Value));
+                        .Sum(d => d.Demands);
+                  
             }
 
             if (cardsViewModel.BuildingFinancial != null && cardsViewModel.BuildingFinancial.Any())
@@ -356,36 +336,6 @@ namespace CleanHub.Controllers
                         NumberNalog = cc.OrderN ?? 0
                     })
                     .ToList();
-                if (customer.Saldo.HasValue && customer.Saldo != 0)
-                {
-                    if (customer.Saldo < 0)
-                    {
-                        dataBookFinancial.Add(new CustomerDataDTO
-                        {
-                            Description = "салдо",
-                            Owes = Math.Abs(customer.Saldo.Value),
-                            Demands = 0,
-                            DocumentTyp = "затварање",
-                            Date = new DateOnly(2026, 1, 1),
-                            Number = 0,
-                            DontSum = true
-                        });
-                    }
-                    else
-                    {
-                        dataBookFinancial.Add(new CustomerDataDTO
-                        {
-                            Description = "салдо",
-                            Owes = 0,
-                            Demands = customer.Saldo.Value,
-                            DocumentTyp = "затварање",
-                            Date = new DateOnly(2021, 1, 1),
-                            Number = 0,
-                            DontSum = true
-                        });
-                    }
-                }
-
                 //if (newBookFinancialFromSaldo.Demands > 0)
                 //{
                 //    cardsViewModel.CustomerDemandsTotal += newBookFinancialFromSaldo.Demands;
@@ -463,21 +413,6 @@ namespace CleanHub.Controllers
                         (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                     .ToList();
-                var newBookFinancialFromSaldo =
-                    new BookFinancial
-                    {
-                        Description = "салдо",
-                        InvoiceId = (int)InvoiceTyp.Reserve,
-
-                        Demands = customer.Saldo1201.HasValue && customer.Saldo1201 < 0
-                    ? Math.Abs(customer.Saldo1201.Value)
-                      : 0,
-
-
-                        Owes = customer.Saldo1201.HasValue && customer.Saldo1201 > 0
-                    ? customer.Saldo1201.Value : 0
-                    };
-                rawFinancials.Add(newBookFinancialFromSaldo);
 
                 bookFinancials = rawFinancials
                     .Select(bf => new BookFinancialViewModel
@@ -500,15 +435,6 @@ namespace CleanHub.Controllers
                     .GetAllNoTrakcing()
                     .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
                     .Sum(x => x.Owes);
-
-                if (newBookFinancialFromSaldo.Demands > 0)
-                {
-                    cardsViewModel.CustomerDemandsTotal += newBookFinancialFromSaldo.Demands;
-                }
-                else
-                {
-                    cardsViewModel.CustomerOwesTotal += (float)newBookFinancialFromSaldo.Owes;
-                }
             }
 
             cardsViewModel.CustomerFinanfical = bookFinancials;

@@ -93,19 +93,10 @@
                             .Where(x => x.PaymentStatus == PaymentStatus.Платено)
                             .Sum(x => x.TotalOutput ?? 0);
 
-                        totalDemands += Model
-                            .Where(x => x.Saldo > 0)
-                            .Sum(x => Math.Abs((float)x.Saldo));
-
                         // Вкупно Должи
                         var totalOwes = allDocs
                             .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
                             .Sum(x => x.TotalOutput ?? 0);
-
-                        totalOwes += Model
-                            .Where(x => x.Saldo < 0)
-                            .Sum(x => Math.Abs((float)x.Saldo));
-
                         // Разлика
                         var totalDifference = totalDemands - totalOwes;
 
@@ -121,20 +112,11 @@
                                 .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
                                 .Sum(x => x.TotalOutput ?? 0);
 
-                            if (customer.Saldo < 0)
-                            {
-                                dolzi += Math.Abs((float)customer.Saldo);
-                            }
-
+                          
                             // Побарува
                             var pobaruva = docs
                                 .Where(x => x.PaymentStatus == PaymentStatus.Платено)
                                 .Sum(x => x.TotalOutput ?? 0);
-
-                            if (customer.Saldo > 0)
-                            {
-                                pobaruva += Math.Abs((float)customer.Saldo);
-                            }
 
                             // Салдо
                             var saldo = pobaruva - dolzi;

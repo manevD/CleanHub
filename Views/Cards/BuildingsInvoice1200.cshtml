@@ -46,11 +46,9 @@
                             var dolzi = allDocuments
                                 .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
                                 .Sum(x => x.TotalOutput ?? 0);
-                            dolzi += (float)building.Customers.Where(x => x.Saldo < 0).Sum(x => x.Saldo);
                             var pobaruva = allDocuments
                                 .Where(x => x.PaymentStatus == PaymentStatus.Платено)
                                 .Sum(x => x.TotalOutput ?? 0);
-                            pobaruva += (float)building.Customers.Where(x => x.Saldo > 0).Sum(x => x.Saldo);
                             var saldo = pobaruva - dolzi;
 
                             counter++;
