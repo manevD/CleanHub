@@ -69,9 +69,11 @@
                     @if (Model != null && Model.CustomerData != null && Model.CustomerData.Any())
                     {
                         var counter = 0;
+
                         @foreach (var invoice in Model.CustomerData.OrderBy(x => x.Date))
                         {
                             counter++;
+
                             <tr role="row">
                                 <td>@counter</td>
                                 <td>@Html.DisplayFor(modelItem => invoice.Date)</td>
@@ -86,41 +88,73 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center">Нема пронајдени податоци</td>
+                            <td colspan="7" class="text-center">
+                                Нема пронајдени податоци
+                            </td>
                         </tr>
                     }
+
                     <tr role="row">
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th><strong>Вкупно</strong></th>
-                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
-                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+
+                        <th>
+                            <strong>Вкупно</strong>
+                        </th>
+
+                        <th>
+                            <strong>
+                                Побарува : @Model.CustomerDemandsTotal
+                            </strong>
+                        </th>
+
+                        <th>
+                            <strong>
+                                Должи : @Model.CustomerOwesTotal
+                            </strong>
+                        </th>
+
                         <th>
                             <strong>
                                 Салдо :
                                 @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
-                                @Model.Total
+                                @Math.Abs(Model.Total)
                             </strong>
                         </th>
                     </tr>
                 </tbody>
+
+
                 <tfoot>
                     <tr>
                         <th></th>
                         <th></th>
                         <th></th>
-                        <th><strong>Вкупно</strong></th>
-                        <th><strong>Побарува : @Model.CustomerDemandsTotal</strong></th>
-                        <th><strong>Должи : @Model.CustomerOwesTotal</strong></th>
+
+                        <th>
+                            <strong>Вкупно</strong>
+                        </th>
+
+                        <th>
+                            <strong>
+                                Побарува : @Model.CustomerDemandsTotal
+                            </strong>
+                        </th>
+
+                        <th>
+                            <strong>
+                                Должи : @Model.CustomerOwesTotal
+                            </strong>
+                        </th>
+
                         <th>
                             <strong>
                                 Салдо :
                                 @(Model.CustomerOwesTotal > Model.CustomerDemandsTotal ? "-" : "")
-                                @Model.Total
+                                @Math.Abs(Model.Total)
                             </strong>
                         </th>
-
                     </tr>
                 </tfoot>
             </table>

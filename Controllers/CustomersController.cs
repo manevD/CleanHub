@@ -239,14 +239,8 @@ namespace CleanHub.Controllers
                 existingCustomer.SetCost = customer.SetCost;
                 existingCustomer.SubscriptionDescription = customer.SubscriptionDescription;
 
-                // WICHTIG:
-                // KEIN Update(existingCustomer)
-                // KEIN Attach(existingCustomer)
-                // KEIN AutoMapper auf Navigation Properties
-
                 await _unitOfWork.SaveChangesAsync();
 
-                // Partner Tabelle updaten
                 var partner = await _context.PartneriTest
                     .FirstOrDefaultAsync(x => x.PartnerID == existingCustomer.Id);
 

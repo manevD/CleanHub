@@ -81,14 +81,25 @@ namespace CleanHub.Controllers
                 ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault(x => x.Id == buildingId.Value).Name;
 
                 ViewBag.BuildingId = buildingId.Value;
-                customers = _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == buildingId.Value)).ToList();
+                customers = _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Include(x => x.BookFinancials
+              .Where(bf => bf != null &&
+                           bf.InvoiceId == (int)InvoiceTyp.Recieve)).Where(x => x.BuildingId == buildingId.Value)).ToList();
                 return View(customers);
             }
             ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", 1);
             ViewBag.SelectedBuildingName = BuildingsList.FirstOrDefault().Name;
 
             ViewBag.BuildingId = 1;
-            customers = _unitOfWork.Customers.GetAllNoTrakcing(inc => inc.Include(c => c.Documents).Where(x => x.BuildingId == 1)).ToList();
+            customers = _unitOfWork.Customers
+          .GetAllNoTrakcing(inc => inc
+          .Include(c => c.Documents)
+          .Include(x => x.BookFinancials
+              .Where(bf => bf != null &&
+                           bf.InvoiceId == (int)InvoiceTyp.Recieve)
+          )
+      )
+      .Where(x => x.BuildingId == 1)
+      .ToList();
 
             return View(customers);
         }
@@ -346,7 +357,7 @@ namespace CleanHub.Controllers
                 //}
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
-                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Where(x => !x.DontSum && x.Date >= new DateOnly(2021, 1, 1)).Sum(x => x.Demands);
+                cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Sum(x => x.Demands);
                 cardsViewModel.CustomerOwesTotal = (float)dataDocument.Where(x => x.Date > new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
 
                 if (dataBookFinancial.Any(x => x.Owes != 0 && x.Date >= new DateOnly(2021, 1, 1)))

@@ -75,7 +75,7 @@
                         <select name="year" class="form-control" style="font-size:15px;">
                             @{
                                 var currentYear = DateTime.Now.Year;
-                                for (int y = 2026; y <= currentYear; y++)
+                                @for (int y = 2026; y >= 2019; y--)
                                 {
                                     <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">
                                         @y
@@ -138,10 +138,10 @@
                                     var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
                                     var orderedCustomers = customers.OrderBy(c =>
                                     {
-                                    var match = Regex.Match(c.CustomerInfo ?? "", @"\.(\d+)$");
-                                    return match.Success
-                                        ? int.Parse(match.Groups[1].Value)
-                                        : int.MaxValue;
+                                            var match = Regex.Match(c.CustomerInfo ?? "", @"\.(\d+)$");
+                                            return match.Success
+                                                ? int.Parse(match.Groups[1].Value)
+                                                : int.MaxValue;
                                     });
                                     @foreach (var c in orderedCustomers)
                                     {

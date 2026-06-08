@@ -14,53 +14,100 @@
 )
 
 UPDATE d
-SET d.PaymentStatus = 
-    CASE 
+SET d.PaymentStatus =
+    CASE
         WHEN EXISTS (
-            SELECT 1 
+            SELECT 1
             FROM BookFinancials bf
             CROSS JOIN MonthMapping mm
-            WHERE 
+            WHERE
                 bf.CustomerId = d.CustomerId
-                AND (
-                    -- 🟢 Fall 1: Einzelne Monate z. B. "за 01,02,03/2021"
+                AND
+                (
+                    --------------------------------------------------
+                    -- 🟢 Fall 1: поединечни месеци
+                    -- "за 01,02,03/2021"
+                    --------------------------------------------------
                     (
-                        CHARINDEX('/', bf.Description) > 0  
+                        CHARINDEX('/', bf.Description) > 0
                         AND EXISTS (
-                            SELECT 1 
+                            SELECT 1
                             FROM STRING_SPLIT(
-                                LEFT(bf.Description, CHARINDEX('/', bf.Description) - 1), 
+                                LEFT(
+                                    bf.Description,
+                                    CHARINDEX('/', bf.Description) - 1
+                                ),
                                 ','
                             ) AS SplitMonths
-                            WHERE TRY_CAST(LTRIM(RTRIM(
-                                SUBSTRING(SplitMonths.value, PATINDEX('%[0-9]%', SplitMonths.value), 2)
-                            )) AS INT) = TRY_CAST(mm.MonthNum AS INT)
+
+                            WHERE TRY_CAST(
+                                LTRIM(RTRIM(
+                                    SUBSTRING(
+                                        SplitMonths.value,
+                                        PATINDEX('%[0-9]%', SplitMonths.value),
+                                        2
+                                    )
+                                ))
+                            AS INT) = TRY_CAST(mm.MonthNum AS INT)
                         )
                     )
-                    
-                    -- 🟢 Fall 2: Monatsbereiche z. B. "од 01-05/2021"
-                    OR (
-                        bf.Description LIKE N'%од %-%/%'  
+
+
+                    --------------------------------------------------
+                    -- 🟢 Fall 2: периоди
+                    -- "од 01-05/2021"
+                    -- "за 01-05/2021"
+                    -- "01-05/2021"
+                    --------------------------------------------------
+                    OR
+                    (
+                        bf.Description LIKE N'%[0-9][0-9]-[0-9][0-9]/%'
                         AND CHARINDEX('-', bf.Description) > 0
                         AND CHARINDEX('/', bf.Description) > 0
+
                         AND TRY_CAST(
-                            SUBSTRING(bf.Description, CHARINDEX('од ', bf.Description) + 3, 2)
-                        AS INT) <= TRY_CAST(mm.MonthNum AS INT)  
+                            SUBSTRING(
+                                bf.Description,
+                                PATINDEX(
+                                    '%[0-9][0-9]-[0-9][0-9]/%',
+                                    bf.Description
+                                ),
+                                2
+                            )
+                        AS INT)
+                        <= TRY_CAST(mm.MonthNum AS INT)
+
+
                         AND TRY_CAST(
-                            SUBSTRING(bf.Description, CHARINDEX('-', bf.Description) + 1, 2)
-                        AS INT) >= TRY_CAST(mm.MonthNum AS INT)
+                            SUBSTRING(
+                                bf.Description,
+                                CHARINDEX('-', bf.Description) + 1,
+                                2
+                            )
+                        AS INT)
+                        >= TRY_CAST(mm.MonthNum AS INT)
                     )
                 )
-                -- 🔹 Korrekte Jahr-Extraktion
+
+
+                --------------------------------------------------
+                -- година после /
+                --------------------------------------------------
                 AND CHARINDEX('/', REVERSE(bf.Description)) > 0
-                AND d.ToDocument = mm.MonthName + ' ' + 
+
+                AND d.ToDocument =
+                    mm.MonthName + ' ' +
                     LEFT(
-                        RIGHT(bf.Description, CHARINDEX('/', REVERSE(bf.Description)) - 1), 
-                        4  -- Nur die ersten 4 Zeichen nach "/" extrahieren (das Jahr)
+                        RIGHT(
+                            bf.Description,
+                            CHARINDEX('/', REVERSE(bf.Description)) - 1
+                        ),
+                        4
                     )
-        ) 
-        THEN 0 -- Wenn es eine Übereinstimmung gibt, setze PaymentStatus auf 0
-        ELSE 1 -- Andernfalls setze PaymentStatus auf 1
+        )
+
+        THEN 0   -- платено
+        ELSE 1   -- неплатено
     END
 FROM Documents d;
 

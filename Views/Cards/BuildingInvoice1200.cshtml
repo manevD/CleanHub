@@ -85,39 +85,26 @@
 
                     @if (Model != null && Model.Any())
                     {
-                        var allDocs = Model
-                            .SelectMany(c => c.Documents ?? Enumerable.Empty<Document>());
-
-                        // Вкупно Побарува
-                        var totalDemands = allDocs
-                            .Where(x => x.PaymentStatus == PaymentStatus.Платено)
-                            .Sum(x => x.TotalOutput ?? 0);
-
-                        // Вкупно Должи
-                        var totalOwes = allDocs
-                            .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
-                            .Sum(x => x.TotalOutput ?? 0);
-                        // Разлика
-                        var totalDifference = totalDemands - totalOwes;
-
                         var counter = 0;
-
+                        double sumPobaruva = 0;
+                        float sumDolzi = 0;
                         @foreach (var customer in Model.OrderBy(x => x.Id))
                         {
                             var docs = customer.Documents
                                 ?? Enumerable.Empty<Document>();
-
+                            var bookFinancials = customer.BookFinancials ?? Enumerable.Empty<BookFinancial>();
                             // Должи
-                            var dolzi = docs
-                                .Where(x => x.PaymentStatus == PaymentStatus.Неплатено)
+                            var dolzi = docs.Where(x => x.TotalOutput != 0 && x.Date >= new DateOnly(2021, 1, 1))
                                 .Sum(x => x.TotalOutput ?? 0);
 
-                          
                             // Побарува
-                            var pobaruva = docs
-                                .Where(x => x.PaymentStatus == PaymentStatus.Платено)
-                                .Sum(x => x.TotalOutput ?? 0);
-
+                            var pobaruva = bookFinancials.Sum(x => x.Demands) ;
+                            if (bookFinancials.Any(x => x.Owes != 0 && x.DatumF >= new DateOnly(2021, 1, 1)))
+                            {
+                                dolzi += (float)bookFinancials.Where(x => x.Owes != 0 && x.DatumF >= new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
+                            }
+                            sumPobaruva += pobaruva;
+                            sumDolzi += dolzi;
                             // Салдо
                             var saldo = pobaruva - dolzi;
 
@@ -158,20 +145,19 @@
 
                             <td>
                                 Побарува :
-                                @totalDemands.ToString("0.00") МКД
+                                @sumPobaruva.ToString("0.00") МКД
                             </td>
 
                             <td>
                                 Должи :
-                                @totalOwes.ToString("0.00") МКД
+                                @sumDolzi.ToString("0.00") МКД
                             </td>
 
-                            <td style="color:@(totalDifference < 0 ? "red" : "green");
+                            <td style="color:@((sumPobaruva - sumDolzi) < 0 ? "red" : "green");
                                 font-weight:bold;">
 
                                 Разлика :
-                                @totalDifference.ToString("+0.00;-0.00;0.00")
-
+                                @((sumPobaruva - sumDolzi).ToString("+0.00;-0.00;0.00"))
                             </td>
 
                         </tr>

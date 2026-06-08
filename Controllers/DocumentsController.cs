@@ -237,12 +237,23 @@ namespace CleanHub.Controllers
                 ViewBag.BuildingId = building.Id;
                 ViewBag.Customers = building.Customers.ToList();
                 var bookFinancials = _unitOfWork.BookFinancials
-                    .GetAllNoTrakcing(
-                        query => query
-                            .Include(bf => bf.Customer)        // Include Customer
-                            .Where(bf => bf.Customer.BuildingId == buildingId.Value && (bf.InvoiceId == (int)InvoiceTyp.Recieve || bf.DocumentTypId == 11) && bf.InvoiceId != (int)InvoiceTyp.Reserve) // Filter nach BuildingId
-                    )
-                    .ToList();
+      .GetAllNoTrakcing(
+          query => query
+              .Include(bf => bf.Customer)
+              .Where(bf =>
+                  bf.Customer.BuildingId == buildingId.Value
+                  &&
+                  (
+                      bf.InvoiceId == (int)InvoiceTyp.Recieve
+                      ||
+                      bf.DocumentTypId == 11
+                  )
+                  &&
+                  bf.InvoiceId != (int)InvoiceTyp.Reserve
+              )
+      )
+      .ToList();
+
 
                 var dataDocument = _unitOfWork.Documents.GetAllNoTrakcing(query => query
                             .Include(bf => bf.Customer)        // Include Customer
@@ -253,29 +264,59 @@ namespace CleanHub.Controllers
 
                 var customerBalances = building.Customers.Select(c =>
                 {
-                    var dataBookFinancial = bookFinancials.Where(x => x.CustomerId == c.Id).ToList();
-
-                    // ✅ Dokumente (gleich wie oben)
+                    // ======================
+                    // Documents vom Customer
+                    // ======================
                     var customerDocs = dataDocument
-                        .Where(x => x.CustomerId == c.Id &&
-                                    x.Date.HasValue &&
-                                    x.Date.Value > new DateOnly(2021, 1, 1))
+                        .Where(x => x.CustomerId == c.Id)
                         .ToList();
 
 
-                    // ✅ Pobaruva (identisch!)
+                    // ======================
+                    // BookFinancial vom Customer
+                    // gleiche Filter sind schon oben geladen
+                    // ======================
+                    var dataBookFinancial = bookFinancials
+                        .Where(x => x.CustomerId == c.Id)
+                        .ToList();
+
+
+                    // ======================
+                    // ПОБАРУВА
+                    // IDENTISCH wie Detail
+                    // ======================
                     var pobaruva = dataBookFinancial
-                        .Where(x => !x.DontSum && (x.DatumF.HasValue && x.DatumF > new DateOnly(2021, 1, 1)) || x.DocumentTypId != 0 && x.DocumentTypId == 11)
                         .Sum(x => x.Demands);
 
-                    // ✅ Dolzi (Teil 1: Dokumente)
-                    var dolzi = customerDocs.Sum(x => x.TotalOutput);
 
-                    // ✅ Dolzi (Teil 2: BookFinancial nur wenn Owes != 0)
-                    //if (dataBookFinancial.Any(x => x.Owes != 0))
-                    //{
-                    //    dolzi += (float)dataBookFinancial.Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)).Sum(x => x.Owes);
-                    //}
+                    // ======================
+                    // ДОЛЖИ Dokumente
+                    // IDENTISCH:
+                    // dataDocument.Where(Date > 2021)
+                    // ======================
+                    double dolzi = customerDocs
+                        .Where(x =>
+                            x.Date.HasValue &&
+                            x.Date.Value > new DateOnly(2021, 1, 1))
+                        .Sum(x => (double)(x.TotalOutput ?? 0));
+
+
+                    // ======================
+                    // ДОЛЖИ BookFinancial
+                    // IDENTISCH
+                    // ======================
+                    if (dataBookFinancial.Any(x =>
+                            x.Owes != 0 &&
+                            x.DatumF.HasValue &&
+                            x.DatumF.Value >= new DateOnly(2021, 1, 1)))
+                    {
+                        dolzi += dataBookFinancial
+                            .Where(x =>
+                                x.Owes != 0 &&
+                                x.DatumF.HasValue &&
+                                x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                            .Sum(x => x.Owes);
+                    }
 
                     var saldo = pobaruva - dolzi;
 
@@ -286,6 +327,7 @@ namespace CleanHub.Controllers
                         Dolzi = dolzi,
                         Saldo = saldo
                     };
+
                 }).ToList();
 
                 // An View übergeben
@@ -804,7 +846,7 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DocumentViewModel document, string actionType, bool submitCost)
+        public async Task<IActionResult> Create(DocumentViewModel document, string actionType)
         {
 
             bool send = actionType == "send";
@@ -813,30 +855,27 @@ namespace CleanHub.Controllers
             {
                 var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.BuildingId,
                       inc => inc.Include(x => x.Customers));
-                if (!submitCost)
+
+                var toDocument =
+                    DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
+
+                if (building.Customers.Any())
                 {
-                    var toDocument =
-                        DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
-
-                    if (building.Customers.Any())
+                    var customer = building.Customers.Where(x => x.ActivityId == 3).FirstOrDefault();
+                    if (customer != null)
                     {
-                        var customer = building.Customers.Where(x => x.ActivityId == 3).FirstOrDefault();
-                        if (customer != null)
+                        var exists = _unitOfWork.Documents.GetAll().Any(d => d.CustomerId == customer.Id && d.ToDocument == toDocument);
+
+                        if (exists)
                         {
-                            var exists = _unitOfWork.Documents.GetAll().Any(d => d.CustomerId == customer.Id && d.ToDocument == toDocument);
+                            TempData["InvoiceExists"] =
+                                "За овој месец веќе постои фактура за оваа зграда.";
 
-                            if (exists)
-                            {
-                                TempData["InvoiceExists"] =
-                                    "За овој месец веќе постои фактура за оваа зграда.";
-
-                                return RedirectToAction(nameof(Create),
-                                    new { id = 0, buildingId = building.Id });
-                            }
+                            return RedirectToAction(nameof(Create),
+                                new { id = 0, buildingId = building.Id });
                         }
                     }
                 }
-
 
                 if (document.BuildingId == null || document.BuildingId == 0)
                 {
@@ -848,28 +887,6 @@ namespace CleanHub.Controllers
                 var selectedBuildingName = Buildings?.FirstOrDefault(x => x.Id == building.Id)?.Name;
                 if (selectedBuildingName != null)
                     ViewBag.SelectedBuildingName = selectedBuildingName;
-                if (submitCost)
-                {
-                    foreach (var product in document.Building.BuildingProducts.Where(x => !string.IsNullOrEmpty(x.ArticleNotes)))
-                    {
-                        var bookFinancial = new BookFinancialViewModel
-                        {
-                            DatumF = document.Date,
-                            InvoiceId = (int)InvoiceTyp.Reserve,
-                            Demands = 0,
-                            Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
-                            CustomerId = building.CustomerRefId ?? building.Id,
-                            DocumentTypId = 5,
-                            Description = product.ArticleNotes,
-                            Status = PaymentStatus.Неплатено
-                        };
-                        _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
-                    }
-                    await _unitOfWork.SaveChangesAsync();
-                    ViewBag.RouteId = 2;
-                    return View(document);
-
-                }
                 var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(document.BuildingId.Value).ToList();
                 var buildingProdutsToRemove = document.Building?.BuildingProducts
                     .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
@@ -1021,9 +1038,6 @@ namespace CleanHub.Controllers
         [HttpGet]
         public async Task<IActionResult> Create(int? id, int? buildingId, DateTime? date)
         {
-            System.Diagnostics.Debug.WriteLine(
-                $"Create called. id={id}, buildingId={buildingId}");
-
             var documentViewModel = new DocumentViewModel();
 
             ViewBag.RouteId = id;
@@ -1615,10 +1629,13 @@ namespace CleanHub.Controllers
 
         private async Task<Document> CreateCustomerDocument(Customer customer, DocumentViewModel document, Building building)
         {
-            var documentCustomer = new DocumentViewModel();
-            documentCustomer.CustomerId = customer.Id;
-            documentCustomer.Number =
-                (await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0) + 1; documentCustomer.Date = document.Date;
+            var documentCustomer = new DocumentViewModel
+            {
+                CustomerId = customer.Id,
+                Number =
+                    (await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0) + 1,
+                Date = document.Date
+            };
             if (document.Date != null)
                 documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
                                               document.Date.Value.Year;
