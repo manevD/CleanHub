@@ -659,7 +659,7 @@
         </script>
 
         <script>
-                         document.addEventListener("DOMContentLoaded", function () {
+            document.addEventListener("DOMContentLoaded", function () {
 
                 const dateInput = document.getElementById("invoiceDate");
 
@@ -679,12 +679,11 @@
 
                     document.querySelectorAll(".article-notes").forEach(function (input) {
 
-                        let baseText = input.value.split(" ").slice(0, -1).join(" ");
+                        // ако веќе има месец/година на крај, тргни го
+                        input.value = input.value.replace(/\s\d{2}\.\d{4}$/, "");
 
-                        if (baseText === "")
-                            baseText = input.value;
-
-                        input.value = baseText + " " + formatted;
+                        // додади нов датум на крај
+                        input.value = input.value.trim() + " " + formatted;
                     });
 
                 });
