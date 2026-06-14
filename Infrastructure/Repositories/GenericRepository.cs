@@ -14,6 +14,12 @@ namespace CleanHub.Infrastructure.Repositories
             _context = context;
             _dbSet = context.Set<T>();
         }
+        public async Task<bool> AnyAsync(Expression<Func<T, bool>> predicate)
+        {
+            return await _dbSet
+                .AsNoTracking()
+                .AnyAsync(predicate);
+        }
         public async Task<List<T>> GetAllWithIncludeAsync(
             Func<IQueryable<T>, IQueryable<T>>? include = null,
             Expression<Func<T, bool>>? predicate = null)

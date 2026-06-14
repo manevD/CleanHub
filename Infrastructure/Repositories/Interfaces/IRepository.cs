@@ -1,4 +1,5 @@
-﻿using System.Linq.Expressions;
+﻿using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace CleanHub.Infrastructure.Repositories.Interfaces
 {
@@ -13,7 +14,8 @@ namespace CleanHub.Infrastructure.Repositories.Interfaces
         IEnumerable<T> GetAllNoTrakcing(Func<IQueryable<T>, IQueryable<T>>? include = null);
 
         IEnumerable<T> GetAll(Func<IQueryable<T>, IQueryable<T>>? include = null);
-         void AddRange(List<T> entities);
+        Task<bool> AnyAsync(Expression<Func<T, bool>> predicate);
+        void AddRange(List<T> entities);
         void Add(T entity);
         void Update(T entity);
         void UpdateRange(IEnumerable<T> entities);

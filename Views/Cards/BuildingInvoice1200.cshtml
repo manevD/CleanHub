@@ -1,4 +1,5 @@
-﻿@using CleanHub.Entities
+﻿@using System.Text.RegularExpressions
+@using CleanHub.Entities
 @using CleanHub.Entities.Enums
 @model IEnumerable<CleanHub.Entities.Customer>
 
@@ -88,7 +89,19 @@
                         var counter = 0;
                         double sumPobaruva = 0;
                         float sumDolzi = 0;
-                        @foreach (var customer in Model.OrderBy(x => x.Id))
+                        var orderedCustomers = Model.OrderBy(c =>
+                                                              {
+                                                                  var match = Regex.Match(
+                                                                      c.CustomerInfo ?? "",
+                                                                      @"\d+"
+                                                                  );
+
+                                                                  return match.Success
+                                                                      ? int.Parse(match.Value)
+                                                                      : int.MaxValue;
+                                                              })
+                                                              .ToList();
+                        @foreach (var customer in orderedCustomers)
                         {
                             var docs = customer.Documents
                                 ?? Enumerable.Empty<Document>();

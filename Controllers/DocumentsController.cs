@@ -865,7 +865,10 @@ namespace CleanHub.Controllers
                     var customer = building.Customers.Where(x => x.ActivityId == 3).FirstOrDefault();
                     if (customer != null)
                     {
-                        var exists = _unitOfWork.Documents.GetAll().Any(d => d.CustomerId == customer.Id && d.ToDocument == toDocument);
+                        var exists = await _unitOfWork.Documents.AnyAsync(
+                            x => x.CustomerId == customer.Id &&
+                                 x.ToDocument == toDocument
+                        );
 
                         if (exists)
                         {

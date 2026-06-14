@@ -136,13 +136,19 @@
                                 {
                                     var customers = (IEnumerable<dynamic>)ViewBag.Customers;
                                     var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
-                                    var orderedCustomers = customers.OrderBy(c =>
+                                    var orderedCustomers = customers
+                                    .OrderBy(c =>
                                     {
-                                            var match = Regex.Match(c.CustomerInfo ?? "", @"\.(\d+)$");
-                                            return match.Success
-                                                ? int.Parse(match.Groups[1].Value)
-                                                : int.MaxValue;
-                                    });
+                                        var match = Regex.Match(
+                                            c.CustomerInfo ?? "",
+                                            @"\d+"
+                                        );
+
+                                        return match.Success
+                                            ? int.Parse(match.Value)
+                                            : int.MaxValue;
+                                    })
+                                    .ToList();
                                     @foreach (var c in orderedCustomers)
                                     {
                                         var cusBalance = balances.FirstOrDefault(b => b.Customer.Id == c.Id);

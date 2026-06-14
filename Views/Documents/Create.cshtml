@@ -1,4 +1,5 @@
-﻿@model CleanHub.ViewModels.DocumentViewModel
+﻿@using System.Text.RegularExpressions
+@model CleanHub.ViewModels.DocumentViewModel
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     var invoiceNotice = @Model.Company?.InvoiceNotice;
@@ -359,7 +360,20 @@
                                                     <div class="form-group mb-0">
                                                         @if (@Model?.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
                                                         {
-                                                            @foreach (var customer in @Model.Building.Customers)
+                                                            var orderedCustomers = Model.Building.Customers
+                                                                .OrderBy(c =>
+                                                                {
+                                                                    var match = Regex.Match(
+                                                                        c.CustomerInfo ?? "",
+                                                                        @"\d+"
+                                                                    );
+
+                                                                    return match.Success
+                                                                        ? int.Parse(match.Value)
+                                                                        : int.MaxValue;
+                                                                })
+                                                                .ToList();
+                                                            @foreach (var customer in orderedCustomers)
                                                             {
                                                                 <h6>@customer.CustomerInfo</h6>
                                                             }
