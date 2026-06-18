@@ -1443,7 +1443,12 @@ namespace CleanHub.Controllers
             }
             var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
 
-            var documents = _unitOfWork.Documents.GetAll(x=> x.Include(xc => xc.Customer).ThenInclude(cs => cs.BookFinancials)).Where(x => ids.Contains(x.Id)).ToList();
+            var documents = _unitOfWork.Documents
+                .GetAll(query => query
+                    .Where(d => ids.Contains(d.Id))
+                    .Include(d => d.Customer)
+                    .ThenInclude(c => c.BookFinancials))
+                .ToList();
             if (documents != null && documents.Any())
             {
                 foreach (var document in documents)
