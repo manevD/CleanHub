@@ -1305,7 +1305,7 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> ChangePaymentMultipleDocuments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        public async Task<IActionResult> ChangePaymentMultipleDocuments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total)
         {
             if (SelectedInvoiceIds == null || !SelectedInvoiceIds.Any())
             {
@@ -1354,6 +1354,10 @@ namespace CleanHub.Controllers
                             if (!string.IsNullOrEmpty(PaymentDescription))
                             {
                                 bookFinancial.Description = PaymentDescription;
+                            }
+                            if (Total != 0 )
+                            {
+                                bookFinancial.Demands = Total;
                             }
                             bookFinancial.DateTimeChanges = DateTime.UtcNow;
                             _unitOfWork.BookFinancials.Update(bookFinancial);

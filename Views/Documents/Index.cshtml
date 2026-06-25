@@ -169,8 +169,20 @@
                                             {
                                                 var monthName = new DateTime(ViewBag.Year, m, 1)
                                                                 .ToString("MMMM", new System.Globalization.CultureInfo("mk-MK"));
-
-                                                var monthly = customerInvoices
+                                                float monthly = 0;
+                                                @if (c.ActivityId != 3)
+                                                {
+                                                   monthly = customerInvoices
+                                                    .Where(x =>
+                                                        x.Date.HasValue &&
+                                                        x.Date.Value.Month == m &&
+                                                        x.PaymentStatus == 0 // nur wenn PaymentStatus 0
+                                                    )
+                                                    .Sum(x => x.TotalOutput ?? 0);
+                                                }
+                                                else
+                                                {
+                                                    monthly = customerInvoices
                                                     .Where(x =>
                                                         x.ToDocument != null &&
                                                         x.ToDocument.IndexOf(monthName, StringComparison.OrdinalIgnoreCase) >= 0 &&
@@ -178,6 +190,8 @@
                                                         x.PaymentStatus == 0 // nur wenn PaymentStatus 0
                                                     )
                                                     .Sum(x => x.TotalOutput ?? 0);
+                                                }
+                                                
 
                                                 <td style="font-size: 15px !important; font-weight:bold;">
                                                     @(monthly == 0 ? "0" : monthly.ToString())
@@ -393,6 +407,20 @@
                                                     <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
                                                 }
                                             </select>
+                                        </div>
+                                        <div class="form-group">
+
+                                            <label for="total">
+                                                Тотал
+                                            </label>
+
+                                            <input type="number"
+                                                   id="total"
+                                                   name="Total"
+                                                   min="0"
+                                                   step="1"
+                                                   class="form-control form-control-sm" />
+
                                         </div>
                                         <div class="form-group">
                                             <label for="paymentDate">Дата на плаќање</label>
