@@ -1,9 +1,9 @@
 ﻿BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2026OriginalMarti].dbo.Documents ON;
+    SET IDENTITY_INSERT Documents ON;
 
-    INSERT INTO [2026OriginalMarti].dbo.Documents
+    INSERT INTO Documents
         (Id, Number, Date, CustomerId, ToDocument, Description, DateReceived, TotalInput, TotalOutput, CreatedTime, DateTimeChanged,PaymentStatus,PaymentType)
     SELECT 
         Dokid,
@@ -17,10 +17,10 @@ BEGIN TRY
         VkupnoIz,
         Vreme,
         VremePromena,1,0
-    FROM [2026-04Marti].dbo.Dokumenti
+    FROM [2026MartiNew].dbo.Dokumenti
 
     COMMIT TRANSACTION;
-    SET IDENTITY_INSERT [2026OriginalMarti].dbo.Documents OFF;
+    SET IDENTITY_INSERT Documents OFF;
 
     PRINT 'Data inserted successfully.';
 END TRY

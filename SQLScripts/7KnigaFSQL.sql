@@ -3,9 +3,9 @@
 BEGIN TRANSACTION;
 BEGIN TRY
     -- Allow explicit values to be inserted into the identity column
-    SET IDENTITY_INSERT [2026OriginalMarti].dbo.BookFinancials ON;
+    SET IDENTITY_INSERT BookFinancials ON;
 
-    INSERT INTO [2026OriginalMarti].dbo.BookFinancials 
+    INSERT INTO BookFinancials 
         (Id, OrderN, InvoiceId, CustomerId, DocumentTypId, Description, DatumF, Owes, Demands, Time, DateTimeChanges,DontSum,Status,PaymentType)
     SELECT 
         KnigaFID,
@@ -19,9 +19,9 @@ BEGIN TRY
         Pobaruva, 
         Vreme, 
         VremePromena,0,0,0
-    FROM [2026-04Marti].dbo.KnigaF
+    FROM [2026MartiNew].dbo.KnigaF
     -- Turn off IDENTITY_INSERT after the insertion
-    SET IDENTITY_INSERT [2026OriginalMarti].dbo.BookFinancials OFF;
+    SET IDENTITY_INSERT BookFinancials OFF;
 
     COMMIT TRANSACTION;
     PRINT 'Data inserted successfully.';

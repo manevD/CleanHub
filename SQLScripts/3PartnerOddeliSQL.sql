@@ -1,15 +1,14 @@
 
-
 BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings ON;
+    SET IDENTITY_INSERT Buildings ON;
 
-    INSERT INTO [2025MartiTest].dbo.Buildings(Id,Name,BankAccount,CustomerRefId)
+    INSERT INTO Buildings(Id,Name,BankAccount,CustomerRefId)
     SELECT OddelID,Oddel,OddelBanka,OddelPartnerID
-    FROM [2025MartiHigiena].dbo.Partneri_Oddeli
+    FROM [2026MartiNew].dbo.Partneri_Oddeli 
     COMMIT TRANSACTION;
-	    SET IDENTITY_INSERT [2025MartiTest].dbo.Buildings Off;
+	    SET IDENTITY_INSERT Buildings Off;
 
     PRINT 'Data inserted successfully.';
 END TRY

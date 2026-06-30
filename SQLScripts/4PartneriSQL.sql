@@ -1,14 +1,14 @@
 ﻿BEGIN TRANSACTION;
 
 BEGIN TRY
-    SET IDENTITY_INSERT [2026OriginalMarti].dbo.Customers ON;
+    SET IDENTITY_INSERT Customers ON;
 
-    INSERT INTO [2026OriginalMarti].dbo.Customers (Id,CustomerInfo, Adress, PhoneNumber, Email, Web, Inactive, InactiveDatum, ActivityId, PhysicalPerson, BuildingId,SetCost,ApartmentUnit,Hide,Garage)
+    INSERT INTO Customers (Id,CustomerInfo, Adress, PhoneNumber, Email, Web, Inactive, InactiveDatum, ActivityId, PhysicalPerson, BuildingId,SetCost,ApartmentUnit,Hide,Garage)
     SELECT PartnerID,Partner, parAdresa, parTel, parEmail, parWeb, parNeaktiven, parNeaktivenDatum, DejnostID, FizickoLice, OddelID,0,1,0,0
-    FROM [2026-04Marti].dbo.Partneri
+    FROM [2026MartiNew].dbo.Partneri where PartnerId > 2343
       update Customers set Inactive = 0 where Inactive is null
     COMMIT TRANSACTION;
-	SET IDENTITY_INSERT [2026OriginalMarti].dbo.Customers OFF;
+	SET IDENTITY_INSERT Customers OFF;
     PRINT 'Data inserted successfully.';
 END TRY
 BEGIN CATCH
@@ -17,6 +17,14 @@ BEGIN CATCH
     -- Optionally, you can re-throw the error to see more details
     THROW;
 END CATCH;
+
+--Bitno : Site sto nemaat ActivityId da se dodadat vo ActivityId = 1 (ostanati) i da se dodadat vo ActivityId = 3 (fizicko lice)
+  update Customers set ActivityId = 1 WHERE ActivityId IS NULL
+  AND CustomerInfo NOT LIKE N'%ст.%'
+  AND CustomerInfo NOT LIKE N'%ст%'
+  AND CustomerInfo NOT LIKE N'%стан%';
+ update Customers set ActivityId = 3 WHERE ActivityId IS NULL
+
 
 
 Update Customers set ActivityId = 3  where Id not In(

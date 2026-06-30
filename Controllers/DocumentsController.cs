@@ -1355,7 +1355,7 @@ namespace CleanHub.Controllers
                             {
                                 bookFinancial.Description = PaymentDescription;
                             }
-                            if (Total != 0 )
+                            if (Total != 0 && bookFinancial.InvoiceId == 1200)
                             {
                                 bookFinancial.Demands = Total;
                             }
