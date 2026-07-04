@@ -5,146 +5,285 @@
 }
 
 <hr />
+
 <form asp-action="BuildingsReserve" asp-controller="Cards" method="get">
+
     <div class="row">
+
         @if (ViewBag.Buildings != null)
         {
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
+
                     <label for="buildingSearch">Објект</label>
-                    <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName"
-                           placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
-                    <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
+
+                    <input class="form-control"
+                           list="buildingOptions"
+                           id="buildingSearch"
+                           name="buildingName"
+                           placeholder="Пребарувај"
+                           value="@ViewBag.SelectedBuildingName" />
+
+                    <input type="hidden"
+                           id="buildingId"
+                           name="buildingId"
+                           value="@ViewBag.BuildingId" />
 
                     <datalist id="buildingOptions">
+
                         @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
                         {
-                            <option value="@building.Text" data-id="@building.Value"></option>
+                            <option value="@building.Text"
+                                    data-id="@building.Value">
+                            </option>
                         }
+
                     </datalist>
+
                 </div>
             </div>
         }
         else
         {
-            <p>Нема пронајдено партнери!</p>
+            <p>Нема пронајдени партнери!</p>
         }
 
         <div class="col-lg-2 col-md-3">
+
             <div class="form-group mb-0">
+
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+
+                <input id="dateFrom"
+                       name="dateFrom"
+                       placeholder="ден.месец.година"
+                       type="text"
+                       class="form-control flatpickr flatpickr-input active"
+                       value="@ViewBag.DateFrom" />
+
             </div>
+
         </div>
+
         <div class="col-lg-2 col-md-3">
-            <h6>До</h6>
+
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+
+                <h6>До</h6>
+
+                <input id="dateTo"
+                       name="dateTo"
+                       placeholder="ден.месец.година"
+                       type="text"
+                       class="form-control flatpickr flatpickr-input active"
+                       value="@ViewBag.DateTo" />
+
             </div>
+
         </div>
+
     </div>
+
     <br />
+
     <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
+
         <div class="form-group mb-0">
-            <button type="submit" class="btn btn-primary">Пребарувај</button>
+            <button type="submit" class="btn btn-primary">
+                Пребарувај
+            </button>
         </div>
+
     </div>
+
 </form>
+
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
-    </br>
+
     <div class="statbox widget box box-shadow">
+
         <div class="widget-content widget-content-area">
-            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+
+            <table id="building-reserve"
+                   class="table dt-table-hover"
+                   style="width:100%">
+
                 <thead>
-                <th data-sorter="false">Бр.</th>
-                <th data-sorter="false">Опис</th>
-                <th data-sorter="false">Побарува</th>
-                <th data-sorter="false">Должи</th>
-                <th data-sorter="false">Дата на издавање</th>
+
+                    <tr>
+                        <th>Бр.</th>
+                        <th>Дата на издавање</th>
+                        <th>Опис</th>
+                        <th>Побарува</th>
+                        <th>Должи</th>
+                    </tr>
+
                 </thead>
+
                 <tbody>
-                    @if (Model.BuildingFinancial != null && Model.BuildingFinancial.Any())
+
+                    @if (Model.BuildingFinancial != null &&
+                         Model.BuildingFinancial.Any())
                     {
                         var counter = 0;
+
                         @foreach (var invoice in Model.BuildingFinancial.OrderBy(x => x.DatumF))
                         {
                             counter++;
-                            <tr role="row">
+
+                            <tr>
+
                                 <td>@counter</td>
-                                <td>@Truncate(invoice.Description,40)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Demands) МКД</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Owes) МКД</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.FormattedDatumF)</td>
+
+                                <td>
+                                    @(invoice.DatumF?.ToString("dd.MM.yyyy"))
+                                </td>
+
+                                <td>
+                                    @Truncate(invoice.Description, 40)
+                                </td>
+
+                                <td>
+                                    @invoice.Demands МКД
+                                </td>
+
+                                <td>
+                                    @invoice.Owes МКД
+                                </td>
+
                             </tr>
                         }
-                        <tr role="row">
-                            <td>Вкупно</td>
-                            <td></td>
-                            <td></td>
-                            <td>Должи : @Model.BuildingFinancial.Sum(x=>x.Owes)</td>
-                            @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
-                            {
-                                <td>Салдо :- @Model.Total</td>
-                            }
-                            else
-                            {
-                                <td>Салдо :@Model.Total</td>
-                            }
+
+                        <tr>
+
+                            <th>Вкупно</th>
+
+                            <th></th>
+
+                            <th></th>
+
+                            <th>
+                                Должи :
+                                @Model.BuildingFinancial.Sum(x => x.Owes)
+                            </th>
+
+                            <th>
+
+                                @if (Model.CustomerOwesTotal > Model.CustomerDemandsTotal)
+                                {
+                                    <text>Салдо :- @Model.Total</text>
+                                }
+                                else
+                                {
+                                    <text>Салдо : @Model.Total</text>
+                                }
+
+                            </th>
+
                         </tr>
                     }
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center">Нема пронајдени податоци</td>
+
+                            <td colspan="5" class="text-center">
+                                Нема пронајдени податоци
+                            </td>
+
                         </tr>
                     }
+
                 </tbody>
-               @*  <tfoot>
-                <tr>
-                    <th></th>
-                    <th></th>
-                    <th>Побарува : @Model.CustomerDemandsTotal</th>
-                    <th>Должи : @Model.CustomerOwesTotal</th>
-                    @if (@Model.CustomerOwesTotal > @Model.CustomerDemandsTotal)
-                    {
-                        <th>Салдо :- @Model.Total</th>
-                    }
-                    else
-                    {
-                        <th>Салдо :@Model.Total</th>
-                    }
-                </tr>
-                </tfoot> *@
+
+                <tfoot>
+
+                    <tr>
+
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+                        <th></th>
+
+                    </tr>
+
+                </tfoot>
+
             </table>
+
         </div>
+
     </div>
+
 </div>
-@functions {
+
+@functions
+{
     public string Truncate(string input, int maxLength)
     {
-        if (string.IsNullOrEmpty(input)) return "";
-        return input.Length > maxLength ? input.Substring(0, maxLength) + "..." : input;
+        if (string.IsNullOrEmpty(input))
+            return "";
+
+        return input.Length > maxLength
+            ? input.Substring(0, maxLength) + "..."
+            : input;
     }
 }
-<script>
-    document.getElementById('buildingSearch').addEventListener('input', function () {
-        const selectedValue = this.value;
-        const options = document.querySelectorAll('#buildingOptions option');
-        let selectedId = '';
+@section Scripts
+{
+    <script>
+        document.getElementById('buildingSearch').addEventListener('input', function () {
 
-        // Find the matching option and get its data-id
-        options.forEach(option => {
-            if (option.value === selectedValue) {
-                selectedId = option.getAttribute('data-id');
-            }
+            const selectedValue = this.value;
+            const options = document.querySelectorAll('#buildingOptions option');
+            let selectedId = '';
+
+            options.forEach(option => {
+                if (option.value === selectedValue) {
+                    selectedId = option.getAttribute('data-id');
+                }
+            });
+
+            document.getElementById('buildingId').value = selectedId || '';
+
         });
 
-        // Set the hidden input's value
-        document.getElementById('buildingId').value = selectedId || '';
-    });
-</script>
-<script>
-$('#html5-extension').DataTable({
-    ordering: false
-});
-</script>
+        $(document).ready(function () {
+
+            $('#building-reserve').DataTable({
+
+                ordering: false,
+                order: [],
+
+                dom:
+                    "<'dt--top-section'<'row'<'col-sm-12 col-md-6 d-flex justify-content-md-start justify-content-center'B><'col-sm-12 col-md-6 d-flex justify-content-md-end justify-content-center mt-md-0 mt-3'f>>>" +
+                    "<'table-responsive'tr>" +
+                    "<'dt--bottom-section d-sm-flex justify-content-sm-between text-center'<'dt--pages-count mb-sm-0 mb-3'i><'dt--pagination'p>>",
+
+                buttons: [
+                    { extend: 'copy', className: 'btn' },
+                    { extend: 'csv', className: 'btn' },
+                    { extend: 'excel', className: 'btn' },
+                    { extend: 'print', className: 'btn' }
+                ],
+
+                oLanguage: {
+                    oPaginate: {
+                        sPrevious: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
+                        sNext: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>'
+                    },
+                    sInfo: "Страна _PAGE_ од _PAGES_",
+                    sSearch: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+                    sSearchPlaceholder: "Пребарувај...",
+                    sLengthMenu: "Results : _MENU_"
+                },
+
+                stripeClasses: [],
+                lengthMenu: [7, 10, 20, 50],
+                pageLength: 10
+
+            });
+
+        });
+    </script>
+}

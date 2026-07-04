@@ -171,6 +171,7 @@ namespace CleanHub.Controllers
                     
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+                    var teeest = results.Where(x => !x.DontSum && x.Owes != 0).ToList();
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{

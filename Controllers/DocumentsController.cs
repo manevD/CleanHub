@@ -1106,7 +1106,7 @@ namespace CleanHub.Controllers
                             Customers = b.Customers,
                             BuildingProducts = b.BuildingProducts
                         }));
-
+                var test = buildings.Where(x => x.Id == 175).FirstOrDefault();
                 documentViewModel.Buildings =
                     App.FullMapper.Map<List<BuildingViewModel>>(buildings);
 
@@ -1115,6 +1115,7 @@ namespace CleanHub.Controllers
                         ? documentViewModel.Buildings
                             .FirstOrDefault(x => x.Id == buildingId.Value)
                         : documentViewModel.Buildings.FirstOrDefault();
+                var test1 = documentViewModel.Buildings.Where(x => x.Id == 175).FirstOrDefault();
 
                 if (documentViewModel.Building == null)
                 {
@@ -1297,7 +1298,6 @@ namespace CleanHub.Controllers
                     _unitOfWork.BookFinancials.Add(App.FullMapper.Map<BookFinancial>(bookFinancial));
                 }
                 await _unitOfWork.SaveChangesAsync();
-                return View(document);
             }
 
             return View(document);
@@ -1876,7 +1876,7 @@ namespace CleanHub.Controllers
                 {
                     var listToAdd = new List<BookFinancial>
                     {
-                        new ()
+                        new()
                         {
                             InvoiceId = Constants.Recieve,
                             PaymentType = model.PaymentType,
@@ -1892,8 +1892,12 @@ namespace CleanHub.Controllers
                             CustomerId = documentToUpdate.Customer.Id,
                             DocumentId = documentToUpdate.Id,
                             Status = PaymentStatus.Платено
-                        },
-                        new()
+                        }
+                    };
+
+                    if (documentToUpdate.Customer.ActivityId != 1)
+                    {
+                        listToAdd.Add(new BookFinancial
                         {
                             InvoiceId = Constants.Reserve,
                             PaymentType = model.PaymentType,
@@ -1912,8 +1916,8 @@ namespace CleanHub.Controllers
                             DocumentTypId = 4,
                             DatumF = model.DateReceived,
                             Status = PaymentStatus.Платено
-                        }
-                    };
+                        });
+                    }
 
                     _unitOfWork.BookFinancials.AddRange(listToAdd);
                 }
@@ -2152,9 +2156,13 @@ namespace CleanHub.Controllers
                     var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == item.CustomerId && x.PaymentStatus != 0);
                     if (debt != null && debt.Any())
                     {
-                        var allParts = debt.OrderBy(x => x.Id)
-                            .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                            .ToList();
+                        var allParts = debt
+                             .OrderBy(x => x.Id)
+                             .SelectMany(x =>
+                                 (x.ToDocument ??
+                                  (x.DateReceived?.ToString("yyyy-MM") ?? string.Empty))
+                                 .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                             .ToList();
 
                         var distinctExceptLast = allParts
                             .Reverse<string>()                    // Umkehren

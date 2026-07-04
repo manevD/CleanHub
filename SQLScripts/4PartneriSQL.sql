@@ -6,6 +6,8 @@ BEGIN TRY
     INSERT INTO Customers (Id,CustomerInfo, Adress, PhoneNumber, Email, Web, Inactive, InactiveDatum, ActivityId, PhysicalPerson, BuildingId,SetCost,ApartmentUnit,Hide,Garage)
     SELECT PartnerID,Partner, parAdresa, parTel, parEmail, parWeb, parNeaktiven, parNeaktivenDatum, DejnostID, FizickoLice, OddelID,0,1,0,0
     FROM [2026MartiNew].dbo.Partneri where PartnerId > 2343
+     --vazno inace nema da gi dava stanarite pri kreiranje na smetka !!
+      update Customers set ActiveDatum = '2025-01-31' where Inactive = 0 and ActiveDatum is null
       update Customers set Inactive = 0 where Inactive is null
     COMMIT TRANSACTION;
 	SET IDENTITY_INSERT Customers OFF;
