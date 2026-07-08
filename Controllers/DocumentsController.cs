@@ -2136,11 +2136,25 @@ namespace CleanHub.Controllers
         {
             if (documents != null && documents.Any())
             {
-                var results = GetFilteredBookFinancials(1201, building.Id).ToList();
-                var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
-                var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+                double total = 0;
+                double owes = 0;
+                double demands = 0;
+                if (building.CustomerRefId != null && building.Customers != null && building.Customers.Any() && building.Customers.Count() <= 1)
+                {
+                    var documenti = await _unitOfWork.Documents.GetAllWithIncludeAsync(
+                    predicate: x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено);
 
-                var total = owes - demands;
+                    total = documenti.Sum(x => x.TotalOutput.Value);
+                }
+                else
+                {
+                    var results = GetFilteredBookFinancials(1201, building.Id).ToList();
+                    demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                    owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+
+                    total = owes - demands;
+                }
+             
                 PdfDocument endDoc = new PdfDocument();
                 MemoryStream pdfStream = new MemoryStream();
                 foreach (var item in documents)
