@@ -26,8 +26,8 @@ namespace CleanHub.Controllers
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
-                return _unitOfWork.Customers
-                    .GetAllNoTrakcing()
+                return await _unitOfWork.Customers
+                    .Query()
                     .Where(x => !x.Hide)
                     .Select(c => new CustomerViewModel
                     {
@@ -38,7 +38,7 @@ namespace CleanHub.Controllers
                         PhoneNumber = c.PhoneNumber,
                         Inactive = c.Inactive ?? false,
                         Adress = c.Adress
-                    }).ToList();
+                    }).ToListAsync();
             });
 
             return View(customers);

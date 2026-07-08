@@ -2141,10 +2141,7 @@ namespace CleanHub.Controllers
                 double demands = 0;
                 if (building.CustomerRefId != null && building.Customers != null && building.Customers.Any() && building.Customers.Count() <= 1)
                 {
-                    var documenti = await _unitOfWork.Documents.GetAllWithIncludeAsync(
-                    predicate: x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено);
-
-                    total = documenti.Sum(x => x.TotalOutput.Value);
+                   total = (double)await _unitOfWork.Documents.Query().Where(x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено).SumAsync(x => x.TotalOutput);
                 }
                 else
                 {
