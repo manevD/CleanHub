@@ -347,14 +347,7 @@ namespace CleanHub.Controllers
                         NumberNalog = cc.OrderN ?? 0
                     })
                     .ToList();
-                //if (newBookFinancialFromSaldo.Demands > 0)
-                //{
-                //    cardsViewModel.CustomerDemandsTotal += newBookFinancialFromSaldo.Demands;
-                //}
-                //else
-                //{
-                //    cardsViewModel.CustomerOwesTotal += (float)newBookFinancialFromSaldo.Owes;
-                //}
+                
                 cardsViewModel.CustomerData.AddRange(dataDocument);
                 cardsViewModel.CustomerData.AddRange(dataBookFinancial);
                 cardsViewModel.CustomerDemandsTotal = dataBookFinancial.Sum(x => x.Demands);

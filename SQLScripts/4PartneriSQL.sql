@@ -27,6 +27,17 @@ END CATCH;
   AND CustomerInfo NOT LIKE N'%стан%';
  update Customers set ActivityId = 3 WHERE ActivityId IS NULL
 
+ -- Bitno tie se firmi so se kako stanari dodadeni a  mora da imaat ActivityId 1 
+ Update Customers set ActivityId = 1 where Id in (
+619,35,36,133,600,1505,
+771 ,
+1117 ,
+1155 ,
+1227  ,
+1282 ,
+1586,
+1906,1908,1909,1979,2042,2117,2184,2185 )
+
 
 
 Update Customers set ActivityId = 3  where Id not In(
