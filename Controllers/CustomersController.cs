@@ -17,7 +17,25 @@ namespace CleanHub.Controllers
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
         public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
         public List<Activity> ActivitiesList { get; set; } = _unitOfWork.Activities.GetAll().ToList();
+        [HttpGet]
+        public async Task<IActionResult> GetAllCustomers([FromServices] IMemoryCache cache)
+        {
+            var customers = await cache.GetOrCreateAsync("Customers", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
+                return await _unitOfWork.Customers
+                    .Query()
+                    .Where(x => !x.Hide)
+                    .Select(c => new CustomerViewModel
+                    {
+                        Id = c.Id,
+                        CustomerInfo = c.CustomerInfo,
+                    }).ToListAsync();
+            });
+
+            return Json(customers);
+        }
         // GET: Customers
         [Route("Станари")]
         public async Task<IActionResult> Index([FromServices] IMemoryCache cache)

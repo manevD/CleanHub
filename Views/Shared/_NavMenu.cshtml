@@ -1,8 +1,10 @@
-﻿@using CleanHub.Entities
-@using System.ComponentModel
+﻿@using System.ComponentModel
+@using CleanHub.Entities
+@using CleanHub.Entities.Enums
+@using CleanHub.Extensions
 
 <nav id="sidebar">
-    <div class="navbar-nav theme-brand flex-row  text-center">
+    <div class="navbar-nav theme-brand flex-row text-center">
         <div class="nav-logo">
             <div class="nav-item theme-logo">
                 <a href="index.html">
@@ -47,7 +49,7 @@
             </a>
         </li>
         <li class="menu active">
-            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
+            <a href="#knizenjaMenu" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
                 <div class="">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clipboard"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                     <span>Книжења</span>
@@ -56,7 +58,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
             </a>
-            <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
+            <ul class="dropdown-menu submenu list-unstyled" id="knizenjaMenu" data-bs-parent="#accordionExample">
                 <li class="active">
                     <a asp-action="Index" asp-controller="BookFinancial" aria-expanded="true" asp-route-id="0" class="dropdown-toggle">
                         <div>
@@ -74,7 +76,7 @@
             </ul>
         </li>
         <li class="menu active">
-            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
+            <a href="#fakturiMenu" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
                 <div>
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clipboard"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                     <span>Креирај Фактура</span>
@@ -83,7 +85,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-chevron-right"><polyline points="9 18 15 12 9 6"></polyline></svg>
                 </div>
             </a>
-            <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
+            <ul class="dropdown-menu submenu list-unstyled" id="fakturiMenu" data-bs-parent="#accordionExample">
                 <li class="active">
                     <a asp-action="Create" asp-controller="Documents" aria-expanded="true" asp-route-id="0" class="dropdown-toggle">
                         <div class="">
@@ -99,7 +101,7 @@
                     </a>
                 </li>
                 <li class="active">
-                    <a asp-action="CreateCostForBuilding" asp-controller="Documents" aria-expanded="true"  class="dropdown-toggle">
+                    <a asp-action="CreateCostForBuilding" asp-controller="Documents" aria-expanded="true" class="dropdown-toggle">
                         <div class="">
                             <span>Трошок</span>
                         </div>
@@ -115,13 +117,13 @@
             </ul>
         </li>
         <li class="menu active">
-            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
+            <a href="#smetkiMenu" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
                 <div class="">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     <span>Сметки</span>
                 </div>
             </a>
-            <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
+            <ul class="dropdown-menu submenu list-unstyled" id="smetkiMenu" data-bs-parent="#accordionExample">
                 <li class="active">
                     <a asp-action="Index" asp-controller="Documents" aria-expanded="true" class="dropdown-toggle">
                         <div class="">
@@ -139,7 +141,7 @@
             </ul>
         </li>
         <li class="menu active">
-            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
+            <a href="#tables" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
                 <div class="">
                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
                     <span>Картици</span>
@@ -147,10 +149,10 @@
             </a>
             <ul class="dropdown-menu submenu list-unstyled" id="tables" data-bs-parent="#accordionExample">
                 <li class="sub-submenu dropend">
-                    <a href="#datatable" data-bs-toggle="dropdown" aria-expanded="false" class="dropdown-toggle collapsed">
+                    <a href="#datatableBuildings" data-bs-toggle="dropdown" aria-expanded="false" class="dropdown-toggle collapsed">
                         Објекти
                     </a>
-                    <ul class="dropdown-menu list-unstyled sub-submenu" id="datatable" data-bs-parent="#tables">
+                    <ul class="dropdown-menu list-unstyled sub-submenu" id="datatableBuildings" data-bs-parent="#tables">
                         <li class="active">
                             <a asp-action="Buildings" asp-controller="Cards" aria-expanded="true" class="dropdown-toggle">
                                 <div class="">
@@ -186,20 +188,13 @@
                                 </div>
                             </a>
                         </li>
-                        @* <li>
-                            <a asp-action="Costs" asp-controller="BookFinancial" aria-expanded="true" class="dropdown-toggle">
-                                <div class="">
-                                    <span> Трошоци </span>
-                                </div>
-                            </a>
-                        </li> *@
                     </ul>
                 </li>
                 <li class="sub-submenu dropend">
-                    <a href="#datatable" data-bs-toggle="dropdown" aria-expanded="false" class="dropdown-toggle collapsed">
+                    <a href="#datatableCustomers" data-bs-toggle="dropdown" aria-expanded="false" class="dropdown-toggle collapsed">
                         Станари
                     </a>
-                    <ul class="dropdown-menu list-unstyled sub-submenu" id="datatable" data-bs-parent="#tables">
+                    <ul class="dropdown-menu list-unstyled sub-submenu" id="datatableCustomers" data-bs-parent="#tables">
                         <li class="active">
                             <a asp-action="Customers" asp-controller="Cards" aria-expanded="true" class="dropdown-toggle">
                                 <div class="">
@@ -208,52 +203,36 @@
                             </a>
                         </li>
                         <li class="active">
-
                             <a asp-action="CustomersReserve" asp-controller="Cards" aria-expanded="true" class="dropdown-toggle">
                                 <div class="">
                                     <span>1201</span>
                                 </div>
                             </a>
                         </li>
-
                     </ul>
                 </li>
             </ul>
         </li>
-        @*  <li class="menu active">
-            <a href="#dashboard" data-bs-toggle="dropdown" aria-expanded="true" class="dropdown-toggle">
+        <li class="menu active" style="color:#25d5e4">
+            <a href="#" data-bs-toggle="modal"  data-bs-target="#globalPayModal" class="nav-link">
                 <div class="">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-book-open"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
-                    <span>Картици</span>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-clipboard"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                    <span style="color:#25d5e4";>Плати сметка</span>
                 </div>
             </a>
-            <ul class="dropdown-menu submenu list-unstyled" id="dashboard" data-bs-parent="#accordionExample">
-                <li class="active">
-                    <a asp-action="Buildings" asp-controller="Cards" aria-expanded="true" class="dropdown-toggle">
-                        <div class="">
-                            <span>Објекти</span>
-                        </div>
-                    </a>
-                </li>
-                <li class="active">
-                    <a asp-action="Customers" asp-controller="Cards" aria-expanded="true" asp-route-id="@((int)InvoiceTyp.Energy)" class="dropdown-toggle">
-                        <div class="">
-                            <span>Станари</span>
-                        </div>
-                    </a>
-                </li>
-            </ul>
-        </li> *@
+        </li>
         <li class="menu active">
             <a asp-action="Help" asp-controller="Home" aria-expanded="true" class="dropdown-toggle">
                 <div class="">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-help-circle"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <svg  style="color:#25d5e4" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-help-circle"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
                     <span>Помош</span>
                 </div>
             </a>
         </li>
     </ul>
-</nav>
+</nav> <!-- КРАЈ НА SIDEBAR НАВИГАЦИЈАТА -->
+
+
 @functions {
     List<KeyValuePair<int, string>> GetEnumDescriptions<T>() where T : Enum
     {

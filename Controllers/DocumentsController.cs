@@ -79,7 +79,48 @@ namespace CleanHub.Controllers
                 await smtpClient.SendMailAsync(message);
             }
         }
+        [HttpPost]
+        public async Task<IActionResult> Pay(int invoiceId, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        {
+            // 1. Најди го документот во базата
+            var document = await _unitOfWork.Documents.Query()
+                .FirstOrDefaultAsync(x => x.Id == invoiceId);
 
+            if (document == null)
+            {
+                return BadRequest("Сметката не е пронајдена.");
+            }
+
+            // 2. Постави ги вредностите на документот исто како во твојата за групно плаќање
+            document.PaymentStatus = PaymentStatus.Платено;
+            document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
+            document.PaymentDescription = PaymentDescription;
+            document.PaymentType = PaymentType;
+            document.PaymentNumber = PaymentNumber;
+
+            // 3. Повикај ја твојата оригинална логика преку маперот 1:1
+            var viewModel = App.FullMapper.Map<DocumentViewModel>(document);
+            SetStatusPayment(viewModel);
+
+            // 4. Зачувај ги промените
+            await _unitOfWork.SaveChangesAsync();
+
+            return Ok(new { success = true });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUnpaidInvoices(int customerId)
+        {
+            var unpaidInvoices = await _unitOfWork.Documents.Query()
+                .Where(x => x.CustomerId == customerId && x.PaymentStatus == PaymentStatus.Неплатено)
+                .Select(x => new {
+                    id = x.Id,
+                    documentText = x.ToDocument + " (" + x.TotalOutput + " МКД)",
+                })
+                .ToListAsync();
+
+            return Json(unpaidInvoices);
+        }
         public async Task CreateAndSend(DocumentViewModel document)
         {
 
@@ -1302,6 +1343,30 @@ namespace CleanHub.Controllers
 
             return View(document);
         }
+        [HttpPost]
+        public async Task<IActionResult> CreateBookFinancial( PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total,int customerId)
+        {
+            var bookFinancial = new BookFinancial()
+            {
+                CustomerId = customerId,
+                Description = PaymentDescription,
+                Demands = Total,
+                Owes = 0,
+                PaymentType = PaymentType,
+                PaymentDate = DateOnly.FromDateTime(PaymentDate),
+                InvoiceId = (int)InvoiceTyp.Recieve,
+                DocumentTypId = 4,
+                Status = (int)PaymentStatus.Платено,
+                Time = DateTime.UtcNow,
+                DatumF = DateOnly.FromDateTime(PaymentDate),
+                DateTimeChanges = DateTime.UtcNow
+            };
+            _unitOfWork.BookFinancials.Add(bookFinancial);
+            await _unitOfWork.SaveChangesAsync();
+
+            // 2. Враќаш OK статус бидејќи ова ќе биде повикано преку AJAX
+            return Ok(new { success = true, message = "Успешно зачувано плаќање!" });
+        }
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -1895,7 +1960,9 @@ namespace CleanHub.Controllers
                         }
                     };
 
-                    if (documentToUpdate.Customer.ActivityId != 1)
+                    if (documentToUpdate.Customer.ActivityId != 1 && documentToUpdate.Books
+                             .Any(x => x.ArticleNotes != null &&
+                                 x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase)))
                     {
                         listToAdd.Add(new BookFinancial
                         {

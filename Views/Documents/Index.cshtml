@@ -94,6 +94,15 @@
                     </button>
 
                 </form>
+
+                <!-- ✅ НОВО КОПЧЕ ПОД ФОРМАТА (Ако е селектиран објект) -->
+                @if (ViewBag.BuildingId != null)
+                {
+                    <button type="button" class="btn btn-success w-100 mt-2"
+                            data-bs-toggle="modal" data-bs-target="#createPaymentModal" style="font-size:15px;">
+                        Креирај плаќање
+                    </button>
+                }
             </div>
         </div>
 
@@ -109,7 +118,7 @@
                             <thead>
                                 <tr>
                                     <th>Партнер</th>
-                                
+
                                     <th>Должи</th>
                                     <th>Побарува</th>
                                     <th>Салдо</th>
@@ -172,13 +181,13 @@
                                                 float monthly = 0;
                                                 @if (c.ActivityId != 3)
                                                 {
-                                                   monthly = customerInvoices
-                                                    .Where(x =>
-                                                        x.Date.HasValue &&
-                                                        x.Date.Value.Month == m &&
-                                                        x.PaymentStatus == 0 // nur wenn PaymentStatus 0
-                                                    )
-                                                    .Sum(x => x.TotalOutput ?? 0);
+                                                    monthly = customerInvoices
+                                                      .Where(x =>
+                                                          x.Date.HasValue &&
+                                                          x.Date.Value.Month == m &&
+                                                          x.PaymentStatus == 0 // nur wenn PaymentStatus 0
+                                                      )
+                                                      .Sum(x => x.TotalOutput ?? 0);
                                                 }
                                                 else
                                                 {
@@ -191,8 +200,8 @@
                                                     )
                                                     .Sum(x => x.TotalOutput ?? 0);
                                                 }
-                                                
 
+                                                
                                                 <td style="font-size: 15px !important; font-weight:bold;">
                                                     @(monthly == 0 ? "0" : monthly.ToString())
                                                 </td>
@@ -289,23 +298,23 @@
 
                                         <td>
                                             <a asp-action="Details" asp-route-id="@invoice.Id"
-                                                   class="badge badge-light-primary">
+                                               class="badge badge-light-primary">
                                                 👁
                                             </a>
                                             @if (invoice.PaymentStatus == PaymentStatus.Неплатено)
                                             {
 
                                                 <a href="#"
-                                                       class="badge badge-light-primary set-paid-btn"
-                                                       data-id="@invoice.Id">
+                                                   class="badge badge-light-primary set-paid-btn"
+                                                   data-id="@invoice.Id">
                                                     Стави како платено
                                                 </a>
                                             }
                                             @if (invoice.PaymentStatus == PaymentStatus.Платено)
                                             {
                                                 <a href="#"
-                                                       class="badge badge-light-primary set-notpaid-btn"
-                                                       data-id="@invoice.Id">
+                                                   class="badge badge-light-primary set-notpaid-btn"
+                                                   data-id="@invoice.Id">
                                                     Стави како неплатено
                                                 </a>
                                             }
@@ -450,6 +459,71 @@
     </div>
 </div>
 
+<div class="modal fade" id="createPaymentModal" tabindex="-1" role="dialog" aria-labelledby="createPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <!-- Му додаваме ID на формата, го тргаме asp-action бидејќи ќ addresses преку AJAX -->
+            <form id="createPaymentForm" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Креирај ново плаќање</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="font-size: 14px;">
+
+                    <div class="form-group mb-3">
+                        <label for="createPaymentCustomerId" class="form-label">Станар</label>
+                        <select id="createPaymentCustomerId" name="customerId" class="form-control" required>
+                            <option value="">-- Избери станар --</option>
+                            @if (ViewBag.Customers != null)
+                            {
+                                foreach (var c in (IEnumerable<dynamic>)ViewBag.Customers)
+                                {
+                                    <option value="@c.Id">@c.CustomerInfo</option>
+                                }
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="createPaymentType" class="form-label">Тип на плаќање</label>
+                        <select id="createPaymentType" name="PaymentType" class="form-control">
+                            @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                            {
+                                <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="createTotal" class="form-label">Тотал</label>
+                        <input type="number" id="createTotal" name="Total" min="0" step="1" class="form-control" required />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="createPaymentDate" class="form-label">Дата на плаќање</label>
+                        <input type="date" id="createPaymentDate" name="PaymentDate" class="form-control" value="@DateTime.Now.ToString("yyyy-MM-dd")" required />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="createPaymentNumber" class="form-label">Број на плаќање</label>
+                        <input type="text" id="createPaymentNumber" name="PaymentNumber" class="form-control" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="createPaymentDescription" class="form-label">Опис</label>
+                        <input type="text" id="createPaymentDescription" name="PaymentDescription" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                    <button type="submit" class="btn btn-success">Креирај плаќање</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
 @section Scripts {
     <script>
         window.addEventListener("load", function () {
@@ -603,6 +677,37 @@
                     this.classList.add("selected-row");
                 });
             });
+        });
+    </script>
+    <script>
+            document.getElementById("createPaymentForm").addEventListener("submit", function (e) {
+        e.preventDefault(); // Спречи го класичното рефреширање на формата
+
+        const formData = new FormData(this);
+
+        fetch('/Documents/CreateBookFinancial', {
+        method: 'POST',
+        body: formData
+        })
+        .then(response => {
+        if (response.ok) {
+        // 1. Го затвораме модалот програмски
+        const modalElement = document.getElementById('createPaymentModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        if (modal) {
+        modal.hide();
+        }
+
+        // 2. Ја рефрешираме моменталната филтрирана страница за веднаш да се ажурираат сумите во табелата
+        window.location.reload();
+        } else {
+        alert("Се појави грешка при зачувување на плаќањето.");
+        }
+        })
+        .catch(error => {
+        console.error("Error:", error);
+        alert("Грешка во конекцијата.");
+        });
         });
     </script>
 }

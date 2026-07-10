@@ -84,10 +84,10 @@ namespace CleanHub.Controllers
                 building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
                 if (building != null)
                 {
-                    results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, buildingId.Value).ToList();
-                    ViewBag.TotalDemands = GetDemandsLastInvoice(dateToStr, results);
-                    ViewBag.TotalOwes = GetOwesLastInvoice(dateToStr, results);
-                    FilterResultsByDate(ref results, dateFromStr ?? "", dateToStr ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
+                    results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
+
+                    ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                    ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{
                     //    CalculateOverdueStatus(results);
@@ -102,7 +102,7 @@ namespace CleanHub.Controllers
                 ViewBag.SelectedBuildingName = building.Name;
 
                 ViewBag.BuildingId = building.Id;
-                return View(results.OrderBy(x => x.DatumF));
+                return View(results.Where(x => x.DatumF.Year == year).OrderBy(x => x.DatumF));
             }
             catch (Exception e)
             {
@@ -171,7 +171,6 @@ namespace CleanHub.Controllers
                     
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
-                    var teeest = results.Where(x => !x.DontSum && x.Owes != 0).ToList();
                     FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", invoiceId ?? (int)InvoiceTyp.Reserve, paymentStatusId);
                     //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
                     //{

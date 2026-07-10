@@ -1,0 +1,229 @@
+﻿@using CleanHub.Entities.Enums
+@using CleanHub.Extensions
+
+<!-- МОДАЛОТ Е ИЗВАДЕН КОМПЛЕТНО НАДВОР ОД СИДЕБАРОТ И СЕГА НЕМА ДА ПРАВИ СЕНКА -->
+<div class="modal fade" id="globalPayModal" tabindex="-1" role="dialog" aria-labelledby="globalPayModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <form id="globalPayForm" method="post">
+                @Html.AntiForgeryToken()
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Брзо плаќање на сметка</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body" style="font-size: 14px;">
+
+                    <!-- 1. Избери Станар / Партнер преку Пребарување -->
+                    <div class="form-group mb-3">
+                        <label for="customerSearch">Партнер</label>
+                        <input class="form-control" list="customerOptions" id="customerSearch" name="customerName"
+                               placeholder="Пребарувај..." autocomplete="off">
+
+                        <!-- Скриеното поле каде што се чува и се праќа ID-то кон бекендот -->
+                        <input type="hidden" id="customerId" name="customerId">
+
+                        <!-- Динамички ќе се наполни преку fetch од базата -->
+                        <datalist id="customerOptions"></datalist>
+                    </div>
+
+                    <!-- 2. Избери Неплатена Сметка -->
+                    <div class="form-group mb-3">
+                        <label for="globalInvoiceId" class="form-label">Избери Неплатена Сметка</label>
+                        <select id="globalInvoiceId" name="invoiceId" class="form-control" required disabled>
+                            <option value="">-- Прво избери станар --</option>
+                        </select>
+                    </div>
+
+                    <div class="row">
+                        <!-- Начин на плаќање -->
+                        <div class="col-md-6 form-group mb-3">
+                            <label for="globalPaymentType" class="form-label">Тип на плаќање</label>
+                            <select id="globalPaymentType" name="PaymentType" class="form-control">
+                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                {
+                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                }
+                            </select>
+                        </div>
+
+                        <!-- Датум на плаќање -->
+                        <div class="col-md-6 form-group mb-3">
+                            <label for="globalPaymentDate" class="form-label">Датум на плаќање</label>
+                            <input type="date" id="globalPaymentDate" name="PaymentDate" class="form-control" required />
+                        </div>
+                    </div>
+
+                    <!-- Број на плаќање / извод -->
+                    <div class="form-group mb-3">
+                        <label for="globalPaymentNumber" class="form-label">Број на уплата / извод</label>
+                        <input type="text" id="globalPaymentNumber" name="PaymentNumber" class="form-control" placeholder="Пр. Извод 45 / Блок 12" />
+                    </div>
+
+                    <!-- Опис -->
+                    <div class="form-group mb-3">
+                        <label for="globalPaymentDescription" class="form-label">Опис на плаќањето</label>
+                        <textarea id="globalPaymentDescription" name="PaymentDescription" class="form-control" rows="2" placeholder="Пр. Редовно плаќање на трошоци"></textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                    <button type="submit" class="btn btn-success">Зачувај плаќање</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const modalElement = document.getElementById('globalPayModal');
+        const customerInput = document.getElementById('customerSearch');
+        const customerHiddenId = document.getElementById('customerId');
+        const customerDatalist = document.getElementById('customerOptions');
+        const invoiceSelect = document.getElementById('globalInvoiceId');
+        const paymentDateInput = document.getElementById('globalPaymentDate');
+        const form = document.getElementById('globalPayForm');
+
+        if (!modalElement) return;
+
+        let debounceTimer;
+
+        // 1. ПРИ ОТВОРАЊЕ НА МОДАЛОТ
+        modalElement.addEventListener('show.bs.modal', function () {
+            if(customerInput) customerInput.value = "";
+            if(customerHiddenId) customerHiddenId.value = "";
+            if(customerDatalist) customerDatalist.innerHTML = "";
+
+            invoiceSelect.innerHTML = '<option value="">-- Прво избери станар --</option>';
+            invoiceSelect.disabled = true;
+
+            if (paymentDateInput) {
+                const today = new Date().toISOString().split('T')[0];
+                paymentDateInput.value = today;
+            }
+        });
+
+        // 2. LIVE SEARCH ЛОГИКА (Се активира при секое пишување)
+        if (customerInput && customerDatalist) {
+            customerInput.addEventListener("input", function () {
+                const currentVal = this.value.trim();
+
+                // Прво проверуваме дали корисникот издиректно КЛИКНАЛ на некоја опција од паѓачкото мени
+                const options = customerDatalist.querySelectorAll("option");
+                let idFound = "";
+                options.forEach(option => {
+                    if (option.value === currentVal) {
+                        idFound = option.getAttribute("data-id");
+                    }
+                });
+
+                // АКО Е КЛИКНАТО НА ПОСТОЕЧКА ОПЦИЈА: Го зачувуваме ID-то и ги вчитуваме сметките
+                if (idFound) {
+                    if (customerHiddenId.value !== idFound) {
+                        customerHiddenId.value = idFound;
+                        loadUnpaidInvoices(idFound);
+                    }
+                    return; // Прекини тука, нема потреба од ново пребарување во база
+                }
+
+                // АКО КОРИСНИКОТ СЕШТЕ ПИШУВА: Се активира Live Search со Debounce (одложување од 300мс)
+                customerHiddenId.value = ""; // Се ресетира ID-то бидејќи уште се пишува
+                invoiceSelect.innerHTML = '<option value="">-- Прво избери станар --</option>';
+                invoiceSelect.disabled = true;
+
+                clearTimeout(debounceTimer);
+
+                if (currentVal.length < 2) {
+                    customerDatalist.innerHTML = ""; // Не пребарувај ако има помалку од 2 букви
+                    return;
+                }
+
+                debounceTimer = setTimeout(() => {
+                    // ПРАЌАЊЕ НА ПРЕБАРУВАЊЕТО ДО БЕКЕНДОТ (Овде претпоставуваме дека GetAllCustomers прифаќа query или ги филтрираме тука)
+                    fetch('/Customers/GetAllCustomers')
+                        .then(res => res.json())
+                        .then(data => {
+                            customerDatalist.innerHTML = ""; // Исчисти ги старите резултати
+
+                            // Филтрирање на податоците на фронтенд според тоа што го пишал корисникот
+                            const filtered = data.filter(c => {
+                                const name = (c.customerInfo || c.info || "").toLowerCase();
+                                return name.includes(currentVal.toLowerCase());
+                            });
+
+                            // Наполни го паѓачкото мени со новите филтрирани резултати
+                            filtered.forEach(c => {
+                                let opt = document.createElement('option');
+                                opt.value = c.customerInfo || c.info;
+                                opt.setAttribute('data-id', c.id);
+                                customerDatalist.appendChild(opt);
+                            });
+                        })
+                        .catch(err => console.error("Грешка при Live Search:", err));
+                }, 300); // 300 милисекунди пауза по последната стисната буква
+            });
+        }
+
+        // 3. ФУНКЦИЈА ЗА ВЧИТУВАЊЕ НЕПЛАТЕНИ СМЕТКИ
+        function loadUnpaidInvoices(customerId) {
+            invoiceSelect.innerHTML = '<option value="">-- Се вчитува... --</option>';
+            invoiceSelect.disabled = true;
+
+            fetch(`/Documents/GetUnpaidInvoices?customerId=${customerId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data || data.length === 0) {
+                        invoiceSelect.innerHTML = '<option value="">Нема неплатени сметки за овој станар</option>';
+                        return;
+                    }
+
+                    invoiceSelect.innerHTML = '<option value="">-- Избери сметка --</option>';
+                    invoiceSelect.disabled = false;
+
+                    data.forEach(inv => {
+                        let opt = document.createElement('option');
+                        opt.value = inv.id;
+                        opt.textContent = inv.documentText;
+                        invoiceSelect.appendChild(opt);
+                    });
+                })
+                .catch(err => {
+                    console.error("Грешка при вчитување фактури:", err);
+                    invoiceSelect.innerHTML = '<option value="">Грешка при вчитавање</option>';
+                });
+        }
+
+        // 4. ИСПРАЌАЊЕ НА ФОРМАТА
+        form.addEventListener('submit', function (e) {
+            e.preventDefault();
+
+            if (!customerHiddenId.value) {
+                alert("Ве молиме изберете валиден партнер од листата.");
+                return;
+            }
+
+            const formData = new FormData(this);
+
+            fetch('/Documents/Pay', {
+                method: 'POST',
+                body: formData
+            })
+            .then(res => {
+                if (res.ok) {
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+
+                    document.body.classList.remove("modal-open");
+                    document.querySelectorAll(".modal-backdrop").forEach(x => x.remove());
+
+                    window.location.reload();
+                } else {
+                    alert("Грешка при извршување на плаќањето.");
+                }
+            })
+            .catch(err => alert("Системска грешка: " + err));
+        });
+    });
+</script>
