@@ -12,7 +12,6 @@ BEGIN TRY
         c.Web            = p.parWeb,
         c.Inactive       = ISNULL(p.parNeaktiven, 0),
         c.InactiveDatum  = p.parNeaktivenDatum,
-        c.ActivityId     = p.DejnostID,
         c.PhysicalPerson = p.FizickoLice,
         c.BuildingId     = p.OddelID,
         c.SetCost        = 0,
