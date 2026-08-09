@@ -1186,20 +1186,6 @@ namespace CleanHub.Controllers
 
                 if (filteredProducts != null && filteredProducts.Any())
                 {
-                    foreach (var product in filteredProducts)
-                    {
-                        var notes = product.ArticleNotes?.ToLower();
-
-                        if (notes != null &&
-                            (notes.Contains("лифт") ||
-                             notes.Contains("електр") ||
-                             notes.Contains("осветлување")))
-                        {
-                            product.Total = product.Price;
-                            product.Price = 0;
-                        }
-                    }
-
                     documentViewModel.Building.BuildingProducts =
                         filteredProducts;
                 }
