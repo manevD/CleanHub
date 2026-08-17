@@ -1203,6 +1203,7 @@ namespace CleanHub.Controllers
                             Customers = b.Customers,
                             BuildingProducts = b.BuildingProducts
                         }));
+
                 documentViewModel.Buildings =
                     App.FullMapper.Map<List<BuildingViewModel>>(buildings);
 
@@ -1225,17 +1226,23 @@ namespace CleanHub.Controllers
                     documentViewModel.Building.Customers
                         .Where(x =>
                             !x.Hide &&
-                            !x.Inactive &&
+                            x.Inactive != true &&
                             x.ActiveDatum.HasValue &&
                             x.ActiveDatum <= documentViewModel.Date)
                         .ToList();
+
+                // ====================================================
+                // PRODUCTS
+                // ====================================================
 
                 var filteredProducts = (id == 0)
                     ? documentViewModel.Building.BuildingProducts
                     : documentViewModel.Building.BuildingProducts
                         .Where(x =>
                             x.ArticleNotes != null &&
-                            x.ArticleNotes.Contains("влез"))
+                            x.ArticleNotes.Contains(
+                                "влез",
+                                StringComparison.OrdinalIgnoreCase))
                         .ToList();
 
                 if (filteredProducts != null && filteredProducts.Any())
@@ -1250,16 +1257,24 @@ namespace CleanHub.Controllers
                         : await _unitOfWork.Products.GetAllAsync(
                             x => x.Where(p =>
                                 p.ArticleNotes != null &&
-                                p.ArticleNotes.Contains("влез")));
+                                p.ArticleNotes.Contains(
+                                    "влез",
+                                    StringComparison.OrdinalIgnoreCase)));
 
                     documentViewModel.Building.BuildingProducts =
                         App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
+
+                    // ====================================================
+                    // RESERVE FUND
+                    // ====================================================
 
                     foreach (var product in documentViewModel.Building
                                  .BuildingProducts
                                  .Where(p =>
                                      p.ArticleNotes != null &&
-                                     p.ArticleNotes.Contains("Резервен")))
+                                     p.ArticleNotes.Contains(
+                                         "Резервен",
+                                         StringComparison.OrdinalIgnoreCase)))
                     {
                         if (documentViewModel.Building.ReserveFund != null)
                         {
@@ -1270,11 +1285,19 @@ namespace CleanHub.Controllers
                 }
             }
 
+            // ====================================================
+            // SAFETY CHECK
+            // ====================================================
+
             if (documentViewModel.Building?.BuildingProducts == null)
             {
                 documentViewModel.Building.BuildingProducts =
                     new List<BuildingProductViewModel>();
             }
+
+            // ====================================================
+            // INITIAL VALUES
+            // ====================================================
 
             foreach (var product in documentViewModel.Building.BuildingProducts)
             {
@@ -1284,6 +1307,10 @@ namespace CleanHub.Controllers
                 if (product.Total == null)
                     product.Total = 0;
             }
+
+            // ====================================================
+            // VIEWBAGS
+            // ====================================================
 
             ViewBag.Buildings = new SelectList(
                 buildings,
@@ -1296,6 +1323,10 @@ namespace CleanHub.Controllers
 
             ViewBag.BuildingId =
                 documentViewModel.BuildingId;
+
+            // ====================================================
+            // FINANCIALS
+            // ====================================================
 
             var results = GetFilteredBookFinancials(
                 1201,
