@@ -889,462 +889,637 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(DocumentViewModel document, string actionType)
+        public async Task<IActionResult> Create(
+    DocumentViewModel document,
+    string actionType)
         {
-
-            bool send = actionType == "send";
-            ModelState.Remove(nameof(actionType));
-            if (ModelState.IsValid)
+            try
             {
-                var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.BuildingId,
-                      inc => inc.Include(x => x.Customers));
+                bool send = actionType == "send";
 
-                var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
+                ModelState.Remove(nameof(actionType));
 
-                if (building.Customers.Any())
+                if (ModelState.IsValid)
                 {
-                    var customer = building.Customers.Where(x => x.ActivityId == 3).FirstOrDefault();
-                    if (customer != null)
+                    var building = await _unitOfWork.Buildings.GetByIdAsync(
+                        x => x.Id == document.BuildingId,
+                        inc => inc.Include(x => x.Customers));
+
+                    var toDocument =
+                        DocumentService.GetMonthAsString(document.Date.Value.Month)
+                        + " "
+                        + document.Date.Value.Year;
+
+                    if (building.Customers.Any())
                     {
-                        var exists = await _unitOfWork.Documents.AnyAsync(
-                            x => x.CustomerId == customer.Id &&
-                                 x.ToDocument == toDocument
-                        );
+                        var customer = building.Customers
+                            .Where(x => x.ActivityId == 3)
+                            .FirstOrDefault();
 
-                        if (exists)
+                        if (customer != null)
                         {
-                            TempData["InvoiceExists"] =
-                                "За овој месец веќе постои фактура за оваа зграда.";
+                            var exists = await _unitOfWork.Documents.AnyAsync(
+                                x => x.CustomerId == customer.Id &&
+                                     x.ToDocument == toDocument);
 
-                            return RedirectToAction(nameof(Create),
-                                new { id = 0, buildingId = building.Id });
+                            if (exists)
+                            {
+                                TempData["InvoiceExists"] =
+                                    "За овој месец веќе постои фактура за оваа зграда.";
+
+                                return RedirectToAction(
+                                    nameof(Create),
+                                    new
+                                    {
+                                        id = 0,
+                                        buildingId = building.Id
+                                    });
+                            }
                         }
                     }
-                }
 
-                if (document.BuildingId == null || document.BuildingId == 0)
-                {
-                    document.BuildingId = 1;
-                }
-
-                ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", building.Id);
-
-                var selectedBuildingName = Buildings?.FirstOrDefault(x => x.Id == building.Id)?.Name;
-                if (selectedBuildingName != null)
-                    ViewBag.SelectedBuildingName = selectedBuildingName;
-                var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(document.BuildingId.Value).ToList();
-                var buildingProdutsToRemove = document.Building?.BuildingProducts
-                    .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
-                if (buildingProdutsToRemove != null && buildingProdutsToRemove.Any())
-                {
-                    foreach (var buildingProduct in buildingProdutsToRemove)
+                    if (document.BuildingId == null ||
+                        document.BuildingId == 0)
                     {
-                        document.Building?.BuildingProducts.Remove(buildingProduct);
+                        document.BuildingId = 1;
                     }
-                }
 
-                //if (document.Building?.BuildingProducts != null && document.Building?.BuildingProducts.Any() == true)
-                //{
-                //    var productsToAdd = document.Building?.BuildingProducts.ToList();
-                //    if (!building.Customers.Any(x => x.SetCost) && productsToAdd != null && productsToAdd.Any())
-                //    {
-                //        foreach (var product in productsToAdd.Where(x => x.IsNew))
-                //        {
-                //            var bookFinancialViewModelReserve = new BookFinancialViewModel
-                //            {
-                //                InvoiceId = Constants.Reserve,
-                //                Demands = 0,
-                //                DocumentTypId = 5,
-                //                Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
-                //                DatumF = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
-                //                CustomerId = building.CustomerRefId,
-                //                Status = PaymentStatus.Неплатено,
-                //                Time = DateTime.Now,
-                //                Description = product.ArticleNotes,
-                //            };
-                //            var bookFinancialReserve = App.FullMapper.Map<BookFinancial>(bookFinancialViewModelReserve);
-                //            _unitOfWork.BookFinancials.Add(bookFinancialReserve);
-                //        }
-                //    }
-                //}
+                    ViewBag.Buildings =
+                        new SelectList(
+                            Buildings,
+                            "Id",
+                            "Name",
+                            building.Id);
 
-                var documents = new List<Document>();
+                    var selectedBuildingName =
+                        Buildings?
+                            .FirstOrDefault(x => x.Id == building.Id)?
+                            .Name;
 
-                if (building != null)
-                {
-                    var hasSetCost = building?.Customers?.Any(x => x.SetCost) == true;
-                    foreach (var customer in building.Customers.Where(x => x.Inactive == false && !x.Hide).ToList())
+                    if (selectedBuildingName != null)
                     {
-                        var docEntity = await CreateCustomerDocument(customer, document, building);
+                        ViewBag.SelectedBuildingName =
+                            selectedBuildingName;
+                    }
 
-                        if (document?.Building?.BuildingProducts != null)
+                    var buildingProductsFromBuilding =
+                        _unitOfWork.Buildings
+                            .GetAllBuildingProducts(
+                                document.BuildingId.Value)
+                            .ToList();
+
+                    var buildingProdutsToRemove =
+                        document.Building?.BuildingProducts?
+                            .Where(x =>
+                                string.IsNullOrWhiteSpace(
+                                    x.ArticleNotes))
+                            .ToList();
+
+                    if (buildingProdutsToRemove != null &&
+                        buildingProdutsToRemove.Any())
+                    {
+                        foreach (var buildingProduct
+                                 in buildingProdutsToRemove)
                         {
+                            document.Building?
+                                .BuildingProducts
+                                .Remove(buildingProduct);
+                        }
+                    }
 
-                            var allProducts = document?.Building?.BuildingProducts?
-                                .Where(x => x.PriceWithTax != 0).ToList()
-                                ?? new List<BuildingProductViewModel>();
+                    var documents = new List<Document>();
 
-                            List<BuildingProductViewModel> productsForCustomer = new List<BuildingProductViewModel>();
+                    if (building != null)
+                    {
+                        var hasSetCost =
+                            building?.Customers?.Any(x => x.SetCost) == true;
 
-                            if (!hasSetCost)
+                        foreach (var customer in building.Customers
+                            .Where(x =>
+                                x.Inactive == false &&
+                                !x.Hide)
+                            .ToList())
+                        {
+                            var docEntity =
+                                await CreateCustomerDocument(
+                                    customer,
+                                    document,
+                                    building);
+
+                            if (document?.Building?.BuildingProducts != null)
                             {
-                                // ✔ никој нема SetCost → сите добиваат се
-                                productsForCustomer = allProducts;
-                            }
-                            else
-                            {
-                                if (customer.SetCost)
+                                var allProducts =
+                                    document.Building.BuildingProducts
+                                        .Where(x =>
+                                            x.PriceWithTax != 0)
+                                        .ToList();
+
+                                List<BuildingProductViewModel>
+                                    productsForCustomer =
+                                        new List<BuildingProductViewModel>();
+
+                                if (!hasSetCost)
                                 {
-                                    // ✔ тие со SetCost → СÈ
                                     productsForCustomer = allProducts;
                                 }
                                 else
                                 {
-                                    // ✔ другите → само стари
-                                    productsForCustomer = allProducts.Where(x => !x.IsNew).ToList();
-                                }
-                            }
-
-
-                            if (!customer.PresmetajAdministrativniTrosoci)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajOdrzuvanjeLift)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajOdrzuvanjeSmetki)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajPotrosenaElektricnaEnergija)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajRezervenFond)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajUpravitel)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("управител", StringComparison.OrdinalIgnoreCase));
-                            }
-
-                            if (!customer.PresmetajCistenjeVlez)
-                            {
-                                productsForCustomer?.RemoveAll(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase));
-                            }
-                            foreach (var buildingProduct in productsForCustomer)
-                            {
-                                try
-                                {
-                                    if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
+                                    if (customer.SetCost)
                                     {
-                                        continue;
+                                        productsForCustomer = allProducts;
                                     }
-
-                                    CreateBook(buildingProduct, docEntity);
+                                    else
+                                    {
+                                        productsForCustomer =
+                                            allProducts
+                                                .Where(x => !x.IsNew)
+                                                .ToList();
+                                    }
                                 }
-                                catch (Exception e)
+
+                                if (!customer.PresmetajAdministrativniTrosoci)
                                 {
-                                    Console.WriteLine(e);
-                                    throw;
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "административни трошоци",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "комунална такса за јавно осветлување",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajOdrzuvanjeLift)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "одржување на лифт",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajOdrzuvanjeSmetki)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "одржување на сметки",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajPotrosenaElektricnaEnergija)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "потрошена електрична енергија",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajRezervenFond)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "резервен фонд",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajUpravitel)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "управител",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                if (!customer.PresmetajCistenjeVlez)
+                                {
+                                    productsForCustomer.RemoveAll(x =>
+                                        x.ArticleNotes != null &&
+                                        x.ArticleNotes.Contains(
+                                            "чистење на влез",
+                                            StringComparison.OrdinalIgnoreCase));
+                                }
+
+                                foreach (var buildingProduct
+                                         in productsForCustomer)
+                                {
+                                    try
+                                    {
+                                        if (buildingProduct.ArticleNotes?
+                                            .Contains("гаража") == true &&
+                                            !customer.Garage)
+                                        {
+                                            continue;
+                                        }
+
+                                        CreateBook(
+                                            buildingProduct,
+                                            docEntity);
+                                    }
+                                    catch (Exception e)
+                                    {
+                                        throw new Exception(
+                                            $"ERROR во CreateBook. " +
+                                            $"CustomerId: {customer.Id}, " +
+                                            $"CustomerInfo: {customer.CustomerInfo}, " +
+                                            $"Product: {buildingProduct.ArticleNotes}, " +
+                                            $"ProductId: {buildingProduct.Id}",
+                                            e);
+                                    }
                                 }
                             }
-                        }
-                        var docViewModel = App.FullMapper.Map<DocumentViewModel>(docEntity);
-                        if (docViewModel.PaymentStatus != PaymentStatus.Платено && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
-                        {
-                            SendNotificationMail(customer, docViewModel.ToDocument);
-                        }
-                        CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
 
-                        documents.Add(docEntity);
+                            var docViewModel =
+                                App.FullMapper.Map<DocumentViewModel>(
+                                    docEntity);
+
+                            if (docViewModel.PaymentStatus !=
+                                    PaymentStatus.Платено &&
+                                customer.Subscription.HasValue &&
+                                customer.Subscription != 0 &&
+                                customer.Subscription <
+                                    docViewModel.TotalOutput &&
+                                !string.IsNullOrEmpty(customer.Email))
+                            {
+                                SendNotificationMail(
+                                    customer,
+                                    docViewModel.ToDocument);
+                            }
+
+                            CreateBookFinancialAndReserve(
+                                docEntity,
+                                customer.Id,
+                                building.ReserveFund ?? 0,
+                                document.PaymentDate,
+                                document.PaymentType,
+                                document.PaymentNumber);
+
+                            documents.Add(docEntity);
+                        }
                     }
-                }
 
-                CreateSpecialInvoice(document);
-                await _unitOfWork.SaveChangesAsync();
-                if (documents != null && documents.Any())
-                {
-                    List<DokumentiTest> mappedDocuments = documents.Select(d => new DokumentiTest
+                    CreateSpecialInvoice(document);
+
+                    await _unitOfWork.SaveChangesAsync();
+
+                    if (documents != null &&
+                        documents.Any())
                     {
-                        Dokid = d.Id.ToString(),
-                        Datum = d.Date.Value.ToString("yyyy-MM-dd"),
-                        Broj = d.Number.ToString(),
-                        PartnerID = d.CustomerId.ToString(),
-                        Godina = d.Date.Value.Year.ToString(),
-                        VkupnoIz = d.TotalOutput.ToString()
-                    }).ToList();
+                        List<DokumentiTest> mappedDocuments =
+                            documents.Select(d => new DokumentiTest
+                            {
+                                Dokid = d.Id.ToString(),
+                                Datum = d.Date.Value
+                                    .ToString("yyyy-MM-dd"),
+                                Broj = d.Number.ToString(),
+                                PartnerID = d.CustomerId.ToString(),
+                                Godina = d.Date.Value.Year.ToString(),
+                                VkupnoIz = d.TotalOutput.ToString()
+                            }).ToList();
 
-                    _context.DokumentiTest.AddRange(mappedDocuments);
-                    _context.SaveChanges();
+                        _context.DokumentiTest.AddRange(
+                            mappedDocuments);
+
+                        _context.SaveChanges();
+                    }
+
+                    HttpContext.Session.Remove("Documents");
+
+                    return await PrintDocuments(
+                        documents,
+                        building,
+                        send);
                 }
 
-                HttpContext.Session.Remove("Documents");
-
-                return await PrintDocuments(documents, building, send);
+                return View(document);
             }
+            catch (Exception ex)
+            {
+                var fullException = ex.ToString();
 
-            return View(document);
+                return Content(
+                    "========================================\n" +
+                    "CLEANHUB ERROR\n" +
+                    "========================================\n\n" +
+                    fullException,
+                    "text/plain");
+            }
         }
 
 
-        /// <summary>
-        /// 0 Zbirna 1 Poedinecna
-        /// </summary>
-        /// <param name="id"></param>
-        /// <param name="buildingId"></param>
-        /// <returns></returns>
         [HttpGet]
-        public async Task<IActionResult> Create(int? id, int? buildingId, DateTime? date)
+        public async Task<IActionResult> Create(
+          int? id,
+          int? buildingId,
+          DateTime? date)
         {
-            var documentViewModel = new DocumentViewModel();
-
-            ViewBag.RouteId = id;
-
-            var now = DateTime.UtcNow;
-
-            if (!date.HasValue)
+            try
             {
-                var lastDayOfLastMonth =
-                    new DateTime(now.Year, now.Month, 1).AddDays(-1);
+                // ================================================
+                // ТУКА СЕ СТАВА ЦЕЛИОТ ТВОЈ ПОСТОЕЧКИ GET CODE
+                // ================================================
 
-                documentViewModel.Date =
-                    DateOnly.FromDateTime(lastDayOfLastMonth);
-            }
-            else
-            {
-                documentViewModel.Date =
-                    DateOnly.FromDateTime(date.Value);
-            }
+                var documentViewModel = new DocumentViewModel();
 
-            documentViewModel.Company = _config.Value;
+                ViewBag.RouteId = id;
 
-            var buildings = new List<Building>();
+                var now = DateTime.UtcNow;
 
-            // ====================================================
-            // ROUTE 2
-            // ====================================================
-
-            if (id == 2)
-            {
-                buildings = (List<Building>)await _unitOfWork.Buildings.GetAllAsync(
-                    query => query.Select(b => new Building()
-                    {
-                        Id = b.Id,
-                        Name = b.Name
-                    }));
-
-                documentViewModel.Buildings =
-                    App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-
-                documentViewModel.Building =
-                    buildingId.HasValue
-                        ? documentViewModel.Buildings
-                            .FirstOrDefault(x => x.Id == buildingId.Value)
-                        : documentViewModel.Buildings.FirstOrDefault();
-
-                if (documentViewModel.Building == null)
+                if (!date.HasValue)
                 {
-                    documentViewModel.Building =
-                        documentViewModel.Buildings.FirstOrDefault();
-                }
+                    var lastDayOfLastMonth =
+                        new DateTime(
+                            now.Year,
+                            now.Month,
+                            1)
+                        .AddDays(-1);
 
-                documentViewModel.BuildingId =
-                    documentViewModel.Building?.Id ?? 0;
-
-                documentViewModel.Building.BuildingProducts =
-                    new List<BuildingProductViewModel>();
-            }
-
-            // ====================================================
-            // ROUTE 0 / 1
-            // ====================================================
-
-            else
-            {
-                buildings = (List<Building>)await _unitOfWork.Buildings.GetAllAsync(
-                    query => query
-                        .Include(x => x.BuildingProducts)
-                        .Include(x => x.Customers)
-                        .Select(b => new Building()
-                        {
-                            Id = b.Id,
-                            Name = b.Name,
-                            ReserveFund = b.ReserveFund,
-                            Customers = b.Customers,
-                            BuildingProducts = b.BuildingProducts
-                        }));
-
-                documentViewModel.Buildings =
-                    App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-
-                documentViewModel.Building =
-                    buildingId.HasValue
-                        ? documentViewModel.Buildings
-                            .FirstOrDefault(x => x.Id == buildingId.Value)
-                        : documentViewModel.Buildings.FirstOrDefault();
-
-                if (documentViewModel.Building == null)
-                {
-                    documentViewModel.Building =
-                        documentViewModel.Buildings.FirstOrDefault();
-                }
-
-                documentViewModel.BuildingId =
-                    documentViewModel.Building.Id;
-
-                documentViewModel.Building.Customers =
-                    documentViewModel.Building.Customers
-                        .Where(x =>
-                            !x.Hide &&
-                            x.Inactive != true &&
-                            x.ActiveDatum.HasValue &&
-                            x.ActiveDatum <= documentViewModel.Date)
-                        .ToList();
-
-                // ====================================================
-                // PRODUCTS
-                // ====================================================
-
-                var filteredProducts = (id == 0)
-                    ? documentViewModel.Building.BuildingProducts
-                    : documentViewModel.Building.BuildingProducts
-                        .Where(x =>
-                            x.ArticleNotes != null &&
-                            x.ArticleNotes
-                                .ToLower()
-                                .Contains("влез"))
-                        .ToList();
-
-                if (filteredProducts != null && filteredProducts.Any())
-                {
-                    documentViewModel.Building.BuildingProducts =
-                        filteredProducts;
+                    documentViewModel.Date =
+                        DateOnly.FromDateTime(
+                            lastDayOfLastMonth);
                 }
                 else
                 {
-                    // ====================================================
-                    // PRODUCTS FROM DATABASE
-                    // ====================================================
+                    documentViewModel.Date =
+                        DateOnly.FromDateTime(
+                            date.Value);
+                }
 
-                    var basicProducts = (id == 0)
-                        ? await _unitOfWork.Products.GetAllAsync()
-                        : await _unitOfWork.Products.GetAllAsync(
-                            x => x.Where(p =>
-                                p.ArticleNotes != null &&
-                                p.ArticleNotes.Contains("влез")));
+                documentViewModel.Company =
+                    _config.Value;
 
-                    documentViewModel.Building.BuildingProducts =
-                        App.FullMapper.Map<List<BuildingProductViewModel>>(
-                            basicProducts);
+                var buildings =
+                    new List<Building>();
 
-                    // ====================================================
-                    // RESERVE FUND
-                    // ====================================================
+                // ====================================================
+                // ROUTE 2
+                // ====================================================
 
-                    foreach (var product in documentViewModel.Building
-                                 .BuildingProducts
-                                 .Where(p =>
-                                     p.ArticleNotes != null &&
-                                     p.ArticleNotes
-                                         .ToLower()
-                                         .Contains("резервен")))
+                if (id == 2)
+                {
+                    buildings =
+                        (List<Building>)
+                        await _unitOfWork.Buildings
+                            .GetAllAsync(
+                                query => query.Select(
+                                    b => new Building()
+                                    {
+                                        Id = b.Id,
+                                        Name = b.Name
+                                    }));
+
+                    documentViewModel.Buildings =
+                        App.FullMapper.Map<
+                            List<BuildingViewModel>>(
+                            buildings);
+
+                    documentViewModel.Building =
+                        buildingId.HasValue
+                            ? documentViewModel.Buildings
+                                .FirstOrDefault(
+                                    x => x.Id ==
+                                         buildingId.Value)
+                            : documentViewModel.Buildings
+                                .FirstOrDefault();
+
+                    if (documentViewModel.Building == null)
                     {
-                        if (documentViewModel.Building.ReserveFund != null)
+                        documentViewModel.Building =
+                            documentViewModel.Buildings
+                                .FirstOrDefault();
+                    }
+
+                    documentViewModel.BuildingId =
+                        documentViewModel.Building?.Id ?? 0;
+
+                    documentViewModel.Building
+                        .BuildingProducts =
+                        new List<BuildingProductViewModel>();
+                }
+
+                // ====================================================
+                // ROUTE 0 / 1
+                // ====================================================
+
+                else
+                {
+                    buildings =
+                        (List<Building>)
+                        await _unitOfWork.Buildings
+                            .GetAllAsync(
+                                query => query
+                                    .Include(x =>
+                                        x.BuildingProducts)
+                                    .Include(x =>
+                                        x.Customers)
+                                    .Select(
+                                        b => new Building()
+                                        {
+                                            Id = b.Id,
+                                            Name = b.Name,
+                                            ReserveFund =
+                                                b.ReserveFund,
+                                            Customers =
+                                                b.Customers,
+                                            BuildingProducts =
+                                                b.BuildingProducts
+                                        }));
+
+                    documentViewModel.Buildings =
+                        App.FullMapper.Map<
+                            List<BuildingViewModel>>(
+                            buildings);
+
+                    documentViewModel.Building =
+                        buildingId.HasValue
+                            ? documentViewModel.Buildings
+                                .FirstOrDefault(
+                                    x => x.Id ==
+                                         buildingId.Value)
+                            : documentViewModel.Buildings
+                                .FirstOrDefault();
+
+                    if (documentViewModel.Building == null)
+                    {
+                        documentViewModel.Building =
+                            documentViewModel.Buildings
+                                .FirstOrDefault();
+                    }
+
+                    if (documentViewModel.Building == null)
+                    {
+                        throw new Exception(
+                            $"Building not found. " +
+                            $"BuildingId = {buildingId}, " +
+                            $"Id = {id}");
+                    }
+
+                    documentViewModel.BuildingId =
+                        documentViewModel.Building.Id;
+
+                    documentViewModel.Building.Customers =
+                        documentViewModel.Building.Customers
+                            .Where(x =>
+                                !x.Hide &&
+                                x.Inactive != true &&
+                                x.ActiveDatum.HasValue &&
+                                x.ActiveDatum <=
+                                    documentViewModel.Date)
+                            .ToList();
+
+                    var filteredProducts =
+                        (id == 0)
+                            ? documentViewModel
+                                .Building
+                                .BuildingProducts
+                            : documentViewModel
+                                .Building
+                                .BuildingProducts
+                                .Where(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes
+                                        .ToLower()
+                                        .Contains("влез"))
+                                .ToList();
+
+                    if (filteredProducts != null &&
+                        filteredProducts.Any())
+                    {
+                        documentViewModel
+                            .Building
+                            .BuildingProducts =
+                            filteredProducts;
+                    }
+                    else
+                    {
+                        var basicProducts =
+                            (id == 0)
+                                ? await _unitOfWork
+                                    .Products
+                                    .GetAllAsync()
+                                : await _unitOfWork
+                                    .Products
+                                    .GetAllAsync(
+                                        x => x.Where(
+                                            p =>
+                                                p.ArticleNotes !=
+                                                    null &&
+                                                p.ArticleNotes
+                                                    .Contains(
+                                                        "влез")));
+
+                        documentViewModel
+                            .Building
+                            .BuildingProducts =
+                            App.FullMapper.Map<
+                                List<BuildingProductViewModel>>(
+                                basicProducts);
+
+                        foreach (
+                            var product in
+                            documentViewModel
+                                .Building
+                                .BuildingProducts
+                                .Where(p =>
+                                    p.ArticleNotes != null &&
+                                    p.ArticleNotes
+                                        .ToLower()
+                                        .Contains(
+                                            "резервен")))
                         {
-                            product.Price =
-                                documentViewModel.Building.ReserveFund.Value;
+                            if (documentViewModel
+                                    .Building
+                                    .ReserveFund != null)
+                            {
+                                product.Price =
+                                    documentViewModel
+                                        .Building
+                                        .ReserveFund
+                                        .Value;
+                            }
                         }
                     }
                 }
+
+                if (documentViewModel
+                        .Building?
+                        .BuildingProducts == null)
+                {
+                    documentViewModel
+                        .Building
+                        .BuildingProducts =
+                        new List<BuildingProductViewModel>();
+                }
+
+                foreach (
+                    var product in
+                    documentViewModel
+                        .Building
+                        .BuildingProducts)
+                {
+                    if (product.PriceWithTax == null)
+                        product.PriceWithTax = 0;
+
+                    if (product.Total == null)
+                        product.Total = 0;
+                }
+
+                ViewBag.Buildings =
+                    new SelectList(
+                        buildings,
+                        "Id",
+                        "Name",
+                        documentViewModel.BuildingId);
+
+                ViewBag.SelectedBuildingName =
+                    documentViewModel
+                        .Building?
+                        .Name;
+
+                ViewBag.BuildingId =
+                    documentViewModel
+                        .BuildingId;
+
+                var results =
+                    GetFilteredBookFinancials(
+                        1201,
+                        documentViewModel
+                            .BuildingId
+                            .Value)
+                    .ToList();
+
+                documentViewModel
+                    .TotalBuildingDemands =
+                    results
+                        .Where(x => !x.DontSum)
+                        .Sum(x => x.Demands);
+
+                documentViewModel
+                    .TotalBuildingOwes =
+                    results
+                        .Where(x => !x.DontSum)
+                        .Sum(x => x.Owes);
+
+                return View(documentViewModel);
             }
-
-            // ====================================================
-            // SAFETY CHECK
-            // ====================================================
-
-            if (documentViewModel.Building?.BuildingProducts == null)
+            catch (Exception ex)
             {
-                documentViewModel.Building.BuildingProducts =
-                    new List<BuildingProductViewModel>();
+                return Content(
+                    "========================================\n" +
+                    "CLEANHUB GET CREATE ERROR\n" +
+                    "========================================\n\n" +
+                    ex.ToString(),
+                    "text/plain");
             }
-
-            // ====================================================
-            // INITIAL VALUES
-            // ====================================================
-
-            foreach (var product in documentViewModel.Building.BuildingProducts)
-            {
-                if (product.PriceWithTax == null)
-                    product.PriceWithTax = 0;
-
-                if (product.Total == null)
-                    product.Total = 0;
-            }
-
-            // ====================================================
-            // VIEWBAGS
-            // ====================================================
-
-            ViewBag.Buildings = new SelectList(
-                buildings,
-                "Id",
-                "Name",
-                documentViewModel.BuildingId);
-
-            ViewBag.SelectedBuildingName =
-                documentViewModel.Building?.Name;
-
-            ViewBag.BuildingId =
-                documentViewModel.BuildingId;
-
-            // ====================================================
-            // FINANCIALS
-            // ====================================================
-
-            var results = GetFilteredBookFinancials(
-                1201,
-                documentViewModel.BuildingId.Value)
-                .ToList();
-
-            documentViewModel.TotalBuildingDemands =
-                results.Where(x => !x.DontSum)
-                       .Sum(x => x.Demands);
-
-            documentViewModel.TotalBuildingOwes =
-                results.Where(x => !x.DontSum)
-                       .Sum(x => x.Owes);
-
-            return View(documentViewModel);
         }
 
         //// GET: Invoices/Create
