@@ -39,5 +39,14 @@ namespace CleanHub.ViewModels
         public List<BookFinancialViewModel>? BookFinancials { get; set; }
         public List<DocumentViewModel>? Documents { get; set; }
         public bool SetCost { get; set; }
+
+        public bool PresmetajAdministrativniTrosoci { get; set; } = true;
+        public bool PresmetajKomunalnaTaksaJavnoOsvetluvanje { get; set; } = true;
+        public bool PresmetajOdrzuvanjeLift { get; set; } = true;
+        public bool PresmetajOdrzuvanjeSmetki { get; set; } = true;
+        public bool PresmetajPotrosenaElektricnaEnergija { get; set; } = true;
+        public bool PresmetajRezervenFond { get; set; } = true;
+        public bool PresmetajUpravitel { get; set; } = true;
+        public bool PresmetajCistenjeVlez { get; set; } = true;
     }
 }

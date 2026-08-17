@@ -55,18 +55,21 @@
                                                         <input asp-for="PhoneNumber" type="text" class="form-control mb-3" id="PhoneNumber" placeholder="Телефонски Број">
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Е - Маил</label>
                                                         <input asp-for="Email" type="text" class="form-control mb-3" id="Email" placeholder="Е - Маил">
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Веб</label>
                                                         <input asp-for="Web" type="text" class="form-control mb-3" id="Web" placeholder="Веб">
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Објект </label>
@@ -89,24 +92,28 @@
                                                         <input asp-for="ActiveDatum" type="date" class="form-control mb-3" id="ActiveDatum" />
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label asp-for="Subscription">Во претплата</label>
                                                         <input asp-for="Subscription" type="number" class="form-control mb-3" id="Subscription" />
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label asp-for="SubscriptionDate">Во претплата од : </label>
                                                         <input asp-for="SubscriptionDate" type="date" class="form-control mb-3" id="SubscriptionDate" />
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label asp-for="InactiveDatum">Неактивен од</label>
                                                         <input asp-for="InactiveDatum" type="date" class="form-control mb-3" id="InactiveDatum" />
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Опис на претплата</label>
@@ -115,6 +122,7 @@
                                                                   rows="3" id="SubscriptionDescription"></textarea>
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="Inactive"
@@ -122,7 +130,7 @@
                                                         <label class="form-check-label" for="Inactive">Неактивен</label>
                                                     </div>
                                                 </div>
-                                              
+
                                                 <div class="col-md-6">
                                                     <div class="form-check">
                                                         <label>Физичко Лице</label>
@@ -130,6 +138,7 @@
                                                                name="PhysicalPerson" value="true" @(Model.PhysicalPerson == true ? "checked" : "") />
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="Garage"
@@ -137,6 +146,7 @@
                                                         <label class="form-check-label">Со гаража</label>
                                                     </div>
                                                 </div>
+
                                                 <div class="col-md-6">
                                                     <div class="form-check">
                                                         <input type="checkbox" class="form-check-input" id="SetCost"
@@ -144,7 +154,179 @@
                                                         <label class="form-check-label">Пресмети трошок</label>
                                                     </div>
                                                 </div>
-                                               
+
+
+                                                <!-- НОВИ PROPERTIES - ПРОДУКТИ -->
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajAdministrativniTrosoci"
+                                                               name="PresmetajAdministrativniTrosoci"
+                                                               value="true"
+                                                        @(Model.PresmetajAdministrativniTrosoci ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajAdministrativniTrosoci"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajAdministrativniTrosoci">
+                                                            Административни трошоци
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajKomunalnaTaksaJavnoOsvetluvanje"
+                                                               name="PresmetajKomunalnaTaksaJavnoOsvetluvanje"
+                                                               value="true"
+                                                        @(Model.PresmetajKomunalnaTaksaJavnoOsvetluvanje ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajKomunalnaTaksaJavnoOsvetluvanje"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajKomunalnaTaksaJavnoOsvetluvanje">
+                                                            Комунална такса за јавно осветлување
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajOdrzuvanjeLift"
+                                                               name="PresmetajOdrzuvanjeLift"
+                                                               value="true"
+                                                        @(Model.PresmetajOdrzuvanjeLift ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajOdrzuvanjeLift"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajOdrzuvanjeLift">
+                                                            Одржување на лифт
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajOdrzuvanjeSmetki"
+                                                               name="PresmetajOdrzuvanjeSmetki"
+                                                               value="true"
+                                                        @(Model.PresmetajOdrzuvanjeSmetki ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajOdrzuvanjeSmetki"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajOdrzuvanjeSmetki">
+                                                            Одржување на сметки
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajPotrosenaElektricnaEnergija"
+                                                               name="PresmetajPotrosenaElektricnaEnergija"
+                                                               value="true"
+                                                        @(Model.PresmetajPotrosenaElektricnaEnergija ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajPotrosenaElektricnaEnergija"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajPotrosenaElektricnaEnergija">
+                                                            Потрошена електрична енергија
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajRezervenFond"
+                                                               name="PresmetajRezervenFond"
+                                                               value="true"
+                                                        @(Model.PresmetajRezervenFond ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajRezervenFond"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajRezervenFond">
+                                                            Резервен фонд
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajUpravitel"
+                                                               name="PresmetajUpravitel"
+                                                               value="true"
+                                                        @(Model.PresmetajUpravitel ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajUpravitel"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajUpravitel">
+                                                            Управител
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+                                                <div class="col-md-6">
+                                                    <div class="form-check">
+
+                                                        <input type="checkbox"
+                                                               class="form-check-input"
+                                                               id="PresmetajCistenjeVlez"
+                                                               name="PresmetajCistenjeVlez"
+                                                               value="true"
+                                                        @(Model.PresmetajCistenjeVlez ? "checked" : "") />
+
+                                                        <input type="hidden"
+                                                               name="PresmetajCistenjeVlez"
+                                                               value="false" />
+
+                                                        <label class="form-check-label" for="PresmetajCistenjeVlez">
+                                                            Чистење на влез
+                                                        </label>
+
+                                                    </div>
+                                                </div>
+
+
                                                 <div class="col-md-12 mt-1">
                                                     <div class="form-group text-end">
                                                         <input type="submit" value="Зачувај" class="btn btn-primary" />
@@ -168,7 +350,7 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function () {
+        document.addEventListener('DOMContentLoaded', function() {
 
             /* ==========================
                INACTIVE / ACTIVE LOGIC
@@ -217,9 +399,9 @@
             subscriptionInput.addEventListener('input', toggleSubscriptionDate);
 
 
-             /* ==========================
-               SUBSCRIPTION LOGIC
-               ========================== */
+            /* ==========================
+              SUBSCRIPTION LOGIC
+              ========================== */
             const subscriptionDescriptionInput = document.getElementById('SubscriptionDescription');
 
             function toggleSubscriptionDescription() {

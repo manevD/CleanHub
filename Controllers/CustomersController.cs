@@ -256,6 +256,14 @@ namespace CleanHub.Controllers
                 existingCustomer.Subscription = customer.Subscription;
                 existingCustomer.SetCost = customer.SetCost;
                 existingCustomer.SubscriptionDescription = customer.SubscriptionDescription;
+                existingCustomer.PresmetajAdministrativniTrosoci = customer.PresmetajAdministrativniTrosoci;
+                existingCustomer.PresmetajKomunalnaTaksaJavnoOsvetluvanje = customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje;
+                existingCustomer.PresmetajOdrzuvanjeLift = customer.PresmetajOdrzuvanjeLift;
+                existingCustomer.PresmetajOdrzuvanjeSmetki = customer.PresmetajOdrzuvanjeSmetki;
+                existingCustomer.PresmetajPotrosenaElektricnaEnergija = customer.PresmetajPotrosenaElektricnaEnergija;
+                existingCustomer.PresmetajRezervenFond = customer.PresmetajRezervenFond;
+                existingCustomer.PresmetajUpravitel = customer.PresmetajUpravitel;
+                existingCustomer.PresmetajCistenjeVlez = customer.PresmetajCistenjeVlez;
 
                 await _unitOfWork.SaveChangesAsync();
 

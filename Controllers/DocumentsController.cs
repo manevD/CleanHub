@@ -981,10 +981,10 @@ namespace CleanHub.Controllers
                         {
 
                             var allProducts = document?.Building?.BuildingProducts?
-                                .Where(x => x.PriceWithTax != 0)
-                                ?? Enumerable.Empty<BuildingProductViewModel>();
+                                .Where(x => x.PriceWithTax != 0).ToList()
+                                ?? new List<BuildingProductViewModel>();
 
-                            IEnumerable<BuildingProductViewModel> productsForCustomer;
+                            List<BuildingProductViewModel> productsForCustomer = new List<BuildingProductViewModel>();
 
                             if (!hasSetCost)
                             {
@@ -1001,10 +1001,66 @@ namespace CleanHub.Controllers
                                 else
                                 {
                                     // ✔ другите → само стари
-                                    productsForCustomer = allProducts.Where(x => !x.IsNew);
+                                    productsForCustomer = allProducts.Where(x => !x.IsNew).ToList();
                                 }
                             }
 
+
+                            if (!customer.PresmetajAdministrativniTrosoci)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajOdrzuvanjeLift)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajOdrzuvanjeSmetki)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajPotrosenaElektricnaEnergija)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajRezervenFond)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajUpravitel)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("управител", StringComparison.OrdinalIgnoreCase));
+                            }
+
+                            if (!customer.PresmetajCistenjeVlez)
+                            {
+                                productsForCustomer?.RemoveAll(x =>
+                                    x.ArticleNotes != null &&
+                                    x.ArticleNotes.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase));
+                            }
                             foreach (var buildingProduct in productsForCustomer)
                             {
                                 try
@@ -1147,7 +1203,6 @@ namespace CleanHub.Controllers
                             Customers = b.Customers,
                             BuildingProducts = b.BuildingProducts
                         }));
-                var test = buildings.Where(x => x.Id == 175).FirstOrDefault();
                 documentViewModel.Buildings =
                     App.FullMapper.Map<List<BuildingViewModel>>(buildings);
 
@@ -1156,7 +1211,6 @@ namespace CleanHub.Controllers
                         ? documentViewModel.Buildings
                             .FirstOrDefault(x => x.Id == buildingId.Value)
                         : documentViewModel.Buildings.FirstOrDefault();
-                var test1 = documentViewModel.Buildings.Where(x => x.Id == 175).FirstOrDefault();
 
                 if (documentViewModel.Building == null)
                 {
@@ -1671,15 +1725,19 @@ namespace CleanHub.Controllers
                 Output = 1,
                 Input = 0,
                 Quantity = book.Quantity,
-                PriceWithTax = book.PriceWithTaxTotal,
+
+                PriceWithTax = book.PriceWithTax,
+
                 Price = book.Price,
-                Tax = (book.ArticleNotes != null && book.ArticleNotes.Contains("енер"))
-                    ? 18
-                    : book.Tax,
-                Total = book.PriceWithTaxTotal,
+
+                Tax =  book.Tax,
+
+                Total = book.PriceWithTax,
+
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
             };
+
             var entityBook = App.FullMapper.Map<Book>(bookEntity);
             docEntity.Books.Add(entityBook);
         }
@@ -1703,8 +1761,8 @@ namespace CleanHub.Controllers
                 documentCustomer.DateReceived =
                     DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10));
             documentCustomer.TotalInput = 0;
-            var calculator = new PriceCalculator(building.Customers.Count(x => x.Inactive != null && !x.Inactive.Value), building.Customers.Count(x => x.Garage));
-
+            var calculator = new PriceCalculator(
+                building.Customers.ToList());
             var tempBuildingProducts = document.Building?.BuildingProducts.ToList();
 
             var hasSetCost = building.Customers?.Any(x => x.SetCost) == true;
@@ -1716,7 +1774,7 @@ namespace CleanHub.Controllers
                     .Where(x => x.ArticleNotes == null || !x.ArticleNotes.Contains("гаража"))
                     .ToList();
             }
-
+           
             // ✔ SetCost логика
             if (hasSetCost && !customer.SetCost)
             {
@@ -1724,7 +1782,61 @@ namespace CleanHub.Controllers
                     .Where(x => !x.IsNew)
                     .ToList();
             }
+            if (!customer.PresmetajAdministrativniTrosoci)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase));
+            }
 
+            if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajOdrzuvanjeLift)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajOdrzuvanjeSmetki)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajPotrosenaElektricnaEnergija)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajRezervenFond)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajUpravitel)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("управител", StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!customer.PresmetajCistenjeVlez)
+            {
+                tempBuildingProducts?.RemoveAll(x =>
+                    x.ArticleNotes != null &&
+                    x.ArticleNotes.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase));
+            }
             calculator.CalculatePrices(tempBuildingProducts, customer);
             // Calculate the total PriceWithTax sum
             if (tempBuildingProducts != null)
@@ -2210,7 +2322,6 @@ namespace CleanHub.Controllers
                 foreach (var item in documents)
                 {
                     var document = App.FullMapper.Map<DocumentViewModel>(item);
-
                     if (document == null)
                     {
                         continue;
