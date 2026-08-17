@@ -1240,9 +1240,9 @@ namespace CleanHub.Controllers
                     : documentViewModel.Building.BuildingProducts
                         .Where(x =>
                             x.ArticleNotes != null &&
-                            x.ArticleNotes.Contains(
-                                "влез",
-                                StringComparison.OrdinalIgnoreCase))
+                            x.ArticleNotes
+                                .ToLower()
+                                .Contains("влез"))
                         .ToList();
 
                 if (filteredProducts != null && filteredProducts.Any())
@@ -1252,17 +1252,20 @@ namespace CleanHub.Controllers
                 }
                 else
                 {
+                    // ====================================================
+                    // PRODUCTS FROM DATABASE
+                    // ====================================================
+
                     var basicProducts = (id == 0)
                         ? await _unitOfWork.Products.GetAllAsync()
                         : await _unitOfWork.Products.GetAllAsync(
                             x => x.Where(p =>
                                 p.ArticleNotes != null &&
-                                p.ArticleNotes.Contains(
-                                    "влез",
-                                    StringComparison.OrdinalIgnoreCase)));
+                                p.ArticleNotes.Contains("влез")));
 
                     documentViewModel.Building.BuildingProducts =
-                        App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
+                        App.FullMapper.Map<List<BuildingProductViewModel>>(
+                            basicProducts);
 
                     // ====================================================
                     // RESERVE FUND
@@ -1272,9 +1275,9 @@ namespace CleanHub.Controllers
                                  .BuildingProducts
                                  .Where(p =>
                                      p.ArticleNotes != null &&
-                                     p.ArticleNotes.Contains(
-                                         "Резервен",
-                                         StringComparison.OrdinalIgnoreCase)))
+                                     p.ArticleNotes
+                                         .ToLower()
+                                         .Contains("резервен")))
                     {
                         if (documentViewModel.Building.ReserveFund != null)
                         {
