@@ -17,6 +17,7 @@ namespace CleanHub.Entities
         [ForeignKey(nameof(Building))]
         public int? BuildingId { get; set; }
         public Building Building { get; set; } = null!;
+        [Column(TypeName = "decimal(18, 2)")]
         public decimal Total { get; set; }
         public PaymentStatus Status { get; set; }
         [NotMapped]

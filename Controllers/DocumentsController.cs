@@ -53,6 +53,7 @@ namespace CleanHub.Controllers
                 return writer.GetStringBuilder().ToString();
             }
         }
+
         private async void SendNotificationMail(Customer customer, string description)
         {
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
@@ -68,21 +69,19 @@ namespace CleanHub.Controllers
                             {_config.Value.PhoneNumber}
                             {_config.Value.Email}
                             {_config.Value.Address}";
-                // create email message
                 MailMessage message = new MailMessage();
                 message.From = new MailAddress(_smtpConfig.Value.Email);
                 message.To.Add(customer.Email);
                 message.Subject = "Известување Марти Хигиена";
                 message.Body = emailBody;
                 smtpClient.UseDefaultCredentials = false;
-                // send email
                 await smtpClient.SendMailAsync(message);
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> Pay(int invoiceId, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
         {
-            // 1. Најди го документот во базата
             var document = await _unitOfWork.Documents.Query()
                 .FirstOrDefaultAsync(x => x.Id == invoiceId);
 
@@ -91,18 +90,15 @@ namespace CleanHub.Controllers
                 return BadRequest("Сметката не е пронајдена.");
             }
 
-            // 2. Постави ги вредностите на документот исто како во твојата за групно плаќање
             document.PaymentStatus = PaymentStatus.Платено;
             document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
             document.PaymentDescription = PaymentDescription;
             document.PaymentType = PaymentType;
             document.PaymentNumber = PaymentNumber;
 
-            // 3. Повикај ја твојата оригинална логика преку маперот 1:1
             var viewModel = App.FullMapper.Map<DocumentViewModel>(document);
             SetStatusPayment(viewModel);
 
-            // 4. Зачувај ги промените
             await _unitOfWork.SaveChangesAsync();
 
             return Ok(new { success = true });
@@ -121,9 +117,9 @@ namespace CleanHub.Controllers
 
             return Json(unpaidInvoices);
         }
+
         public async Task CreateAndSend(DocumentViewModel document)
         {
-
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
             {
                 smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
@@ -137,13 +133,9 @@ namespace CleanHub.Controllers
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                 HtmlToPdf converter = new HtmlToPdf();
                 PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
-                // create memory stream to save PDF
                 MemoryStream pdfStream = new MemoryStream();
 
-                // save pdf document into a MemoryStream
                 doc.Save(pdfStream);
-
-                // reset stream position
                 pdfStream.Position = 0;
                 string emailBody =
                     @$"Почитувани,
@@ -157,7 +149,6 @@ namespace CleanHub.Controllers
                             {_config.Value.PhoneNumber}
                             {_config.Value.Email}
                             {_config.Value.Address}";
-                // create email message
                 MailMessage message = new MailMessage();
                 message.From = new MailAddress(_smtpConfig.Value.Email);
                 message.To.Add(document?.Customer?.Email);
@@ -167,40 +158,28 @@ namespace CleanHub.Controllers
                 message.Attachments.Add(new Attachment(pdfStream,
                     string.Concat("МартиХигиена", document.Date.Value.Month, "/", document.Date.Value.Year, ".pdf")));
                 smtpClient.UseDefaultCredentials = false;
-                // send email
                 await smtpClient.SendMailAsync(message);
-                // close pdf document
                 doc.Close();
             }
         }
 
         private int GetOverdueFeePercentage(int overdueDays)
         {
-            if (overdueDays == 0)
-                return 0;
-            if (overdueDays < 30)
-                return 2;
-            else if (overdueDays >= 31 && overdueDays <= 60)
-                return 4;
-            else if (overdueDays >= 61 && overdueDays <= 90)
-                return 6;
-            else if (overdueDays >= 91 && overdueDays <= 180)
-                return 8;
-            else if (overdueDays >= 181 && overdueDays <= 360)
-                return 10;
-            else if (overdueDays >= 361 && overdueDays <= 730)
-                return 13;
-            else
-                return 16;
+            if (overdueDays == 0) return 0;
+            if (overdueDays < 30) return 2;
+            else if (overdueDays >= 31 && overdueDays <= 60) return 4;
+            else if (overdueDays >= 61 && overdueDays <= 90) return 6;
+            else if (overdueDays >= 91 && overdueDays <= 180) return 8;
+            else if (overdueDays >= 181 && overdueDays <= 360) return 10;
+            else if (overdueDays >= 361 && overdueDays <= 730) return 13;
+            else return 16;
         }
-
 
         [Route("Сметки")]
         public IActionResult Index(bool? fromPaymentStatus)
         {
             if (!fromPaymentStatus.HasValue || !fromPaymentStatus.Value)
             {
-                // Populate dropdown for PaymentStatus and Buildings
                 ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                     .Cast<PaymentStatus>()
                     .Select(e => new SelectListItem
@@ -224,12 +203,8 @@ namespace CleanHub.Controllers
                 var selectedName = TempData["SelectedBuildingName"] as string;
 
                 ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", selectedId);
-
-                {
-                    ViewBag.Buildings = new SelectList(Buildings, "Id", "Name", selectedId);
-                    ViewBag.SelectedBuildingName = selectedName;
-                    ViewBag.BuildingId = selectedId;
-                }
+                ViewBag.SelectedBuildingName = selectedName;
+                ViewBag.BuildingId = selectedId;
 
                 ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
               .Cast<PaymentStatus>()
@@ -259,7 +234,6 @@ namespace CleanHub.Controllers
                 throw new Exception("No buildings found in the database.");
             }
 
-            // ✅ Payment Status
             ViewBag.PaymentStatusList = Enum.GetValues(typeof(PaymentStatus))
                 .Cast<PaymentStatus>()
                 .Select(e => new SelectListItem
@@ -270,7 +244,6 @@ namespace CleanHub.Controllers
                 })
                 .ToList();
 
-            // ✅ Building
             var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value, inc => inc.Include(c => c.Customers));
             if (building != null)
             {
@@ -278,85 +251,39 @@ namespace CleanHub.Controllers
                 ViewBag.SelectedBuildingName = building.Name;
                 ViewBag.BuildingId = building.Id;
                 ViewBag.Customers = building.Customers.ToList();
-                var bookFinancials = _unitOfWork.BookFinancials
-      .GetAllNoTrakcing(
-          query => query
-              .Include(bf => bf.Customer)
-              .Where(bf =>
-                  bf.Customer.BuildingId == buildingId.Value
-                  &&
-                  (
-                      bf.InvoiceId == (int)InvoiceTyp.Recieve
-                      ||
-                      bf.DocumentTypId == 11
-                  )
-                  &&
-                  bf.InvoiceId != (int)InvoiceTyp.Reserve
-              )
-      )
-      .ToList();
 
+                var bookFinancials = _unitOfWork.BookFinancials
+                    .GetAllNoTrakcing(query => query
+                        .Include(bf => bf.Customer)
+                        .Where(bf =>
+                            bf.Customer.BuildingId == buildingId.Value &&
+                            (bf.InvoiceId == (int)InvoiceTyp.Recieve || bf.DocumentTypId == 11) &&
+                            bf.InvoiceId != 1201
+                        )
+                    )
+                    .ToList();
 
                 var dataDocument = _unitOfWork.Documents.GetAllNoTrakcing(query => query
-                            .Include(bf => bf.Customer)        // Include Customer
+                            .Include(bf => bf.Customer)
                             .Where(bf => bf.Customer.BuildingId == buildingId.Value)).ToList();
                 ViewBag.Documents = dataDocument;
-
                 ViewBag.BookFinancials = bookFinancials;
 
                 var customerBalances = building.Customers.Select(c =>
                 {
-                    // ======================
-                    // Documents vom Customer
-                    // ======================
-                    var customerDocs = dataDocument
-                        .Where(x => x.CustomerId == c.Id)
-                        .ToList();
+                    var customerDocs = dataDocument.Where(x => x.CustomerId == c.Id).ToList();
+                    var dataBookFinancial = bookFinancials.Where(x => x.CustomerId == c.Id).ToList();
 
+                    var pobaruva = dataBookFinancial.Sum(x => x.Demands);
 
-                    // ======================
-                    // BookFinancial vom Customer
-                    // gleiche Filter sind schon oben geladen
-                    // ======================
-                    var dataBookFinancial = bookFinancials
-                        .Where(x => x.CustomerId == c.Id)
-                        .ToList();
-
-
-                    // ======================
-                    // ПОБАРУВА
-                    // IDENTISCH wie Detail
-                    // ======================
-                    var pobaruva = dataBookFinancial
-                        .Sum(x => x.Demands);
-
-
-                    // ======================
-                    // ДОЛЖИ Dokumente
-                    // IDENTISCH:
-                    // dataDocument.Where(Date > 2021)
-                    // ======================
                     double dolzi = customerDocs
-                        .Where(x =>
-                            x.Date.HasValue &&
-                            x.Date.Value > new DateOnly(2021, 1, 1))
+                        .Where(x => x.Date.HasValue && x.Date.Value > new DateOnly(2021, 1, 1))
                         .Sum(x => (double)(x.TotalOutput ?? 0));
 
-
-                    // ======================
-                    // ДОЛЖИ BookFinancial
-                    // IDENTISCH
-                    // ======================
-                    if (dataBookFinancial.Any(x =>
-                            x.Owes != 0 &&
-                            x.DatumF.HasValue &&
-                            x.DatumF.Value >= new DateOnly(2021, 1, 1)))
+                    if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)))
                     {
                         dolzi += dataBookFinancial
-                            .Where(x =>
-                                x.Owes != 0 &&
-                                x.DatumF.HasValue &&
-                                x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                            .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1))
                             .Sum(x => x.Owes);
                     }
 
@@ -372,15 +299,12 @@ namespace CleanHub.Controllers
 
                 }).ToList();
 
-                // An View übergeben
                 ViewBag.CustomerBalances = customerBalances;
             }
 
-            // ✅ Default Year = Current Year
             int selectedYear = year ?? DateTime.Now.Year;
             ViewBag.Year = selectedYear;
 
-            // ❗ WICHTIG: Neue Methode mit Year verwenden
             var documentEntities = await GetDocumentsByYear(buildingId, paymentStatusId, selectedYear);
 
             var documents = App.FullMapper.Map<List<DocumentViewModel>>(documentEntities);
@@ -397,29 +321,6 @@ namespace CleanHub.Controllers
                 .ToList());
         }
 
-
-        //private int CalculateOverdueDays(DateOnly? dateReceived)
-        //{
-        //    var today = DateOnly.FromDateTime(DateTime.Now);
-        //    if (dateReceived != null)
-        //    {
-        //        if (dateReceived >= today)
-        //        {
-        //            return 0;
-        //        }
-        //        return today.DayNumber - dateReceived.Value.DayNumber;
-        //    }
-
-        //    return 0;
-        //}
-
-        //private int CalculateNewTotal(DocumentViewModel doc)
-        //{
-        //    doc.ChargesInPercent = GetOverdueFeePercentage(doc.Delay.Value);
-        //    if (doc.TotalOutput != null)
-        //        return (int)Math.Round(doc.TotalOutput.Value * (doc.ChargesInPercent.Value / 100f), MidpointRounding.AwayFromZero);
-        //    return 0;
-        //}
         private async Task<List<Document>> GetDocumentsByYear(int? buildingId, int? paymentStatusId, int? year)
         {
             var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
@@ -431,7 +332,6 @@ namespace CleanHub.Controllers
                     (paymentStatusId == (int)PaymentStatus.Сите || (int)d.PaymentStatus == paymentStatusId)
             );
 
-            // ✅ YEAR FILTER
             if (year.HasValue)
             {
                 query = query
@@ -441,6 +341,7 @@ namespace CleanHub.Controllers
 
             return query;
         }
+
         private async Task<List<Document>> GetDocuments(int? buildingId, int? paymentStatusId, string dateFrom, string dateTo)
         {
             var query = await _unitOfWork.Documents.GetAllWithIncludeAsync(
@@ -459,86 +360,56 @@ namespace CleanHub.Controllers
 
             return query;
         }
-        // GET: Invoices/Details/5
-        public async Task<IActionResult> JustSetDocumentPayedStatus(
-      int id,
-      int? year,
-      int? buildingId,
-      int? paymentStatusId,
-      string buildingName)
-        {
-            {
-                if (id == null)
-                {
-                    return NotFound();
-                }
-                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
-                if (documentEntity == null)
-                {
-                    return NotFound();
-                }
-                documentEntity.PaymentStatus = PaymentStatus.Платено;
-                _unitOfWork.Documents.Update(documentEntity);
-                await _unitOfWork.SaveChangesAsync();
 
-                return RedirectToAction("InvoiceFiltered", new
-                {
-                    year = year,
-                    buildingId = buildingId,
-                    paymentStatusId = paymentStatusId,
-                    buildingName = buildingName
-                });
-            }
+        public async Task<IActionResult> JustSetDocumentPayedStatus(int id, int? year, int? buildingId, int? paymentStatusId, string buildingName)
+        {
+            if (id == 0) return NotFound();
+
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
+            if (documentEntity == null) return NotFound();
+
+            documentEntity.PaymentStatus = PaymentStatus.Платено;
+            _unitOfWork.Documents.Update(documentEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            return RedirectToAction("InvoiceFiltered", new
+            {
+                year = year,
+                buildingId = buildingId,
+                paymentStatusId = paymentStatusId,
+                buildingName = buildingName
+            });
         }
 
         public async Task<IActionResult> JustSetDocumentNotPayedStatus(int id, int? year, int? buildingId, int? paymentStatusId, string buildingName)
         {
-            {
-                if (id == null)
-                {
-                    return NotFound();
-                }
-                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
-                if (documentEntity == null)
-                {
-                    return NotFound();
-                }
-                documentEntity.PaymentStatus = PaymentStatus.Неплатено;
-                _unitOfWork.Documents.Update(documentEntity);
-                await _unitOfWork.SaveChangesAsync();
+            if (id == 0) return NotFound();
 
-                return RedirectToAction("InvoiceFiltered", new
-                {
-                    year = year,
-                    buildingId = buildingId,
-                    paymentStatusId = paymentStatusId,
-                    buildingName = buildingName
-                });
-            }
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id);
+            if (documentEntity == null) return NotFound();
+
+            documentEntity.PaymentStatus = PaymentStatus.Неплатено;
+            _unitOfWork.Documents.Update(documentEntity);
+            await _unitOfWork.SaveChangesAsync();
+
+            return RedirectToAction("InvoiceFiltered", new
+            {
+                year = year,
+                buildingId = buildingId,
+                paymentStatusId = paymentStatusId,
+                buildingName = buildingName
+            });
         }
-        // GET: Invoices/Details/5
+
         public async Task<IActionResult> Details(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
+
             var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
-            if (documentViewModel == null)
-            {
-                return NotFound();
-            }
-            //documentViewModel.Delay = CalculateOverdueDays(documentViewModel.DateReceived);
-            //if (documentViewModel.PaymentStatus == PaymentStatus.Платено)
-            //{
-            //    documentViewModel.NewTotal = (int?)documentViewModel.TotalOutput;
-            //}
-            //else
-            //{
-            //    documentViewModel.NewTotal = (int?)(documentViewModel.TotalOutput + CalculateNewTotal(documentViewModel));
-            //}
+            if (documentViewModel == null) return NotFound();
+
             documentViewModel.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
             if (documentViewModel.Books != null && documentViewModel.Books.Any(x => x.Hide))
             {
@@ -555,28 +426,29 @@ namespace CleanHub.Controllers
 
                 documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
             }
+
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
             if (debt != null && debt.Any())
             {
-
                 var allParts = debt.OrderBy(x => x.Id).SelectMany(x => (x.ToDocument ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)).ToList();
 
                 var distinctExceptLast = allParts
-                    .Reverse<string>()                    // Umkehren
-                    .Skip(1)                              // Letztes Element ignorieren
-                    .Reverse()                            // Wieder umkehren
+                    .Reverse<string>()
+                    .Skip(1)
+                    .Reverse()
                     .Distinct()
                     .ToList();
+
                 if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
                 {
                     documentViewModel.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
                 else
                 {
-                    documentViewModel.Debt = string.Join(",", distinctExceptLast)
-                                       + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                    documentViewModel.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
             }
+
             var results = GetFilteredBookFinancials(1201, documentViewModel.Customer.BuildingId).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
             var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
@@ -591,9 +463,6 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
 
-            // =========================
-            // Kunden laden
-            // =========================
             var customers = _unitOfWork.Customers.GetAll()
                 .Select(x => new Customer
                 {
@@ -602,35 +471,17 @@ namespace CleanHub.Controllers
                 })
                 .ToList();
 
-            // Fallback für Auswahl
-            var selectedCustomer = customers
-                .FirstOrDefault(x => x.Id == customerId)
-                ?? customers.FirstOrDefault();
-
+            var selectedCustomer = customers.FirstOrDefault(x => x.Id == customerId) ?? customers.FirstOrDefault();
             ViewBag.SelectedCustomerName = selectedCustomer?.CustomerInfo;
-
-            // Firma setzen
             documentViewModel.Company = _config.Value;
 
-            // =========================
-            // Dropdown setzen (immer!)
-            // =========================
-            ViewBag.Customers = new SelectList(
-                customers,
-                "Id",
-                "CustomerInfo",
-                selectedCustomer?.Id
-            );
+            ViewBag.Customers = new SelectList(customers, "Id", "CustomerInfo", selectedCustomer?.Id);
 
-            // 👉 Wenn kein Kunde gewählt → nur leeres ViewModel zurückgeben
             if (!customerId.HasValue)
             {
                 return View(documentViewModel);
             }
 
-            // =========================
-            // Customer inkl. Building laden
-            // =========================
             var customer = _unitOfWork.Customers
                 .GetAll(include: inc => inc
                     .Include(x => x.Building)
@@ -639,50 +490,34 @@ namespace CleanHub.Controllers
 
             if (customer == null)
             {
-                // optional: Fehler anzeigen oder einfach leeres View zurück
                 return View(documentViewModel);
             }
 
             documentViewModel.CustomerId = customerId;
 
-            // =========================
-            // Building mappen
-            // =========================
             if (customer.Building != null)
             {
-                documentViewModel.Building =
-                    App.FullMapper.Map<BuildingViewModel>(customer.Building);
+                documentViewModel.Building = App.FullMapper.Map<BuildingViewModel>(customer.Building);
             }
 
-            // 👉 ABSICHERUNG (sehr wichtig!)
             documentViewModel.Building ??= new BuildingViewModel();
 
-            // =========================
-            // Products laden wenn leer
-            // =========================
             if (!(documentViewModel.Building.BuildingProducts?.Any() ?? false))
             {
                 var products = await _unitOfWork.Products.GetAllAsync();
-
-                documentViewModel.Building.BuildingProducts =
-                    App.FullMapper.Map<List<BuildingProductViewModel>>(products);
+                documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(products);
             }
 
-            // 👉 ReserveFund anwenden
             var reserveFund = documentViewModel.Building.ReserveFund;
 
             if (reserveFund != null)
             {
-                foreach (var product in documentViewModel.Building.BuildingProducts
-                             .Where(p => p.ArticleNotes?.Contains("Резервен") == true))
+                foreach (var product in documentViewModel.Building.BuildingProducts.Where(p => p.ArticleNotes?.Contains("Резервен") == true))
                 {
                     product.Price = reserveFund.Value;
                 }
             }
 
-            // =========================
-            // BuildingId setzen
-            // =========================
             documentViewModel.BuildingId = documentViewModel.Building.Id;
 
             return View(documentViewModel);
@@ -693,27 +528,11 @@ namespace CleanHub.Controllers
         public async Task<IActionResult> CreateForCustomer(DocumentViewModel documentViewModel, string actionType)
         {
             var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == documentViewModel.CustomerId);
-            var toDocument =
-             DocumentService.GetMonthAsString(documentViewModel.Date.Value.Month) +
-             " " +
-             documentViewModel.Date.Value.Year;
 
-            var exists = _unitOfWork.Documents
-                .GetAll()
-                .Any(d => d.CustomerId == customer.Id && d.ToDocument == toDocument);
-
-            if (exists)
-            {
-                TempData["InvoiceExists"] =
-                    "За овој месец веќе постои фактура за овој станар.";
-
-                return RedirectToAction(nameof(CreateForCustomer),
-                    new { customerId = customer.Id });
-            }
             documentViewModel.BuildingId = customer.BuildingId;
             var buildingProductsFromBuilding = _unitOfWork.Buildings.GetAllBuildingProducts(documentViewModel.BuildingId.Value).ToList();
-            var buildingProdutsToRemove = documentViewModel.Building?.BuildingProducts
-                .Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
+            var buildingProdutsToRemove = documentViewModel.Building?.BuildingProducts.Where(x => string.IsNullOrWhiteSpace(x.ArticleNotes)).ToList();
+
             if (buildingProdutsToRemove != null && buildingProdutsToRemove.Any())
             {
                 foreach (var buildingProduct in buildingProdutsToRemove)
@@ -732,17 +551,14 @@ namespace CleanHub.Controllers
                         .ToList();
 
                     var productsToAdd = documentViewModel.Building?.BuildingProducts
-                        .Where(x =>
-                            !string.IsNullOrWhiteSpace(x.ArticleNotes) &&
-                            !existingNotes.Any(existing =>
-                                x.ArticleNotes.Trim().StartsWith(existing, StringComparison.OrdinalIgnoreCase)))
+                        .Where(x => !string.IsNullOrWhiteSpace(x.ArticleNotes) && !existingNotes.Any(existing => x.ArticleNotes.Trim().StartsWith(existing, StringComparison.OrdinalIgnoreCase)))
                         .ToList();
 
                     foreach (var product in productsToAdd)
                     {
                         var bookFinancialViewModelReserve = new BookFinancialViewModel
                         {
-                            InvoiceId = Constants.Reserve,
+                            InvoiceId = 1201, // Заменет Constants.Reserve со 1201
                             Demands = 0,
                             DocumentTypId = 5,
                             Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
@@ -757,38 +573,32 @@ namespace CleanHub.Controllers
                     }
                 }
             }
-            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == customer.BuildingId);
 
+            var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == customer.BuildingId);
             var docEntity = await CreateCustomerDocument(customer, documentViewModel, building);
 
             if (documentViewModel?.Building?.BuildingProducts != null)
+            {
                 foreach (var buildingProduct in documentViewModel.Building.BuildingProducts.Where(x => x.PriceWithTax != 0))
                 {
-                    try
+                    if (buildingProduct.ArticleNotes.Contains("гаража") && !customer.Garage)
                     {
-                        // Continue creating the book if the article exists
-                        if (buildingProduct.ArticleNotes.Contains("гаража") && !customer.Garage)
-                        {
-                            continue;
-                        }
-                        CreateBook(buildingProduct, docEntity);
+                        continue;
                     }
-
-                    catch (Exception e)
-                    {
-                        Console.WriteLine(e);
-                        throw;
-                    }
+                    CreateBook(buildingProduct, docEntity);
                 }
+            }
+
             var docViewModel = App.FullMapper.Map<DocumentViewModel>(docEntity);
             if (docViewModel.PaymentStatus != PaymentStatus.Платено && customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription < docViewModel.TotalOutput && !string.IsNullOrEmpty(customer.Email))
             {
                 SendNotificationMail(customer, docViewModel.ToDocument);
             }
-       
+
             CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, documentViewModel.PaymentDate, documentViewModel.PaymentType, documentViewModel.PaymentNumber);
 
             await _unitOfWork.SaveChangesAsync();
+
             if (docEntity != null)
             {
                 DokumentiTest mappedDocuments = new DokumentiTest()
@@ -809,17 +619,12 @@ namespace CleanHub.Controllers
             bool send = actionType == "send";
             return await PrintDocuments(new List<Document> { docEntity }, building, send);
         }
+
         [HttpGet]
         public async Task<IActionResult> CreateWithDate(int? id, int? buildingId, DateTime? date)
         {
             var formattedDate = date?.ToString("yyyy-MM-dd");
-
-            return RedirectToAction("Create", new
-            {
-                id = id,
-                buildingId = buildingId,
-                date = formattedDate
-            });
+            return RedirectToAction("Create", new { id = id, buildingId = buildingId, date = formattedDate });
         }
 
         [HttpGet]
@@ -840,7 +645,6 @@ namespace CleanHub.Controllers
 
             documentViewModel.Company = _config.Value;
 
-            // 1. Повлечи ги сите објекти само со Id и Name (за потребите на datalist-от)
             var buildings = (List<Building>)await _unitOfWork.Buildings.GetAllAsync(
                 query => query.Select(b => new Building()
                 {
@@ -851,10 +655,8 @@ namespace CleanHub.Controllers
 
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
 
-            // 2. Одреди го точното BuildingId (ако нема, земи го првиот објект од листата)
             int targetBuildingId = buildingId ?? buildings.FirstOrDefault()?.Id ?? 0;
             documentViewModel.BuildingId = targetBuildingId;
-
             documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault(x => x.Id == targetBuildingId) ?? new BuildingViewModel();
 
             if (documentViewModel.Building.BuildingProducts == null)
@@ -862,7 +664,6 @@ namespace CleanHub.Controllers
                 documentViewModel.Building.BuildingProducts = new List<BuildingProductViewModel>();
             }
 
-            // Поставување на почетни дефолт вредности за продуктите ако се null
             foreach (var product in documentViewModel.Building.BuildingProducts)
             {
                 if (product.PriceWithTax == null) product.PriceWithTax = 0;
@@ -870,16 +671,13 @@ namespace CleanHub.Controllers
                 if (product.Tax == null) product.Tax = 0;
             }
 
-            // Подготовка на ViewBag за погледот
             ViewBag.Buildings = new SelectList(buildings, "Id", "Name", documentViewModel.BuildingId);
             ViewBag.SelectedBuildingName = documentViewModel.Building?.Name;
             ViewBag.BuildingId = documentViewModel.BuildingId;
 
-            // Финансиски пресметки
             if (documentViewModel.BuildingId.HasValue && documentViewModel.BuildingId.Value > 0)
             {
                 var results = GetFilteredBookFinancials(1201, documentViewModel.BuildingId.Value).ToList();
-
                 documentViewModel.TotalBuildingDemands = results.Where(x => !x.DontSum).Sum(x => x.Demands);
                 documentViewModel.TotalBuildingOwes = results.Where(x => !x.DontSum).Sum(x => x.Owes);
             }
@@ -889,625 +687,824 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Create(
-    DocumentViewModel document,
-    string actionType)
+        public async Task<IActionResult> Create(DocumentViewModel document, string actionType)
         {
             try
             {
                 bool send = actionType == "send";
-
                 ModelState.Remove(nameof(actionType));
 
-                if (ModelState.IsValid)
+                if (!ModelState.IsValid)
+                    return View(document);
+
+                var building = await _unitOfWork.Buildings.GetByIdAsync(
+                    x => x.Id == document.BuildingId,
+                    inc => inc.Include(x => x.Customers)
+                              .Include(x => x.BuildingProducts));
+
+                if (building == null)
+                    return NotFound("Зградата не е пронајдена.");
+
+                var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
+                    var activeCustomers = building.Customers
+                .Where(x => x.Inactive == false && x.Hide == false)
+                .ToList();
+                var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
+
+                var exists = await _unitOfWork.Documents.AnyAsync(
+                    x => activeCustomerIds.Contains(x.CustomerId.Value) && x.ToDocument == toDocument);
+
+                if (exists)
                 {
-                    var building = await _unitOfWork.Buildings.GetByIdAsync(
-                        x => x.Id == document.BuildingId,
-                        inc => inc.Include(x => x.Customers));
-
-                    var toDocument =
-                        DocumentService.GetMonthAsString(document.Date.Value.Month)
-                        + " "
-                        + document.Date.Value.Year;
-
-                    if (building.Customers.Any())
-                    {
-                        var customer = building.Customers
-                            .Where(x => x.ActivityId == 3)
-                            .FirstOrDefault();
-
-                        if (customer != null)
-                        {
-                            var exists = await _unitOfWork.Documents.AnyAsync(
-                                x => x.CustomerId == customer.Id &&
-                                     x.ToDocument == toDocument);
-
-                            if (exists)
-                            {
-                                TempData["InvoiceExists"] =
-                                    "За овој месец веќе постои фактура за оваа зграда.";
-
-                                return RedirectToAction(
-                                    nameof(Create),
-                                    new
-                                    {
-                                        id = 0,
-                                        buildingId = building.Id
-                                    });
-                            }
-                        }
-                    }
-
-                    if (document.BuildingId == null ||
-                        document.BuildingId == 0)
-                    {
-                        document.BuildingId = 1;
-                    }
-
-                    ViewBag.Buildings =
-                        new SelectList(
-                            Buildings,
-                            "Id",
-                            "Name",
-                            building.Id);
-
-                    var selectedBuildingName =
-                        Buildings?
-                            .FirstOrDefault(x => x.Id == building.Id)?
-                            .Name;
-
-                    if (selectedBuildingName != null)
-                    {
-                        ViewBag.SelectedBuildingName =
-                            selectedBuildingName;
-                    }
-
-                    var buildingProductsFromBuilding =
-                        _unitOfWork.Buildings
-                            .GetAllBuildingProducts(
-                                document.BuildingId.Value)
-                            .ToList();
-
-                    var buildingProdutsToRemove =
-                        document.Building?.BuildingProducts?
-                            .Where(x =>
-                                string.IsNullOrWhiteSpace(
-                                    x.ArticleNotes))
-                            .ToList();
-
-                    if (buildingProdutsToRemove != null &&
-                        buildingProdutsToRemove.Any())
-                    {
-                        foreach (var buildingProduct
-                                 in buildingProdutsToRemove)
-                        {
-                            document.Building?
-                                .BuildingProducts
-                                .Remove(buildingProduct);
-                        }
-                    }
-
-                    var documents = new List<Document>();
-
-                    if (building != null)
-                    {
-                        var hasSetCost =
-                            building?.Customers?.Any(x => x.SetCost) == true;
-
-                        foreach (var customer in building.Customers
-                            .Where(x =>
-                                x.Inactive == false &&
-                                !x.Hide)
-                            .ToList())
-                        {
-                            var docEntity =
-                                await CreateCustomerDocument(
-                                    customer,
-                                    document,
-                                    building);
-
-                            if (document?.Building?.BuildingProducts != null)
-                            {
-                                var allProducts =
-                                    document.Building.BuildingProducts
-                                        .Where(x =>
-                                            x.PriceWithTax != 0)
-                                        .ToList();
-
-                                List<BuildingProductViewModel>
-                                    productsForCustomer =
-                                        new List<BuildingProductViewModel>();
-
-                                if (!hasSetCost)
-                                {
-                                    productsForCustomer = allProducts;
-                                }
-                                else
-                                {
-                                    if (customer.SetCost)
-                                    {
-                                        productsForCustomer = allProducts;
-                                    }
-                                    else
-                                    {
-                                        productsForCustomer =
-                                            allProducts
-                                                .Where(x => !x.IsNew)
-                                                .ToList();
-                                    }
-                                }
-
-                                if (!customer.PresmetajAdministrativniTrosoci)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "административни трошоци",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "комунална такса за јавно осветлување",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajOdrzuvanjeLift)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "одржување на лифт",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajOdrzuvanjeSmetki)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "одржување на сметки",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajPotrosenaElektricnaEnergija)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "потрошена електрична енергија",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajRezervenFond)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "резервен фонд",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajUpravitel)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "управител",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                if (!customer.PresmetajCistenjeVlez)
-                                {
-                                    productsForCustomer.RemoveAll(x =>
-                                        x.ArticleNotes != null &&
-                                        x.ArticleNotes.Contains(
-                                            "чистење на влез",
-                                            StringComparison.OrdinalIgnoreCase));
-                                }
-
-                                foreach (var buildingProduct
-                                         in productsForCustomer)
-                                {
-                                    try
-                                    {
-                                        if (buildingProduct.ArticleNotes?
-                                            .Contains("гаража") == true &&
-                                            !customer.Garage)
-                                        {
-                                            continue;
-                                        }
-
-                                        CreateBook(
-                                            buildingProduct,
-                                            docEntity);
-                                    }
-                                    catch (Exception e)
-                                    {
-                                        throw new Exception(
-                                            $"ERROR во CreateBook. " +
-                                            $"CustomerId: {customer.Id}, " +
-                                            $"CustomerInfo: {customer.CustomerInfo}, " +
-                                            $"Product: {buildingProduct.ArticleNotes}, " +
-                                            $"ProductId: {buildingProduct.Id}",
-                                            e);
-                                    }
-                                }
-                            }
-
-                            var docViewModel =
-                                App.FullMapper.Map<DocumentViewModel>(
-                                    docEntity);
-
-                            if (docViewModel.PaymentStatus !=
-                                    PaymentStatus.Платено &&
-                                customer.Subscription.HasValue &&
-                                customer.Subscription != 0 &&
-                                customer.Subscription <
-                                    docViewModel.TotalOutput &&
-                                !string.IsNullOrEmpty(customer.Email))
-                            {
-                                SendNotificationMail(
-                                    customer,
-                                    docViewModel.ToDocument);
-                            }
-
-                            CreateBookFinancialAndReserve(
-                                docEntity,
-                                customer.Id,
-                                building.ReserveFund ?? 0,
-                                document.PaymentDate,
-                                document.PaymentType,
-                                document.PaymentNumber);
-
-                            documents.Add(docEntity);
-                        }
-                    }
-
-                    CreateSpecialInvoice(document);
-
-                    await _unitOfWork.SaveChangesAsync();
-
-                    if (documents != null &&
-                        documents.Any())
-                    {
-                        List<DokumentiTest> mappedDocuments =
-                            documents.Select(d => new DokumentiTest
-                            {
-                                Dokid = d.Id.ToString(),
-                                Datum = d.Date.Value
-                                    .ToString("yyyy-MM-dd"),
-                                Broj = d.Number.ToString(),
-                                PartnerID = d.CustomerId.ToString(),
-                                Godina = d.Date.Value.Year.ToString(),
-                                VkupnoIz = d.TotalOutput.ToString()
-                            }).ToList();
-
-                        _context.DokumentiTest.AddRange(
-                            mappedDocuments);
-
-                        _context.SaveChanges();
-                    }
-
-                    HttpContext.Session.Remove("Documents");
-
-                    return await PrintDocuments(
-                        documents,
-                        building,
-                        send);
+                    TempData["InvoiceExists"] = "За овој месец веќе постои фактура за оваа зграда.";
+                    return RedirectToAction(nameof(Create), new { id = 0, buildingId = building.Id });
                 }
 
-                return View(document);
+                int currentMaxNumber = await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0;
+
+                var allDebts = await _unitOfWork.Documents.Query()
+                    .Where(x => activeCustomerIds.Contains(x.CustomerId.Value) && x.PaymentStatus != PaymentStatus.Платено)
+                    .ToListAsync();
+
+                var documentsToInsert = new List<Document>();
+                var bookFinancialsToInsert = new List<BookFinancial>();
+
+                bool hasSetCost = activeCustomers.Any(x => x.SetCost);
+
+                foreach (var customer in activeCustomers)
+                {
+                    currentMaxNumber++;
+
+                    var docEntity = CreateCustomerDocumentInMemory(customer, document, building, currentMaxNumber);
+                    documentsToInsert.Add(docEntity);
+
+                    var productsForCustomer = GetProductsForCustomer(document.Building?.BuildingProducts, customer, hasSetCost);
+
+                    foreach (var buildingProduct in productsForCustomer)
+                    {
+                        if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
+                            continue;
+
+                       CreateBook(buildingProduct, docEntity);
+                    }
+
+                    // Креирање на финансиски записи преку BookFinancials
+                    CreateBookFinancialAndReserveInMemory(
+                        docEntity,
+                        building.ReserveFund ?? 0,
+                        document,
+                        bookFinancialsToInsert);
+                }
+
+               // CreateSpecialInvoiceInMemory(document, documentsToInsert);
+
+                // BATCH SAVE
+                _unitOfWork.Documents.AddRange(documentsToInsert);
+                _unitOfWork.BookFinancials.AddRange(bookFinancialsToInsert);
+
+                await _unitOfWork.SaveChangesAsync();
+
+                var mappedTestDocs = documentsToInsert.Select(d => new DokumentiTest
+                {
+                    Dokid = d.Id.ToString(),
+                    Datum = d.Date.Value.ToString("yyyy-MM-dd"),
+                    Broj = d.Number.ToString(),
+                    PartnerID = d.CustomerId.ToString(),
+                    Godina = d.Date.Value.Year.ToString(),
+                    VkupnoIz = d.TotalOutput.ToString()
+                }).ToList();
+
+                _context.DokumentiTest.AddRange(mappedTestDocs);
+                await _context.SaveChangesAsync();
+
+                HttpContext.Session.Remove("Documents");
+                return await ProcessPrintAndSend(documentsToInsert, building, allDebts, send);
             }
             catch (Exception ex)
             {
-                var fullException = ex.ToString();
-
-                return Content(
-                    "========================================\n" +
-                    "CLEANHUB ERROR\n" +
-                    "========================================\n\n" +
-                    fullException,
-                    "text/plain");
+                return Content($"ERROR:\n\n{ex.Message}\n\n{ex.StackTrace}", "text/plain");
             }
         }
 
+        private Document CreateCustomerDocumentInMemory(Customer customer, DocumentViewModel document, Building building, int number)
+        {
+            var documentCustomer = new DocumentViewModel
+            {
+                CustomerId = customer.Id,
+                Number = number,
+                Date = document.Date,
+                ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year,
+                Description = building.Name,
+                CreatedTime = DateTime.UtcNow,
+                DateReceived = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
+                TotalInput = 0
+            };
 
-        [HttpGet]
-        public async Task<IActionResult> Create(
-          int? id,
-          int? buildingId,
-          DateTime? date)
+            var calculator = new PriceCalculator(building.Customers.ToList());
+            var tempBuildingProducts = GetProductsForCustomer(document.Building?.BuildingProducts, customer, building.Customers.Any(x => x.SetCost));
+
+            calculator.CalculatePrices(tempBuildingProducts, customer);
+
+            if (tempBuildingProducts != null)
+            {
+                documentCustomer.TotalOutput = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
+            }
+
+            var docEntity = App.FullMapper.Map<Document>(documentCustomer);
+
+            if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
+            {
+                customer.Subscription -= (int)documentCustomer.TotalOutput.Value;
+                docEntity.PaymentStatus = PaymentStatus.Платено;
+                docEntity.PaymentType = PaymentType.Subscription;
+                docEntity.Description = customer.Building.Name;
+                docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                _unitOfWork.Customers.Update(customer);
+            }
+            else
+            {
+                docEntity.PaymentStatus = PaymentStatus.Неплатено;
+            }
+
+            return docEntity;
+        }
+
+        private void CreateBook(BuildingProductViewModel book, Document docEntity)
+        {
+            var bookEntity = new BookViewModel
+            {
+                DocId = docEntity.Id,
+                Output = 1,
+                Input = 0,
+                Quantity = book.Quantity,
+
+                PriceWithTax = book.PriceWithTax,
+
+                Price = book.Price,
+
+                Tax = book.Tax,
+
+                Total = book.PriceWithTax,
+
+                ArticleNotes = book.ArticleNotes,
+                UnitOfMeasurement = book.UnitOfMeasurement,
+            };
+
+            var entityBook = App.FullMapper.Map<Book>(bookEntity);
+            docEntity.Books.Add(entityBook);
+        }
+
+        private void CreateBookFinancialAndReserveInMemory(
+         Document docEntity,
+         decimal reserveFundAmount,
+         DocumentViewModel document,
+         List<BookFinancial> bookFinancials)
+        {
+            // Главен финансиски запис за фактурата
+            bookFinancials.Add(new BookFinancial
+            {
+                Document = docEntity,
+                CustomerId = docEntity.CustomerId,
+                InvoiceId = (int)InvoiceTyp.Recieve,
+                Owes = docEntity.TotalOutput ?? 0,
+                Demands = 0,
+                PaymentType = document.PaymentType,
+                PaymentNumber = document.PaymentNumber,
+                PaymentDate = document.PaymentDate,
+                DatumF = docEntity.DateReceived,
+                Status = docEntity.PaymentStatus,
+                Time = DateTime.UtcNow
+            });
+
+            // Доколку има резервен фонд, се внесува во BookFinancials со InvoiceId = 1201
+            if (reserveFundAmount > 0)
+            {
+                bookFinancials.Add(new BookFinancial
+                {
+                    Document = docEntity,
+                    CustomerId = docEntity.CustomerId,
+                    InvoiceId = 1201,
+                    Owes = (double)reserveFundAmount,
+                    Demands = 0,
+                    PaymentType = document.PaymentType,
+                    PaymentNumber = document.PaymentNumber,
+                    PaymentDate = document.PaymentDate,
+                    DatumF = docEntity.DateReceived,
+                    Status = docEntity.PaymentStatus,
+                    Time = DateTime.UtcNow
+                });
+            }
+        }
+
+        //private void CreateSpecialInvoiceInMemory(DocumentViewModel document, List<Document> documents)
+        //{
+        //    if (document.BuildingSpecialInvoice != null && document.BuildingSpecialInvoice.Any(x => x.IsSelected))
+        //    {
+        //        foreach (var special in document.BuildingSpecialInvoice.Where(x => x.IsSelected))
+        //        {
+        //            var specialDoc = new Document
+        //            {
+        //                CustomerId = special.CustomerId,
+        //                Date = document.Date,
+        //                ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year,
+        //                TotalOutput = special.Amount,
+        //                PaymentStatus = PaymentStatus.Неплатено,
+        //                Description = "Специјална фактура - " + special.Description
+        //            };
+        //            documents.Add(specialDoc);
+        //        }
+        //    }
+        //}
+
+        private List<BuildingProductViewModel> GetProductsForCustomer(List<BuildingProductViewModel> baseProducts, Customer customer, bool hasSetCost)
+        {
+            if (baseProducts == null) return new List<BuildingProductViewModel>();
+
+            var filtered = baseProducts.Where(x => x.PriceWithTax != 0).ToList();
+
+            if (hasSetCost && !customer.SetCost)
+                filtered = filtered.Where(x => !x.IsNew).ToList();
+
+            if (!customer.PresmetajAdministrativniTrosoci)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajOdrzuvanjeLift)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajOdrzuvanjeSmetki)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajPotrosenaElektricnaEnergija)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajRezervenFond)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajUpravitel)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("управител", StringComparison.OrdinalIgnoreCase) == true);
+
+            if (!customer.PresmetajCistenjeVlez)
+                filtered.RemoveAll(x => x.ArticleNotes?.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase) == true);
+
+            return filtered;
+        }
+        public async Task<IActionResult> ProcessPrintAndSend(
+      List<Document> documents,
+      Building building,
+      List<Document> allDebts,
+      bool send)
         {
             try
             {
-                // ================================================
-                // ТУКА СЕ СТАВА ЦЕЛИОТ ТВОЈ ПОСТОЕЧКИ GET CODE
-                // ================================================
+                if (documents == null || !documents.Any())
+                {
+                    throw new Exception("No documents were provided for PDF generation.");
+                }
 
+                if (building == null)
+                {
+                    throw new Exception("Building is null.");
+                }
+
+                double total = 0;
+                double owes = 0;
+                double demands = 0;
+
+                // ============================================================
+                // CALCULATE BUILDING TOTALS
+                // ============================================================
+
+                try
+                {
+                    if (building.CustomerRefId != null &&
+                        building.Customers != null &&
+                        building.Customers.Any() &&
+                        building.Customers.Count() <= 1)
+                    {
+                        total = (double)await _unitOfWork.Documents.Query()
+                            .Where(x =>
+                                x.CustomerId == building.CustomerRefId &&
+                                x.PaymentStatus == PaymentStatus.Неплатено)
+                            .SumAsync(x => x.TotalOutput);
+                    }
+                    else
+                    {
+                        var results = GetFilteredBookFinancials(
+                            1201,
+                            building.Id)
+                            .ToList();
+
+                        demands = results
+                            .Where(x => !x.DontSum)
+                            .Sum(x => x.Demands);
+
+                        owes = results
+                            .Where(x => !x.DontSum)
+                            .Sum(x => x.Owes);
+
+                        total = owes - demands;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception(
+                        $"ERROR while calculating building totals. " +
+                        $"BuildingId={building.Id}, BuildingName={building.Name}",
+                        ex);
+                }
+
+                // ============================================================
+                // CREATE FINAL PDF
+                // ============================================================
+
+                PdfDocument endDoc = null;
+
+                try
+                {
+                    endDoc = new PdfDocument();
+
+                    int documentIndex = 0;
+
+                    foreach (var item in documents)
+                    {
+                        documentIndex++;
+
+                        try
+                        {
+                            if (item == null)
+                            {
+                                throw new Exception(
+                                    $"Document #{documentIndex} is null.");
+                            }
+
+                            // ====================================================
+                            // MAP DOCUMENT
+                            // ====================================================
+
+                            var document =
+                                App.FullMapper.Map<DocumentViewModel>(item);
+
+                            if (document == null)
+                            {
+                                throw new Exception(
+                                    $"Document mapping returned null. " +
+                                    $"DocumentId={item.Id}");
+                            }
+
+                            document.TotalBuildingDemands = (int)demands;
+                            document.TotalBuildingOwes = (int)owes;
+
+                            // ====================================================
+                            // GET CUSTOMER DEBTS
+                            // ====================================================
+
+                            var debtQuery =
+                                allDebts != null && allDebts.Any()
+                                    ? allDebts
+                                        .Where(x =>
+                                            x.CustomerId == item.CustomerId &&
+                                            x.PaymentStatus != 0)
+                                    : _unitOfWork.Documents
+                                        .GetAll()
+                                        .Where(x =>
+                                            x.CustomerId == item.CustomerId &&
+                                            x.PaymentStatus != 0);
+
+                            if (debtQuery != null && debtQuery.Any())
+                            {
+                                var allParts = debtQuery
+                                 .OrderBy(x => x.Id)
+                                 .SelectMany(x =>
+                                     (
+                                         x.ToDocument ??
+                                         x.DateReceived?.ToString("yyyy-MM") ??
+                                         string.Empty
+                                     )
+                                     .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                 .ToList();
+
+                                var distinctExceptLast = allParts
+                                    .AsEnumerable()
+                                    .Reverse()
+                                    .Skip(1)
+                                    .Reverse()
+                                    .Distinct()
+                                    .ToList();
+
+                                document.Debt =
+                                    string.Join(",", distinctExceptLast) +
+                                    " : " +
+                                    debtQuery.Sum(x => x.TotalOutput ?? 0);
+                            }
+
+                            // ====================================================
+                            // COMPANY
+                            // ====================================================
+
+                            document.Company =
+                                App.FullMapper.Map<CompanyConfig>(
+                                    _config.Value);
+
+                            if (document.Company == null)
+                            {
+                                throw new Exception(
+                                    $"Company configuration is null. " +
+                                    $"DocumentId={item.Id}");
+                            }
+
+                            document.IsForPdf = true;
+
+                            // ====================================================
+                            // SEND EMAIL
+                            // ====================================================
+
+                            if (send &&
+                                !string.IsNullOrWhiteSpace(
+                                    document.Customer?.Email))
+                            {
+                                try
+                                {
+                                    await CreateAndSend(document);
+                                }
+                                catch (Exception mailEx)
+                                {
+                                    throw new Exception(
+                                        $"ERROR while creating/sending PDF email. " +
+                                        $"DocumentId={item.Id}, " +
+                                        $"CustomerId={item.CustomerId}, " +
+                                        $"Email={document.Customer.Email}",
+                                        mailEx);
+                                }
+                            }
+
+                            // ====================================================
+                            // RENDER HTML
+                            // ====================================================
+
+                            string htmlContent;
+
+                            try
+                            {
+                                htmlContent =
+                                    await RenderPartialViewToStringAsync(
+                                        "~/Views/Shared/_DocumentDetailPartialPrint.cshtml",
+                                        document);
+                            }
+                            catch (Exception viewEx)
+                            {
+                                throw new Exception(
+                                    $"ERROR rendering invoice HTML. " +
+                                    $"DocumentId={item.Id}",
+                                    viewEx);
+                            }
+
+                            if (string.IsNullOrWhiteSpace(htmlContent))
+                            {
+                                throw new Exception(
+                                    $"Generated HTML is empty. " +
+                                    $"DocumentId={item.Id}");
+                            }
+
+                            // ====================================================
+                            // BASE URL
+                            // ====================================================
+
+                            var request =
+                                _httpContextAccessor?.HttpContext?.Request;
+
+                            string baseUrl =
+                                request != null
+                                    ? $"{request.Scheme}://{request.Host.Value}/"
+                                    : null;
+
+                            // ====================================================
+                            // CONVERT HTML -> PDF
+                            // ====================================================
+
+                            PdfDocument singleDoc = null;
+
+                            try
+                            {
+                                var converter = new HtmlToPdf();
+
+                                singleDoc = string.IsNullOrWhiteSpace(baseUrl)
+                                    ? converter.ConvertHtmlString(htmlContent)
+                                    : converter.ConvertHtmlString(
+                                        htmlContent,
+                                        baseUrl);
+
+                                if (singleDoc == null)
+                                {
+                                    throw new Exception(
+                                        $"SelectPdf returned null PdfDocument. " +
+                                        $"DocumentId={item.Id}");
+                                }
+
+                                if (singleDoc.Pages == null ||
+                                    singleDoc.Pages.Count == 0)
+                                {
+                                    throw new Exception(
+                                        $"SelectPdf generated 0 pages. " +
+                                        $"DocumentId={item.Id}");
+                                }
+
+                                // =================================================
+                                // IMPORTANT
+                                // Append entire document instead of AddPage()
+                                // =================================================
+
+                                endDoc.Append(singleDoc);
+
+                                singleDoc = null;
+                            }
+                            catch (Exception pdfEx)
+                            {
+                                throw new Exception(
+                                    $"ERROR converting HTML to PDF. " +
+                                    $"DocumentId={item.Id}, " +
+                                    $"DocumentNumber={item.Number}, " +
+                                    $"HTML length={htmlContent.Length}, " +
+                                    $"BaseUrl={baseUrl}",
+                                    pdfEx);
+                            }
+                            finally
+                            {
+                                try
+                                {
+                                    singleDoc?.Close();
+                                }
+                                catch
+                                {
+                                }
+                            }
+                        }
+                        catch (Exception documentEx)
+                        {
+                            throw new Exception(
+                                $"ERROR processing document " +
+                                $"{documentIndex}/{documents.Count}. " +
+                                $"DocumentId={item?.Id}, " +
+                                $"CustomerId={item?.CustomerId}, " +
+                                $"Number={item?.Number}",
+                                documentEx);
+                        }
+                    }
+
+                    // ============================================================
+                    // CHECK FINAL PDF
+                    // ============================================================
+
+                    if (endDoc == null)
+                    {
+                        throw new Exception(
+                            "Final PdfDocument is null.");
+                    }
+
+                    if (endDoc.Pages == null ||
+                        endDoc.Pages.Count == 0)
+                    {
+                        throw new Exception(
+                            "Final PDF contains 0 pages.");
+                    }
+
+                    // ============================================================
+                    // SAVE PDF
+                    // ============================================================
+
+                    try
+                    {
+                        using var pdfStream = new MemoryStream();
+
+                        endDoc.Save(pdfStream);
+
+                        if (pdfStream.Length == 0)
+                        {
+                            throw new Exception(
+                                "PDF stream is empty after Save().");
+                        }
+
+                        byte[] pdfBytes =
+                            pdfStream.ToArray();
+
+                        var fileResult =
+                            new FileContentResult(
+                                pdfBytes,
+                                "application/pdf");
+
+                        var dateOnly =
+                            documents.FirstOrDefault()?.Date;
+
+                        if (dateOnly != null)
+                        {
+                            fileResult.FileDownloadName =
+                                $"{building.Name}_" +
+                                $"{dateOnly.Value.Month}_" +
+                                $"{dateOnly.Value.Year}.pdf";
+                        }
+                        else
+                        {
+                            fileResult.FileDownloadName =
+                                $"{building.Name}_Invoices.pdf";
+                        }
+
+                        return fileResult;
+                    }
+                    catch (Exception saveEx)
+                    {
+                        throw new Exception(
+                            $"ERROR SAVING FINAL PDF. " +
+                            $"BuildingId={building.Id}, " +
+                            $"BuildingName={building.Name}, " +
+                            $"Documents={documents.Count}, " +
+                            $"Pages={endDoc.Pages?.Count ?? 0}",
+                            saveEx);
+                    }
+                }
+                finally
+                {
+                    try
+                    {
+                        endDoc?.Close();
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(
+                    "========================================\n" +
+                    "CLEANHUB PDF ERROR\n" +
+                    "========================================\n\n" +
+                    ex.ToString(),
+                    "text/plain");
+            }
+        }
+        private string RenderInvoiceHtml(Document doc, Building building, List<Document> customerDebts)
+        {
+            return $"<html><body><h1>Фактура бр. {doc.Number}</h1><p>За: {doc.Customer?.CustomerInfo}</p><p>Износ: {doc.TotalOutput} ден.</p></body></html>";
+        }
+
+        private async Task SendEmailWithPdfAsync(string emailTo, string htmlContent, int docNumber)
+        {
+            try
+            {
+                var converter = new HtmlToPdf();
+                PdfDocument pdfDoc = converter.ConvertHtmlString(htmlContent);
+
+                using var ms = new MemoryStream();
+                pdfDoc.Save(ms);
+                pdfDoc.Close();
+                ms.Position = 0;
+
+                using var mail = new MailMessage();
+                mail.From = new MailAddress("your-email@domain.com", "CleanHub System");
+                mail.To.Add(emailTo);
+                mail.Subject = $"Фактура бр. {docNumber}";
+                mail.Body = "Почитувани, во прилог е вашата најнова фактура.";
+                mail.Attachments.Add(new Attachment(ms, $"Faktura_{docNumber}.pdf", "application/pdf"));
+
+                using var smtp = new SmtpClient("smtp.yourserver.com", 587);
+                smtp.Credentials = new NetworkCredential("your-email@domain.com", "your-password");
+                smtp.EnableSsl = true;
+
+                await smtp.SendMailAsync(mail);
+            }
+            catch
+            {
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Create(int? id, int? buildingId, DateTime? date)
+        {
+            try
+            {
                 var documentViewModel = new DocumentViewModel();
-
                 ViewBag.RouteId = id;
-
                 var now = DateTime.UtcNow;
 
                 if (!date.HasValue)
                 {
-                    var lastDayOfLastMonth =
-                        new DateTime(
-                            now.Year,
-                            now.Month,
-                            1)
-                        .AddDays(-1);
-
-                    documentViewModel.Date =
-                        DateOnly.FromDateTime(
-                            lastDayOfLastMonth);
+                    var lastDayOfLastMonth = new DateTime(now.Year, now.Month, 1).AddDays(-1);
+                    documentViewModel.Date = DateOnly.FromDateTime(lastDayOfLastMonth);
                 }
                 else
                 {
-                    documentViewModel.Date =
-                        DateOnly.FromDateTime(
-                            date.Value);
+                    documentViewModel.Date = DateOnly.FromDateTime(date.Value);
                 }
 
-                documentViewModel.Company =
-                    _config.Value;
-
-                var buildings =
-                    new List<Building>();
-
-                // ====================================================
-                // ROUTE 2
-                // ====================================================
+                documentViewModel.Company = _config.Value;
+                var buildings = new List<Building>();
 
                 if (id == 2)
                 {
-                    buildings =
-                        (List<Building>)
-                        await _unitOfWork.Buildings
-                            .GetAllAsync(
-                                query => query.Select(
-                                    b => new Building()
-                                    {
-                                        Id = b.Id,
-                                        Name = b.Name
-                                    }));
+                    buildings = (List<Building>)await _unitOfWork.Buildings
+                            .GetAllAsync(query => query.Select(b => new Building()
+                            {
+                                Id = b.Id,
+                                Name = b.Name
+                            }));
 
-                    documentViewModel.Buildings =
-                        App.FullMapper.Map<
-                            List<BuildingViewModel>>(
-                            buildings);
-
-                    documentViewModel.Building =
-                        buildingId.HasValue
-                            ? documentViewModel.Buildings
-                                .FirstOrDefault(
-                                    x => x.Id ==
-                                         buildingId.Value)
-                            : documentViewModel.Buildings
-                                .FirstOrDefault();
+                    documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
+                    documentViewModel.Building = buildingId.HasValue
+                            ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId.Value)
+                            : documentViewModel.Buildings.FirstOrDefault();
 
                     if (documentViewModel.Building == null)
                     {
-                        documentViewModel.Building =
-                            documentViewModel.Buildings
-                                .FirstOrDefault();
+                        documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
                     }
 
-                    documentViewModel.BuildingId =
-                        documentViewModel.Building?.Id ?? 0;
-
-                    documentViewModel.Building
-                        .BuildingProducts =
-                        new List<BuildingProductViewModel>();
+                    documentViewModel.BuildingId = documentViewModel.Building?.Id ?? 0;
+                    documentViewModel.Building.BuildingProducts = new List<BuildingProductViewModel>();
                 }
-
-                // ====================================================
-                // ROUTE 0 / 1
-                // ====================================================
-
                 else
                 {
-                    buildings =
-                        (List<Building>)
-                        await _unitOfWork.Buildings
-                            .GetAllAsync(
-                                query => query
-                                    .Include(x =>
-                                        x.BuildingProducts)
-                                    .Include(x =>
-                                        x.Customers)
-                                    .Select(
-                                        b => new Building()
-                                        {
-                                            Id = b.Id,
-                                            Name = b.Name,
-                                            ReserveFund =
-                                                b.ReserveFund,
-                                            Customers =
-                                                b.Customers,
-                                            BuildingProducts =
-                                                b.BuildingProducts
-                                        }));
+                    buildings = (List<Building>)await _unitOfWork.Buildings
+                            .GetAllAsync(query => query
+                                    .Include(x => x.BuildingProducts)
+                                    .Include(x => x.Customers)
+                                    .Select(b => new Building()
+                                    {
+                                        Id = b.Id,
+                                        Name = b.Name,
+                                        ReserveFund = b.ReserveFund,
+                                        Customers = b.Customers,
+                                        BuildingProducts = b.BuildingProducts
+                                    }));
 
-                    documentViewModel.Buildings =
-                        App.FullMapper.Map<
-                            List<BuildingViewModel>>(
-                            buildings);
-
-                    documentViewModel.Building =
-                        buildingId.HasValue
-                            ? documentViewModel.Buildings
-                                .FirstOrDefault(
-                                    x => x.Id ==
-                                         buildingId.Value)
-                            : documentViewModel.Buildings
-                                .FirstOrDefault();
+                    documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
+                    documentViewModel.Building = buildingId.HasValue
+                            ? documentViewModel.Buildings.FirstOrDefault(x => x.Id == buildingId.Value)
+                            : documentViewModel.Buildings.FirstOrDefault();
 
                     if (documentViewModel.Building == null)
                     {
-                        documentViewModel.Building =
-                            documentViewModel.Buildings
-                                .FirstOrDefault();
+                        documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
                     }
 
                     if (documentViewModel.Building == null)
                     {
-                        throw new Exception(
-                            $"Building not found. " +
-                            $"BuildingId = {buildingId}, " +
-                            $"Id = {id}");
+                        throw new Exception($"Building not found. BuildingId = {buildingId}, Id = {id}");
                     }
 
-                    documentViewModel.BuildingId =
-                        documentViewModel.Building.Id;
-
-                    documentViewModel.Building.Customers =
-                        documentViewModel.Building.Customers
-                            .Where(x =>
-                                !x.Hide &&
-                                x.Inactive != true &&
-                                x.ActiveDatum.HasValue &&
-                                x.ActiveDatum <=
-                                    documentViewModel.Date)
+                    documentViewModel.BuildingId = documentViewModel.Building.Id;
+                    documentViewModel.Building.Customers = documentViewModel.Building.Customers
+                            .Where(x => !x.Hide && x.Inactive != true && x.ActiveDatum.HasValue && x.ActiveDatum <= documentViewModel.Date)
                             .ToList();
 
-                    var filteredProducts =
-                        (id == 0)
-                            ? documentViewModel
-                                .Building
-                                .BuildingProducts
-                            : documentViewModel
-                                .Building
-                                .BuildingProducts
-                                .Where(x =>
-                                    x.ArticleNotes != null &&
-                                    x.ArticleNotes
-                                        .ToLower()
-                                        .Contains("влез"))
+                    var filteredProducts = (id == 0)
+                            ? documentViewModel.Building.BuildingProducts
+                            : documentViewModel.Building.BuildingProducts
+                                .Where(x => x.ArticleNotes != null && x.ArticleNotes.ToLower().Contains("влез"))
                                 .ToList();
 
-                    if (filteredProducts != null &&
-                        filteredProducts.Any())
+                    if (filteredProducts != null && filteredProducts.Any())
                     {
-                        documentViewModel
-                            .Building
-                            .BuildingProducts =
-                            filteredProducts;
+                        documentViewModel.Building.BuildingProducts = filteredProducts;
                     }
                     else
                     {
-                        var basicProducts =
-                            (id == 0)
-                                ? await _unitOfWork
-                                    .Products
-                                    .GetAllAsync()
-                                : await _unitOfWork
-                                    .Products
-                                    .GetAllAsync(
-                                        x => x.Where(
-                                            p =>
-                                                p.ArticleNotes !=
-                                                    null &&
-                                                p.ArticleNotes
-                                                    .Contains(
-                                                        "влез")));
+                        var basicProducts = (id == 0)
+                                ? await _unitOfWork.Products.GetAllAsync()
+                                : await _unitOfWork.Products.GetAllAsync(x => x.Where(p => p.ArticleNotes != null && p.ArticleNotes.Contains("влез")));
 
-                        documentViewModel
-                            .Building
-                            .BuildingProducts =
-                            App.FullMapper.Map<
-                                List<BuildingProductViewModel>>(
-                                basicProducts);
+                        documentViewModel.Building.BuildingProducts = App.FullMapper.Map<List<BuildingProductViewModel>>(basicProducts);
 
-                        foreach (
-                            var product in
-                            documentViewModel
-                                .Building
-                                .BuildingProducts
-                                .Where(p =>
-                                    p.ArticleNotes != null &&
-                                    p.ArticleNotes
-                                        .ToLower()
-                                        .Contains(
-                                            "резервен")))
+                        foreach (var product in documentViewModel.Building.BuildingProducts.Where(p => p.ArticleNotes != null && p.ArticleNotes.ToLower().Contains("резервен")))
                         {
-                            if (documentViewModel
-                                    .Building
-                                    .ReserveFund != null)
+                            if (documentViewModel.Building.ReserveFund != null)
                             {
-                                product.Price =
-                                    documentViewModel
-                                        .Building
-                                        .ReserveFund
-                                        .Value;
+                                product.Price = documentViewModel.Building.ReserveFund.Value;
                             }
                         }
                     }
                 }
 
-                if (documentViewModel
-                        .Building?
-                        .BuildingProducts == null)
+                if (documentViewModel.Building?.BuildingProducts == null)
                 {
-                    documentViewModel
-                        .Building
-                        .BuildingProducts =
-                        new List<BuildingProductViewModel>();
+                    documentViewModel.Building.BuildingProducts = new List<BuildingProductViewModel>();
                 }
 
-                foreach (
-                    var product in
-                    documentViewModel
-                        .Building
-                        .BuildingProducts)
+                foreach (var product in documentViewModel.Building.BuildingProducts)
                 {
-                    if (product.PriceWithTax == null)
-                        product.PriceWithTax = 0;
-
-                    if (product.Total == null)
-                        product.Total = 0;
+                    if (product.PriceWithTax == null) product.PriceWithTax = 0;
+                    if (product.Total == null) product.Total = 0;
                 }
 
-                ViewBag.Buildings =
-                    new SelectList(
-                        buildings,
-                        "Id",
-                        "Name",
-                        documentViewModel.BuildingId);
+                ViewBag.Buildings = new SelectList(buildings, "Id", "Name", documentViewModel.BuildingId);
+                ViewBag.SelectedBuildingName = documentViewModel.Building?.Name;
+                ViewBag.BuildingId = documentViewModel.BuildingId;
 
-                ViewBag.SelectedBuildingName =
-                    documentViewModel
-                        .Building?
-                        .Name;
+                var results = GetFilteredBookFinancials(1201, documentViewModel.BuildingId.Value).ToList();
 
-                ViewBag.BuildingId =
-                    documentViewModel
-                        .BuildingId;
-
-                var results =
-                    GetFilteredBookFinancials(
-                        1201,
-                        documentViewModel
-                            .BuildingId
-                            .Value)
-                    .ToList();
-
-                documentViewModel
-                    .TotalBuildingDemands =
-                    results
-                        .Where(x => !x.DontSum)
-                        .Sum(x => x.Demands);
-
-                documentViewModel
-                    .TotalBuildingOwes =
-                    results
-                        .Where(x => !x.DontSum)
-                        .Sum(x => x.Owes);
+                documentViewModel.TotalBuildingDemands = results.Where(x => !x.DontSum).Sum(x => x.Demands);
+                documentViewModel.TotalBuildingOwes = results.Where(x => !x.DontSum).Sum(x => x.Owes);
 
                 return View(documentViewModel);
             }
@@ -1522,33 +1519,6 @@ namespace CleanHub.Controllers
             }
         }
 
-        //// GET: Invoices/Create
-        //public async Task<IActionResult> CreatePartially()
-        //{
-        //    var documentViewModel = new DocumentViewModel();
-        //    documentViewModel.Company = _config.Value;
-        //    var buildings = await _unitOfWork.Buildings.GetAllAsync(x => x
-        //        .Include(b => b.BuildingProducts)
-        //        .Select(b => new Building()
-        //        {
-        //            Id = b.Id,
-        //            Name = b.Name,
-        //            BuildingProducts =
-        //                (ICollection<BuildingProduct>)b.BuildingProducts.Where(x =>
-        //                    x.ArticleNotes == "Чистење на влез за")
-        //        }));
-        //    HttpContext.Session.Remove("Documents");
-
-        //    documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
-        //    documentViewModel.Building = documentViewModel.Buildings.FirstOrDefault();
-        //    return View(nameof(Create), documentViewModel);
-        //}
-
-
-
-        // POST: Invoices/Create
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> CreateCostForBuilding(DocumentViewModel document, string actionType)
@@ -1558,7 +1528,6 @@ namespace CleanHub.Controllers
             if (ModelState.IsValid)
             {
                 var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == document.BuildingId);
-
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
 
                 if (document.BuildingId == null || document.BuildingId == 0)
@@ -1577,7 +1546,7 @@ namespace CleanHub.Controllers
                     var bookFinancial = new BookFinancialViewModel
                     {
                         DatumF = document.Date,
-                        InvoiceId = (int)InvoiceTyp.Reserve,
+                        InvoiceId = 1201, // Заменет Constants.Reserve
                         Demands = 0,
                         Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
                         CustomerId = building.CustomerRefId ?? building.Id,
@@ -1592,8 +1561,9 @@ namespace CleanHub.Controllers
 
             return View(document);
         }
+
         [HttpPost]
-        public async Task<IActionResult> CreateBookFinancial( PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total,int customerId)
+        public async Task<IActionResult> CreateBookFinancial(PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total, int customerId)
         {
             var bookFinancial = new BookFinancial()
             {
@@ -1613,7 +1583,6 @@ namespace CleanHub.Controllers
             _unitOfWork.BookFinancials.Add(bookFinancial);
             await _unitOfWork.SaveChangesAsync();
 
-            // 2. Враќаш OK статус бидејќи ова ќе биде повикано преку AJAX
             return Ok(new { success = true, message = "Успешно зачувано плаќање!" });
         }
 
@@ -1694,7 +1663,7 @@ namespace CleanHub.Controllers
                 }
             }
 
-            TempData["Success"] = $"{ids.Count} фактури се успешно избришани.";
+            TempData["Success"] = $"{ids.Count} фактури се успешно изменети.";
 
             return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
         }
@@ -1728,8 +1697,7 @@ namespace CleanHub.Controllers
                 await _unitOfWork.SaveChangesAsync();
                 var idsDoc = documentsToDelete.Select(d => d.Id.ToString()).ToList();
 
-                var documents = _context.DokumentiTest
-                    .Where(x => idsDoc.Contains(x.Dokid));
+                var documents = _context.DokumentiTest.Where(x => idsDoc.Contains(x.Dokid));
                 if (documents != null && documents.Any())
                 {
                     _context.DokumentiTest.RemoveRange(documents);
@@ -1767,6 +1735,7 @@ namespace CleanHub.Controllers
                     .Include(d => d.Customer)
                     .ThenInclude(c => c.BookFinancials))
                 .ToList();
+
             if (documents != null && documents.Any())
             {
                 foreach (var document in documents)
@@ -1798,9 +1767,9 @@ namespace CleanHub.Controllers
         {
             int sum = 0;
             var energyValues = document.Building?.BuildingProducts
-                .Where(x => x.ArticleNotes != null && x.Total != 0 && (x.ArticleNotes.ToLower().Contains("енер.")
-                                                                        || x.ArticleNotes.ToLower().Contains("осветлување")))
+                .Where(x => x.ArticleNotes != null && x.Total != 0 && (x.ArticleNotes.ToLower().Contains("енер.") || x.ArticleNotes.ToLower().Contains("осветлување")))
                 .ToList();
+
             if (energyValues != null && energyValues.Any())
             {
                 sum = (int)Math.Round((decimal)energyValues.Sum(x => x.Total), MidpointRounding.AwayFromZero);
@@ -1828,10 +1797,8 @@ namespace CleanHub.Controllers
             if (docEntity.PaymentStatus == PaymentStatus.Платено)
             {
                 var bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == customerId).ToList();
-                var existsInBookFinancials = AlreadyPayedInBookFinancials(
-                    bookFinancials,
-                    customerId,
-                    docEntity.ToDocument);
+                var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, customerId, docEntity.ToDocument);
+
                 if (!existsInBookFinancials)
                 {
                     var bookFinancialViewModel = new BookFinancialViewModel
@@ -1845,13 +1812,9 @@ namespace CleanHub.Controllers
                         Time = DateTime.Now,
                         Status = PaymentStatus.Платено,
                         DatumF = docEntity.DateReceived,
-                        PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
-                                  ? paymentDate.Value
-                                  : DateOnly.FromDateTime(DateTime.UtcNow),
+                        PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue ? paymentDate.Value : DateOnly.FromDateTime(DateTime.UtcNow),
                         PaymentType = docEntity.PaymentType.Value,
-                        Description = string.IsNullOrEmpty(docEntity.PaymentDescription)
-                                  ? docEntity.PaymentType.GetEnumDescription()
-                                  : docEntity.PaymentDescription,
+                        Description = string.IsNullOrEmpty(docEntity.PaymentDescription) ? docEntity.PaymentType.GetEnumDescription() : docEntity.PaymentDescription,
                         PaymentNumber = paymentNumber
                     };
                     CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber);
@@ -1859,26 +1822,9 @@ namespace CleanHub.Controllers
                     _unitOfWork.BookFinancials.Add(bookFinancial);
                 }
             }
-            //else
-            //{
-            //    bookFinancialViewModel = new BookFinancialViewModel
-            //    {
-            //        InvoiceId = Constants.Recieve,
-            //        DocumentId = docEntity.Id,
-            //        Demands = 0,
-            //        Owes = docEntity!.TotalOutput!.Value!,
-            //        DocumentTypId = 4,
-            //        CustomerId = customerId,
-            //        Time = DateTime.Now,
-            //        Status = PaymentStatus.Неплатено,
-            //        DatumF = docEntity.DateReceived,
-            //        Description = string.Empty,
-            //    };
-            //}
         }
 
-        public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate,
-            PaymentType? paymentType, string? paymentNumber)
+        public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber)
         {
             var bookFinancialViewModelReserve = new BookFinancialViewModel();
 
@@ -1886,7 +1832,7 @@ namespace CleanHub.Controllers
             {
                 bookFinancialViewModelReserve = new BookFinancialViewModel()
                 {
-                    InvoiceId = Constants.Reserve,
+                    InvoiceId = 1201, // Заменет Constants.Reserve со 1201
                     DocumentId = docEntity.Id,
                     Demands = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
                     DocumentTypId = 4,
@@ -1895,12 +1841,8 @@ namespace CleanHub.Controllers
                     CustomerId = customerId,
                     Status = docEntity.PaymentStatus,
                     Time = DateTime.Now,
-                    Description = string.IsNullOrEmpty(docEntity.PaymentDescription)
-                    ? docEntity.PaymentType.GetEnumDescription()
-                    : docEntity.PaymentDescription,
-                    PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue
-                    ? paymentDate.Value
-                    : DateOnly.FromDateTime(DateTime.UtcNow),
+                    Description = string.IsNullOrEmpty(docEntity.PaymentDescription) ? docEntity.PaymentType.GetEnumDescription() : docEntity.PaymentDescription,
+                    PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue ? paymentDate.Value : DateOnly.FromDateTime(DateTime.UtcNow),
                     PaymentType = docEntity.PaymentType.Value,
                     PaymentNumber = paymentNumber
                 };
@@ -1909,7 +1851,7 @@ namespace CleanHub.Controllers
             {
                 bookFinancialViewModelReserve = new BookFinancialViewModel()
                 {
-                    InvoiceId = Constants.Reserve,
+                    InvoiceId = 1201, // Заменет Constants.Reserve со 1201
                     DocumentId = docEntity.Id,
                     Demands = 0,
                     DocumentTypId = 4,
@@ -1926,128 +1868,87 @@ namespace CleanHub.Controllers
             _unitOfWork.BookFinancials.Add(bookFinancialReserve);
         }
 
-        private void CreateBook(BuildingProductViewModel book, Document docEntity)
-        {
-            var bookEntity = new BookViewModel
-            {
-                DocId = docEntity.Id,
-                Output = 1,
-                Input = 0,
-                Quantity = book.Quantity,
-
-                PriceWithTax = book.PriceWithTax,
-
-                Price = book.Price,
-
-                Tax =  book.Tax,
-
-                Total = book.PriceWithTax,
-
-                ArticleNotes = book.ArticleNotes,
-                UnitOfMeasurement = book.UnitOfMeasurement,
-            };
-
-            var entityBook = App.FullMapper.Map<Book>(bookEntity);
-            docEntity.Books.Add(entityBook);
-        }
-
         private async Task<Document> CreateCustomerDocument(Customer customer, DocumentViewModel document, Building building)
         {
             var documentCustomer = new DocumentViewModel
             {
                 CustomerId = customer.Id,
-                Number =
-                    (await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0) + 1,
+                Number = (await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0) + 1,
                 Date = document.Date
             };
+
             if (document.Date != null)
-                documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " +
-                                              document.Date.Value.Year;
+                documentCustomer.ToDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
+
             documentCustomer.Description = building.Name;
             documentCustomer.Date = document.Date;
             documentCustomer.CreatedTime = DateTime.UtcNow;
+
             if (document.Date != null)
-                documentCustomer.DateReceived =
-                    DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10));
+                documentCustomer.DateReceived = DateOnly.FromDateTime(document.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10));
+
             documentCustomer.TotalInput = 0;
-            var calculator = new PriceCalculator(
-                building.Customers.ToList());
+            var calculator = new PriceCalculator(building.Customers.ToList());
             var tempBuildingProducts = document.Building?.BuildingProducts.ToList();
 
             var hasSetCost = building.Customers?.Any(x => x.SetCost) == true;
 
-            // ✔ Garage filter
             if (!customer.Garage)
             {
                 tempBuildingProducts = tempBuildingProducts?
                     .Where(x => x.ArticleNotes == null || !x.ArticleNotes.Contains("гаража"))
                     .ToList();
             }
-           
-            // ✔ SetCost логика
+
             if (hasSetCost && !customer.SetCost)
             {
                 tempBuildingProducts = tempBuildingProducts?
                     .Where(x => !x.IsNew)
                     .ToList();
             }
+
             if (!customer.PresmetajAdministrativniTrosoci)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("административни трошоци", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajKomunalnaTaksaJavnoOsvetluvanje)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("комунална такса за јавно осветлување", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajOdrzuvanjeLift)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("одржување на лифт", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajOdrzuvanjeSmetki)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("одржување на сметки", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajPotrosenaElektricnaEnergija)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("потрошена електрична енергија", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajRezervenFond)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajUpravitel)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("управител", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("управител", StringComparison.OrdinalIgnoreCase));
             }
 
             if (!customer.PresmetajCistenjeVlez)
             {
-                tempBuildingProducts?.RemoveAll(x =>
-                    x.ArticleNotes != null &&
-                    x.ArticleNotes.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase));
+                tempBuildingProducts?.RemoveAll(x => x.ArticleNotes != null && x.ArticleNotes.Contains("чистење на влез", StringComparison.OrdinalIgnoreCase));
             }
+
             calculator.CalculatePrices(tempBuildingProducts, customer);
-            // Calculate the total PriceWithTax sum
+
             if (tempBuildingProducts != null)
             {
                 float totalPriceWithTax = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
@@ -2057,6 +1958,7 @@ namespace CleanHub.Controllers
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
             _unitOfWork.Documents.Add(docEntity);
             await _unitOfWork.SaveChangesAsync();
+
             if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
             {
                 customer.Subscription = (int?)(customer.Subscription - documentCustomer.TotalOutput.Value);
@@ -2071,137 +1973,63 @@ namespace CleanHub.Controllers
             {
                 docEntity.PaymentStatus = PaymentStatus.Неплатено;
             }
+
             _unitOfWork.Documents.Update(docEntity);
 
             return docEntity;
         }
-        private bool AlreadyPayedInBookFinancials(
-     List<BookFinancial> bookFinancials,
-     int customerId,
-     string toDocument)
+
+        private bool AlreadyPayedInBookFinancials(List<BookFinancial> bookFinancials, int customerId, string toDocument)
         {
             var months = new Dictionary<string, int>
-    {
-        { "Јануари", 1 },
-        { "Февруари", 2 },
-        { "Март", 3 },
-        { "Април", 4 },
-        { "Мај", 5 },
-        { "Јуни", 6 },
-        { "Јули", 7 },
-        { "Август", 8 },
-        { "Септември", 9 },
-        { "Октомври", 10 },
-        { "Ноември", 11 },
-        { "Декември", 12 }
-    };
+            {
+                { "Јануари", 1 }, { "Февруари", 2 }, { "Март", 3 }, { "Април", 4 },
+                { "Мај", 5 }, { "Јуни", 6 }, { "Јули", 7 }, { "Август", 8 },
+                { "Септември", 9 }, { "Октомври", 10 }, { "Ноември", 11 }, { "Декември", 12 }
+            };
 
-
-            if (string.IsNullOrEmpty(toDocument))
-                return false;
-
+            if (string.IsNullOrEmpty(toDocument)) return false;
 
             var parts = toDocument.Split(' ');
+            if (parts.Length < 2) return false;
 
-            if (parts.Length < 2)
-                return false;
-
-
-            if (!months.TryGetValue(parts[0], out int month))
-                return false;
-
-
-            if (!int.TryParse(parts[1], out int year))
-                return false;
-
+            if (!months.TryGetValue(parts[0], out int month)) return false;
+            if (!int.TryParse(parts[1], out int year)) return false;
 
             string yearText = year.ToString();
 
-
             var entries = bookFinancials
-                .Where(x =>
-                    x.CustomerId == customerId &&
-                    !string.IsNullOrWhiteSpace(x.Description) &&
-                    x.Description.Contains(yearText))
+                .Where(x => x.CustomerId == customerId && !string.IsNullOrWhiteSpace(x.Description) && x.Description.Contains(yearText))
                 .ToList();
-
 
             foreach (var bf in entries)
             {
                 var desc = bf.Description.Trim();
 
-
-                // ====================================
-                // 01-08/2026
-                // 1-8/2026
-                // за 01-08/2026
-                // од 01-08/2026
-                // ====================================
-
-                var range = Regex.Match(
-                    desc,
-                    @"(\d{1,2})\s*-\s*(\d{1,2})\s*/\s*" + yearText);
-
+                var range = Regex.Match(desc, @"(\d{1,2})\s*-\s*(\d{1,2})\s*/\s*" + yearText);
                 if (range.Success)
                 {
-                    if (
-                        int.TryParse(range.Groups[1].Value, out int from)
-                        &&
-                        int.TryParse(range.Groups[2].Value, out int to)
-                    )
+                    if (int.TryParse(range.Groups[1].Value, out int from) && int.TryParse(range.Groups[2].Value, out int to))
                     {
-                        if (month >= from && month <= to)
-                            return true;
+                        if (month >= from && month <= to) return true;
                     }
                 }
 
-
-                // ====================================
-                // 01,02,03,04,05/2026
-                // 1,2,3,4,5/2026
-                // ====================================
-
-                var list = Regex.Match(
-                    desc,
-                    @"([\d,\s]+)\s*/\s*" + yearText);
-
+                var list = Regex.Match(desc, @"([\d,\s]+)\s*/\s*" + yearText);
                 if (list.Success)
                 {
-                    var foundMonths = list.Groups[1]
-                        .Value
-                        .Split(',')
-                        .Select(x =>
-                        {
-                            return int.TryParse(x.Trim(), out int m)
-                                ? m
-                                : -1;
-                        })
+                    var foundMonths = list.Groups[1].Value.Split(',')
+                        .Select(x => int.TryParse(x.Trim(), out int m) ? m : -1)
                         .Where(x => x > 0)
                         .ToList();
 
-
-                    if (foundMonths.Contains(month))
-                        return true;
+                    if (foundMonths.Contains(month)) return true;
                 }
 
-
-                // ====================================
-                // 05/2026
-                // за 05/2026
-                // ====================================
-
-                var single = Regex.Match(
-                    desc,
-                    @"(\d{1,2})\s*/\s*" + yearText);
-
-
+                var single = Regex.Match(desc, @"(\d{1,2})\s*/\s*" + yearText);
                 if (single.Success)
                 {
-                    if (
-                        int.TryParse(single.Groups[1].Value, out int singleMonth)
-                        &&
-                        singleMonth == month
-                    )
+                    if (int.TryParse(single.Groups[1].Value, out int singleMonth) && singleMonth == month)
                     {
                         return true;
                     }
@@ -2218,16 +2046,12 @@ namespace CleanHub.Controllers
             {
                 var documentToUpdate = _unitOfWork.Documents.GetByIdAsync(x => x.Id == model.Id, include: inc => inc.Include(bu => bu.Books).Include(cu => cu.Customer).ThenInclude(bu => bu.Building)).Result;
 
-                //if (model.NewTotal.HasValue && model.NewTotal != 0)
-                //{
-                //    documentToUpdate.NewTotal = model.NewTotal.Value;
-                //}
                 documentToUpdate.PaymentStatus = PaymentStatus.Платено;
                 documentToUpdate.PaymentDate = model.PaymentDate;
                 documentToUpdate.PaymentDescription = model.PaymentDescription;
                 documentToUpdate.PaymentType = model.PaymentType;
                 documentToUpdate.PaymentNumber = model.PaymentNumber;
-                // Update related BookFinancials
+
                 if (bookfinancialToUpdate != null && bookfinancialToUpdate.Any())
                 {
                     foreach (var item in bookfinancialToUpdate)
@@ -2268,12 +2092,11 @@ namespace CleanHub.Controllers
                     };
 
                     if (documentToUpdate.Customer.ActivityId != 1 && documentToUpdate.Books
-                             .Any(x => x.ArticleNotes != null &&
-                                 x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase)))
+                             .Any(x => x.ArticleNotes != null && x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase)))
                     {
                         listToAdd.Add(new BookFinancial
                         {
-                            InvoiceId = Constants.Reserve,
+                            InvoiceId = 1201, // Заменет Constants.Reserve
                             PaymentType = model.PaymentType,
                             Time = DateTime.UtcNow,
                             PaymentNumber = model.PaymentNumber,
@@ -2282,8 +2105,7 @@ namespace CleanHub.Controllers
                             Description = model.PaymentDescription,
                             DocumentId = documentToUpdate.Id,
                             Demands = documentToUpdate.Books
-                                .FirstOrDefault(x => x.ArticleNotes != null &&
-                                    x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase))
+                                .FirstOrDefault(x => x.ArticleNotes != null && x.ArticleNotes.Contains("резервен фонд", StringComparison.OrdinalIgnoreCase))
                                 ?.Total ?? 0,
                             Owes = 0,
                             CustomerId = documentToUpdate.Customer.Id,
@@ -2297,31 +2119,25 @@ namespace CleanHub.Controllers
                 }
                 _unitOfWork.Documents.Update(documentToUpdate);
             }
-            catch (DbUpdateConcurrencyException e)
+            catch (DbUpdateConcurrencyException)
             {
-
             }
         }
-        // GET: Invoices/Edit/5
+
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
             var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
                 .Include(x => x.Books)
                 .Include(d => d.Customer));
 
-            if (documentEntity == null)
-            {
-                return NotFound();
-            }
+            if (documentEntity == null) return NotFound();
 
             var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
             document.Company = _config.Value;
             var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+
             if (debt != null && debt.Any())
             {
                 var allParts = debt.OrderBy(x => x.Id)
@@ -2329,53 +2145,42 @@ namespace CleanHub.Controllers
                     .ToList();
 
                 var distinctExceptLast = allParts
-                    .Reverse<string>()                    // Umkehren
-                    .Skip(1)                              // Letztes Element ignorieren
-                    .Reverse()                            // Wieder umkehren
+                    .Reverse<string>()
+                    .Skip(1)
+                    .Reverse()
                     .Distinct()
                     .ToList();
+
                 if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
                 {
                     document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
                 else
                 {
-                    document.Debt = string.Join(",", distinctExceptLast)
-                                       + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                    document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                 }
             }
             ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
             return PartialView("_DocumentDetailPartial", document);
         }
 
-        // POST: Invoices/Edit/5
-        // To protect from overposting attacks, enable the specific properties you want to bind to.
-        // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, DocumentViewModel document)
         {
-            if (id != document.Id)
-            {
-                return NotFound();
-            }
+            if (id != document.Id) return NotFound();
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    var documentEntity = App.FullMapper.Map<Document>(document);  // Map to Document entity, not ViewModel
+                    var documentEntity = App.FullMapper.Map<Document>(document);
                     _unitOfWork.Documents.Update(documentEntity);
                     await _unitOfWork.SaveChangesAsync();
                 }
                 catch (DbUpdateConcurrencyException)
                 {
-                    if (!InvoiceExists(document.Id))
-                    {
-                        return NotFound();
-                    }
-
-                    // Optionally log error here for better debugging
+                    if (!InvoiceExists(document.Id)) return NotFound();
                     throw;
                 }
 
@@ -2385,26 +2190,17 @@ namespace CleanHub.Controllers
             return View(document);
         }
 
-        // GET: Invoices/Delete/5
         public async Task<IActionResult> Delete(int? id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
+            if (id == null) return NotFound();
 
-            var invoice = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, x => x
-                .Include(i => i.Books));
+            var invoice = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, x => x.Include(i => i.Books));
 
-            if (invoice == null)
-            {
-                return NotFound();
-            }
+            if (invoice == null) return NotFound();
 
             return View(invoice);
         }
 
-        // POST: Invoices/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -2426,20 +2222,18 @@ namespace CleanHub.Controllers
 
         public async Task<IActionResult> CombineAndDownloadPdfs(int? buildingId, int? paymentStatusId, int year)
         {
-            // Hole die Kunden, die dem Gebäude zugeordnet sind
             var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(buildingId.Value);
 
             var startDate = new DateOnly();
             var endDate = new DateOnly();
 
-
             var results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
             var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
             var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
 
-
-            PdfDocument endDoc = new PdfDocument();  // Initialize the final document to append pages to.
+            PdfDocument endDoc = new PdfDocument();
             MemoryStream pdfStream = new MemoryStream();
+
             foreach (var item in customers.Where(x => x.Inactive == false))
             {
                 var documentEntity = await _unitOfWork.Documents.GetByIdAsync(
@@ -2449,16 +2243,14 @@ namespace CleanHub.Controllers
                     d => d.Include(x => x.Customer).Include(x => x.Books)
                 );
 
-
                 var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
-                if (document == null)
-                {
-                    continue;
-                }
+                if (document == null) continue;
+
                 document.TotalBuildingDemands = (int)demands;
                 document.TotalBuildingOwes = (int)owes;
                 var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+
                 if (debt != null && debt.Any())
                 {
                     var allParts = debt.OrderBy(x => x.Id)
@@ -2466,9 +2258,9 @@ namespace CleanHub.Controllers
                         .ToList();
 
                     var distinctExceptLast = allParts
-                        .Reverse<string>()                    // Umkehren
-                        .Skip(1)                              // Letztes Element ignorieren
-                        .Reverse()                            // Wieder umkehren
+                        .Reverse<string>()
+                        .Skip(1)
+                        .Reverse()
                         .Distinct()
                         .ToList();
 
@@ -2478,8 +2270,7 @@ namespace CleanHub.Controllers
                     }
                     else
                     {
-                        document.Debt = string.Join(",", distinctExceptLast)
-                                           + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                        document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                     }
                 }
                 document.Company = _config.Value;
@@ -2496,7 +2287,6 @@ namespace CleanHub.Controllers
             }
 
             byte[] pdf = endDoc.Save();
-
             endDoc.Close();
 
             FileResult fileResult = new FileContentResult(pdf, "application/pdf")
@@ -2513,9 +2303,10 @@ namespace CleanHub.Controllers
                 double total = 0;
                 double owes = 0;
                 double demands = 0;
+
                 if (building.CustomerRefId != null && building.Customers != null && building.Customers.Any() && building.Customers.Count() <= 1)
                 {
-                   total = (double)await _unitOfWork.Documents.Query().Where(x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено).SumAsync(x => x.TotalOutput);
+                    total = (double)await _unitOfWork.Documents.Query().Where(x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено).SumAsync(x => x.TotalOutput);
                 }
                 else
                 {
@@ -2525,38 +2316,34 @@ namespace CleanHub.Controllers
 
                     total = owes - demands;
                 }
-             
+
                 PdfDocument endDoc = new PdfDocument();
                 MemoryStream pdfStream = new MemoryStream();
+
                 foreach (var item in documents)
                 {
                     var document = App.FullMapper.Map<DocumentViewModel>(item);
-                    if (document == null)
-                    {
-                        continue;
-                    }
+                    if (document == null) continue;
+
                     document.TotalBuildingDemands = (int)demands;
                     document.TotalBuildingOwes = (int)owes;
                     var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == item.CustomerId && x.PaymentStatus != 0);
+
                     if (debt != null && debt.Any())
                     {
                         var allParts = debt
                              .OrderBy(x => x.Id)
-                             .SelectMany(x =>
-                                 (x.ToDocument ??
-                                  (x.DateReceived?.ToString("yyyy-MM") ?? string.Empty))
-                                 .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                             .SelectMany(x => (x.ToDocument ?? (x.DateReceived?.ToString("yyyy-MM") ?? string.Empty)).Split(',', StringSplitOptions.RemoveEmptyEntries))
                              .ToList();
 
                         var distinctExceptLast = allParts
-                            .Reverse<string>()                    // Umkehren
-                            .Skip(1)                              // Letztes Element ignorieren
-                            .Reverse()                            // Wieder umkehren
+                            .Reverse<string>()
+                            .Skip(1)
+                            .Reverse()
                             .Distinct()
                             .ToList();
 
-                        document.Debt = string.Join(",", distinctExceptLast)
-                                                 + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+                        document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
                     }
                     document.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
                     document.IsForPdf = true;
@@ -2567,8 +2354,7 @@ namespace CleanHub.Controllers
                     }
                     else
                     {
-                        string htmlContent = await RenderPartialViewToStringAsync(
-                            "~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
+                        string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
 
                         var request = _httpContextAccessor?.HttpContext?.Request;
                         string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
@@ -2581,21 +2367,21 @@ namespace CleanHub.Controllers
                 }
 
                 byte[] pdf = endDoc.Save();
-
                 endDoc.Close();
 
                 FileResult fileResult = new FileContentResult(pdf, "application/pdf");
                 var dateOnly = documents.FirstOrDefault().Date;
                 if (dateOnly != null)
-                    fileResult.FileDownloadName =
-                        $"{building?.Name}_{dateOnly.Value.Month}_{dateOnly.Value.Year}.pdf";
+                    fileResult.FileDownloadName = $"{building?.Name}_{dateOnly.Value.Month}_{dateOnly.Value.Year}.pdf";
+
                 return fileResult;
             }
             return null;
         }
+
         private List<BookFinancialInfoViewModel> GetFilteredBookFinancials(int? invoiceId, int buildingId)
         {
-            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? (int)InvoiceTyp.Reserve);
+            var query = _unitOfWork.BookFinancials.GetBuldingReserve(buildingId, invoiceId ?? 1201); // Заменет (int)InvoiceTyp.Reserve со 1201
 
             return query.Select(bf => new BookFinancialInfoViewModel
             {
@@ -2611,5 +2397,4 @@ namespace CleanHub.Controllers
             }).ToList();
         }
     }
-
 }

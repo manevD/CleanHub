@@ -46,6 +46,9 @@ namespace CleanHub.Infrastructure.Data
             // modelBuilder.Entity<CompanyConfig>().HasNoKey();
             // Add configurations for your entities, including primary keys
             modelBuilder.Entity<IdentityUserLogin<string>>().HasKey(l => l.UserId);
+            modelBuilder.Entity<SpecialInvoice>()
+        .Property(s => s.Total)
+        .HasPrecision(18, 2);
             //modelBuilder.Entity<Activity>().ToTable("Activity", t => t.ExcludeFromMigrations());
         }
 

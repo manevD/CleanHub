@@ -319,9 +319,12 @@
                                         <input class="form-control" list="buildingOptions" id="buildingSearch" name="buildingName" placeholder="Пребарувај" value="@ViewBag.SelectedBuildingName">
                                         <input type="hidden" name="id" value="@routeId" />
                                         <datalist id="buildingOptions">
-                                            @foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                            @if (ViewBag.Buildings != null)
                                             {
-                                                <option value="@building.Text" data-id="@building.Value"></option>
+                                                foreach (var building in (IEnumerable<SelectListItem>)ViewBag.Buildings)
+                                                {
+                                                    <option value="@building.Text" data-id="@building.Value"></option>
+                                                }
                                             }
                                         </datalist>
                                     </div>
