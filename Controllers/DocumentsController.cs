@@ -733,12 +733,15 @@ namespace CleanHub.Controllers
 
                 foreach (var customer in activeCustomers)
                 {
+                    var productsForCustomer = GetProductsForCustomer(document.Building?.BuildingProducts, customer, hasSetCost);
+                    if (!productsForCustomer.Any())
+                    {
+                        continue;
+                    }
                     currentMaxNumber++;
-
                     var docEntity = CreateCustomerDocumentInMemory(customer, document, building, currentMaxNumber);
                     documentsToInsert.Add(docEntity);
 
-                    var productsForCustomer = GetProductsForCustomer(document.Building?.BuildingProducts, customer, hasSetCost);
 
                     foreach (var buildingProduct in productsForCustomer)
                     {
