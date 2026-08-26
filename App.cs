@@ -99,7 +99,7 @@ public class App : Profile
 
             #region BookFinancial
 
-            cfg.CreateMap<BookFinancial, BookFinancialViewModel>().ReverseMap();
+            cfg.CreateMap<BookFinancial, BookFinancialViewModel>().ForMember(dest => dest.Source, opt => opt.Ignore()).ReverseMap();
 
             #endregion
 

@@ -116,6 +116,7 @@
                         <th>Опис</th>
                         <th>Побарува</th>
                         <th>Должи</th>
+                        <th>Функции</th>
                     </tr>
 
                 </thead>
@@ -150,7 +151,40 @@
                                 <td>
                                     @invoice.Owes МКД
                                 </td>
+                                <td>
 
+                                    @if (invoice.Source == "bookFinancial")
+                                    {
+                                        <form asp-action="DeleteBookFinancial"
+                                              asp-controller="Cards"
+                                              method="post"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете овој запис?');">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@invoice.Id" />
+
+                                            <input type="hidden"
+                                                   name="returnPage"
+                                                   value="BuildingsReserve" />
+
+                                            <input type="hidden" DeleteBuildingFinancial
+                                                   name="buildingId"
+                                                   value="@ViewBag.BuildingId" />
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Избриши">
+                                                    Избриши
+                                            </button>
+
+                                        </form>
+                                    }
+
+                                </td>
                             </tr>
                         }
 

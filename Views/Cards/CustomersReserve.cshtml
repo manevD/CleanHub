@@ -103,6 +103,7 @@
 
 </form>
 
+
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
 
     <div class="statbox widget box box-shadow">
@@ -122,6 +123,7 @@
                         <th>Сметка</th>
                         <th>Побарува</th>
                         <th>Должи</th>
+                        <th>Функции</th>
                     </tr>
 
                 </thead>
@@ -139,7 +141,9 @@
 
                             <tr>
 
-                                <td>@counter</td>
+                                <td>
+                                    @counter
+                                </td>
 
                                 <td>
                                     @(invoice.DatumF?.ToString("dd.MM.yyyy"))
@@ -159,6 +163,34 @@
 
                                 <td>
                                     @invoice.Owes МКД
+                                </td>
+
+                                <td>
+
+                                    @if (@invoice.Source == "bookFinancial")
+                                    {
+                                        <form asp-action="DeleteBookFinancial"
+                                              asp-controller="Cards"
+                                              method="post"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете ова плаќање?');">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@invoice.Id" />
+                                            <input type="hidden" name="returnPage" value="CustomersReserve" />
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Избриши">
+                                                Избриши
+                                            </button>
+
+                                        </form>
+                                    }
+
                                 </td>
 
                             </tr>
@@ -185,6 +217,8 @@
                                 @Model.CustomerOwesTotal
                             </th>
 
+                            <th></th>
+
                         </tr>
 
                     }
@@ -192,7 +226,7 @@
                     {
                         <tr>
 
-                            <td colspan="6"
+                            <td colspan="7"
                                 class="text-center">
                                 Нема пронајдени податоци
                             </td>
@@ -221,6 +255,8 @@
                             @Model.CustomerOwesTotal
                         </th>
 
+                        <th></th>
+
                     </tr>
 
                 </tfoot>
@@ -232,30 +268,57 @@
     </div>
 
 </div>
+
+
 @section Scripts
 {
     <script>
-        document.getElementById('customerSearch').addEventListener('input', function () {
 
-            const selectedValue = this.value;
-            const options = document.querySelectorAll('#customerOptions option');
-            let selectedId = '';
+        document.addEventListener("DOMContentLoaded", function() {
 
-            options.forEach(option => {
-                if (option.value === selectedValue) {
-                    selectedId = option.getAttribute('data-id');
-                }
-            });
+            const customerSearch =
+                document.getElementById('customerSearch');
 
-            document.getElementById('customerId').value = selectedId || '';
+            const customerId =
+                document.getElementById('customerId');
+
+            if (customerSearch && customerId) {
+
+                customerSearch.addEventListener('input', function() {
+
+                    const selectedValue = this.value;
+
+                    const options =
+                        document.querySelectorAll('#customerOptions option');
+
+                    let selectedId = '';
+
+                    options.forEach(function(option) {
+
+                        if (option.value === selectedValue) {
+
+                            selectedId =
+                                option.getAttribute('data-id');
+
+                        }
+
+                    });
+
+                    customerId.value = selectedId || '';
+
+                });
+
+            }
 
         });
 
-        $(document).ready(function () {
+
+        $(document).ready(function() {
 
             $('#customer-reserve').DataTable({
 
                 ordering: false,
+
                 order: [],
 
                 dom:
@@ -264,25 +327,50 @@
                     "<'dt--bottom-section d-sm-flex justify-content-sm-between text-center'<'dt--pages-count mb-sm-0 mb-3'i><'dt--pagination'p>>",
 
                 buttons: [
-                    { extend: 'copy', className: 'btn' },
-                    { extend: 'csv', className: 'btn' },
-                    { extend: 'excel', className: 'btn' },
-                    { extend: 'print', className: 'btn' }
+                    {
+                        extend: 'copy',
+                        className: 'btn'
+                    },
+                    {
+                        extend: 'csv',
+                        className: 'btn'
+                    },
+                    {
+                        extend: 'excel',
+                        className: 'btn'
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn'
+                    }
                 ],
 
                 oLanguage: {
+
                     oPaginate: {
-                        sPrevious: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
-                        sNext: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>'
+
+                        sPrevious:
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>',
+
+                        sNext:
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>'
+
                     },
+
                     sInfo: "Страна _PAGE_ од _PAGES_",
-                    sSearch: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+
+                    sSearch:
+                        '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>',
+
                     sSearchPlaceholder: "Пребарувај...",
+
                     sLengthMenu: "Results : _MENU_"
                 },
 
                 stripeClasses: [],
+
                 lengthMenu: [7, 10, 20, 50],
+
                 pageLength: 10
 
             });

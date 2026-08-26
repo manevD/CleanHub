@@ -1723,14 +1723,24 @@ namespace CleanHub.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> SetMultiplePayments(string SelectedInvoiceIds, PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription)
+        public async Task<IActionResult> SetMultiplePayments(
+    string SelectedInvoiceIds,
+    PaymentType PaymentType,
+    DateTime PaymentDate,
+    string PaymentNumber,
+    string PaymentDescription)
         {
-            if (SelectedInvoiceIds == null || !SelectedInvoiceIds.Any())
+            if (string.IsNullOrWhiteSpace(SelectedInvoiceIds))
             {
                 TempData["Error"] = "Изберете најмалку една фактура.";
                 return RedirectToAction("Index");
             }
-            var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
+
+            var ids = SelectedInvoiceIds
+                .Split(',', StringSplitOptions.RemoveEmptyEntries)
+                .Select(int.Parse)
+                .Distinct()
+                .ToList();
 
             var documents = _unitOfWork.Documents
                 .GetAll(query => query
@@ -1739,29 +1749,56 @@ namespace CleanHub.Controllers
                     .ThenInclude(c => c.BookFinancials))
                 .ToList();
 
-            if (documents != null && documents.Any())
+            if (documents == null || !documents.Any())
             {
-                foreach (var document in documents)
-                {
-                    document.PaymentStatus = PaymentStatus.Платено;
-                    document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
-                    document.PaymentDescription = PaymentDescription;
-                    document.PaymentType = PaymentType;
-                    document.PaymentNumber = PaymentNumber;
-                    SetStatusPayment(App.FullMapper.Map<DocumentViewModel>(document));
-                }
-                await _unitOfWork.SaveChangesAsync();
-                var customerId = documents?.FirstOrDefault()?.CustomerId;
-                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
-                var building = customer?.Building;
-                if (building != null)
-                {
-                    TempData["SelectedBuildingId"] = building.Id;
-                    TempData["SelectedBuildingName"] = building.Name;
-                }
+                TempData["Error"] = "Не се пронајдени фактурите.";
+                return RedirectToAction("Index");
             }
 
-            TempData["Success"] = $"{ids.Count} фактури се успешно платени.";
+            // Само фактури кои сè уште НЕ се платени
+            var unpaidDocuments = documents
+                .Where(d => d.PaymentStatus != PaymentStatus.Платено)
+                .ToList();
+
+            // Ако сите веќе се платени, вториот клик нема да направи ништо
+            if (!unpaidDocuments.Any())
+            {
+                TempData["Error"] = "Избраните фактури веќе се платени.";
+                return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
+            }
+
+            foreach (var document in unpaidDocuments)
+            {
+                document.PaymentStatus = PaymentStatus.Платено;
+                document.PaymentDate = DateOnly.FromDateTime(PaymentDate);
+                document.PaymentDescription = PaymentDescription;
+                document.PaymentType = PaymentType;
+                document.PaymentNumber = PaymentNumber;
+
+                SetStatusPayment(
+                    App.FullMapper.Map<DocumentViewModel>(document)
+                );
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+
+            var customerId = unpaidDocuments.FirstOrDefault()?.CustomerId;
+
+            var customer = await _unitOfWork.Customers.GetByIdAsync(
+                x => x.Id == customerId,
+                inc => inc.Include(bu => bu.Building)
+            );
+
+            var building = customer?.Building;
+
+            if (building != null)
+            {
+                TempData["SelectedBuildingId"] = building.Id;
+                TempData["SelectedBuildingName"] = building.Name;
+            }
+
+            TempData["Success"] =
+                $"{unpaidDocuments.Count} фактури се успешно платени.";
 
             return RedirectToAction(nameof(Index), new { fromPaymentStatus = true });
         }

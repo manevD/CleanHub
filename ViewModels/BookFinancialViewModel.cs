@@ -38,5 +38,7 @@ namespace CleanHub.ViewModels
         public DateOnly? PaymentDate { get; set; }
         public string? PaymentNumber { get; set; }
         public bool DontSum { get; set; }
+        [Ignore]
+        public string Source { get; set; }
     }
 }

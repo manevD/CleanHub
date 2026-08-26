@@ -157,6 +157,8 @@ namespace CleanHub.Controllers
                     bookFinancials = rawFinancials
                         .Select(bf => new BookFinancialViewModel
                         {
+                            Source = "bookFinancial",
+                            Id = bf.Id,
                             Description = bf.Description,
                             InvoiceId = (int)InvoiceTyp.Reserve,
                             Owes = bf.Owes,
@@ -323,7 +325,8 @@ namespace CleanHub.Controllers
                         DocumentTyp = "Фактура",
                         Date = cc.Date.Value,
                         Number = cc.Number ?? 0,
-                        NumberNalog = 0
+                        NumberNalog = 0,
+                        Source="document"
                     })
                     .ToList();
 
@@ -335,6 +338,7 @@ namespace CleanHub.Controllers
                                 (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11) && x.InvoiceId != (int)InvoiceTyp.Reserve)
                     .Select(cc => new CustomerDataDTO
                     {
+                        Id = cc.Id,
                         Description = cc.Description,
                         Owes = cc.Owes,
                         Demands = cc.Demands,
@@ -344,7 +348,8 @@ namespace CleanHub.Controllers
                         Date = cc.DatumF.Value,
                         Number = 0,
                         DontSum = cc.DontSum,
-                        NumberNalog = cc.OrderN ?? 0
+                        NumberNalog = cc.OrderN ?? 0,
+                        Source = "bookFinancial"
                     })
                     .ToList();
                 
@@ -379,13 +384,62 @@ namespace CleanHub.Controllers
             return View(cardsViewModel);
         }
 
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteBookFinancial(long id, string returnPage)
+        {
+            var bookFinancial = await _unitOfWork.BookFinancials
+                .GetByIdAsync(x => x.Id == id);
 
+            if (bookFinancial == null)
+            {
+                TempData["Error"] = "Плаќањето не е пронајдено.";
+
+                if (returnPage == "CustomersReserve")
+                    return RedirectToAction(nameof(CustomersReserve));
+
+                return RedirectToAction(nameof(Customers));
+            }
+
+            _unitOfWork.BookFinancials.Delete(bookFinancial);
+
+            await _unitOfWork.SaveChangesAsync();
+
+            TempData["Success"] = "Плаќањето е успешно избришано.";
+
+            if (returnPage == "CustomersReserve")
+            {
+                return RedirectToAction(nameof(CustomersReserve), new
+                {
+                    customerId = bookFinancial.CustomerId
+                });
+            }
+            else if(returnPage == "BuildingsReserve")
+            {
+                if (bookFinancial.CustomerId.HasValue)
+                {
+                    var building = _unitOfWork.Buildings.GetBuildingByCustomerRefId(bookFinancial.CustomerId.Value);
+                    if (building != null)
+                    {
+                        return RedirectToAction(nameof(BuildingsReserve), new
+                        {
+                            buildingId = building.Id
+                        });
+                    }
+                }
+                return RedirectToAction(nameof(BuildingsReserve));
+            }
+            return RedirectToAction(nameof(Customers), new
+            {
+                customerId = bookFinancial.CustomerId
+            });
+        }
         [Route("КартицаСтанари1201")]
         public async Task<IActionResult> CustomersReserve(int? customerId, string dateFrom, string dateTo)
         {
             var cardsViewModel = new CardsViewModel();
             var newCustomer = new Customer { CustomerInfo = "Сите", Id = 0 };
-            CustomersList.Add(newCustomer);
+            CustomersList.Add(newCustomer); 
 
             var bookFinancials = new List<BookFinancialViewModel>();
             ViewBag.Customers = new SelectList(CustomersList, "Id", "CustomerInfo");
@@ -421,11 +475,13 @@ namespace CleanHub.Controllers
                 bookFinancials = rawFinancials
                     .Select(bf => new BookFinancialViewModel
                     {
+                        Source="bookFinancial",
                         Description = bf.Description,
                         InvoiceId = bf.InvoiceId,
                         Owes = bf.Owes,
                         Demands = bf.Demands,
-                        DatumF = bf.DatumF
+                        DatumF = bf.DatumF,
+                        Id = bf.Id
                     })
                     .ToList();
 

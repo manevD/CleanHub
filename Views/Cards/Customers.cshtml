@@ -5,21 +5,34 @@
 }
 
 <hr />
+
 <form asp-action="Customers" asp-controller="Cards" method="get">
     <div class="row">
+
         @if (ViewBag.Customers != null)
         {
             <div class="col-lg-2 col-md-3">
                 <div class="form-group mb-0">
                     <label for="customerSearch">Партнер</label>
-                    <input class="form-control" list="customerOptions" id="customerSearch" name="customerName"
-                           placeholder="Пребарувај" value="@ViewBag.SelectedCustomerName">
-                    <input type="hidden" id="customerId" name="customerId" value="@ViewBag.CustomerId">
+
+                    <input class="form-control"
+                           list="customerOptions"
+                           id="customerSearch"
+                           name="customerName"
+                           placeholder="Пребарувај"
+                           value="@ViewBag.SelectedCustomerName">
+
+                    <input type="hidden"
+                           id="customerId"
+                           name="customerId"
+                           value="@ViewBag.CustomerId">
 
                     <datalist id="customerOptions">
                         @foreach (var customer in (IEnumerable<SelectListItem>)ViewBag.Customers)
                         {
-                            <option value="@customer.Text" data-id="@customer.Value"></option>
+                            <option value="@customer.Text"
+                                    data-id="@customer.Value">
+                            </option>
                         }
                     </datalist>
                 </div>
@@ -33,27 +46,52 @@
         <div class="col-lg-2 col-md-3">
             <div class="form-group mb-0">
                 <h6>Од</h6>
-                <input id="dateFrom" name="dateFrom" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateFrom" />
+
+                <input id="dateFrom"
+                       name="dateFrom"
+                       placeholder="ден.месец.година"
+                       type="text"
+                       class="form-control flatpickr flatpickr-input active"
+                       value="@ViewBag.DateFrom" />
             </div>
         </div>
+
         <div class="col-lg-2 col-md-3">
             <h6>До</h6>
+
             <div class="form-group mb-0">
-                <input id="dateTo" name="dateTo" placeholder="ден.месец.година" type="text" class="form-control flatpickr flatpickr-input active" value="@ViewBag.DateTo" />
+                <input id="dateTo"
+                       name="dateTo"
+                       placeholder="ден.месец.година"
+                       type="text"
+                       class="form-control flatpickr flatpickr-input active"
+                       value="@ViewBag.DateTo" />
             </div>
         </div>
+
     </div>
+
     <br />
+
     <div class="col-xl-2 col-lg-6 col-md-6 col-sm-6">
         <div class="form-group mb-0">
-            <button type="submit" class="btn btn-primary">Пребарувај</button>
+            <button type="submit" class="btn btn-primary">
+                Пребарувај
+            </button>
         </div>
     </div>
 </form>
+
+
 <div class="col-xl-12 col-lg-12 col-sm-12 layout-spacing">
     <div class="statbox widget box box-shadow">
+
         <div class="widget-content widget-content-area">
-            <table id="html5-extension" class="table dt-table-hover" style="width:100%">
+
+            <table id="html5-extension"
+                   class="table dt-table-hover"
+                   style="width:100%">
+
                 <thead>
                     <tr>
                         <th data-sorter="false">Бр.</th>
@@ -63,10 +101,15 @@
                         <th data-sorter="false">Побарува</th>
                         <th data-sorter="false">Должи</th>
                         <th data-sorter="false">Салдо</th>
+                        <th data-sorter="false">Функции</th>
                     </tr>
                 </thead>
+
                 <tbody>
-                    @if (Model != null && Model.CustomerData != null && Model.CustomerData.Any())
+
+                    @if (Model != null &&
+                         Model.CustomerData != null &&
+                         Model.CustomerData.Any())
                     {
                         var counter = 0;
 
@@ -75,26 +118,78 @@
                             counter++;
 
                             <tr role="row">
-                                <td>@counter</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Date)</td>
-                                <td>@Truncate(invoice.Description, 50)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.DocumentTyp)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Demands)</td>
-                                <td>@Html.DisplayFor(modelItem => invoice.Owes)</td>
-                                <td></td>
+
+                                <td>
+                                    @counter
+                                </td>
+
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Date)
+                                </td>
+
+                                <td>
+                                    @Truncate(invoice.Description, 50)
+                                </td>
+
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.DocumentTyp)
+                                </td>
+
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Demands)
+                                </td>
+
+                                <td>
+                                    @Html.DisplayFor(modelItem => invoice.Owes)
+                                </td>
+
+                                <td>
+                                </td>
+
+                                <td>
+
+                                    @if (invoice.Source == "bookFinancial")
+                                    {
+                                        <form asp-action="DeleteBookFinancial"
+                                              asp-controller="Cards"
+                                              method="post"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Дали сте сигурни дека сакате да го избришете ова плаќање?');">
+
+                                            @Html.AntiForgeryToken()
+
+                                            <input type="hidden"
+                                                   name="id"
+                                                   value="@invoice.Id" />
+                                            <input type="hidden" name="returnPage" value="Customers" />
+
+                                            <button type="submit"
+                                                    class="btn btn-sm btn-outline-danger"
+                                                    title="Избриши">
+                                                Избриши
+                                            </button>
+
+                                        </form>
+                                    }
+
+                                </td>
+
                             </tr>
                         }
                     }
                     else
                     {
                         <tr>
-                            <td colspan="7" class="text-center">
+                            <td colspan="8" class="text-center">
                                 Нема пронајдени податоци
                             </td>
                         </tr>
                     }
 
+
+                    <!-- TOTAL -->
                     <tr role="row">
+
                         <th></th>
                         <th></th>
                         <th></th>
@@ -122,12 +217,18 @@
                                 @Math.Abs(Model.Total)
                             </strong>
                         </th>
+
+                        <th></th>
+
                     </tr>
+
                 </tbody>
 
 
                 <tfoot>
+
                     <tr>
+
                         <th></th>
                         <th></th>
                         <th></th>
@@ -155,33 +256,63 @@
                                 @Math.Abs(Model.Total)
                             </strong>
                         </th>
+
+                        <th></th>
+
                     </tr>
+
                 </tfoot>
+
             </table>
+
         </div>
     </div>
 </div>
+
+
 @functions {
     public string Truncate(string input, int maxLength)
     {
-        if (string.IsNullOrEmpty(input)) return "";
-        return input.Length > maxLength ? input.Substring(0, maxLength) + "..." : input;
+        if (string.IsNullOrEmpty(input))
+            return "";
+
+        return input.Length > maxLength
+            ? input.Substring(0, maxLength) + "..."
+            : input;
     }
 }
-<script>
-    document.getElementById('customerSearch').addEventListener('input', function () {
-        const selectedValue = this.value;
-        const options = document.querySelectorAll('#customerOptions option');
-        let selectedId = '';
 
-        // Find the matching option and get its data-id
-        options.forEach(option => {
-            if (option.value === selectedValue) {
-                selectedId = option.getAttribute('data-id');
-            }
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+
+        const customerSearch = document.getElementById("customerSearch");
+        const customerId = document.getElementById("customerId");
+
+        if (!customerSearch || !customerId) {
+            return;
+        }
+
+        customerSearch.addEventListener("input", function() {
+
+            const selectedValue = this.value;
+
+            const options = document.querySelectorAll(
+                "#customerOptions option"
+            );
+
+            let selectedId = "";
+
+            options.forEach(function(option) {
+
+                if (option.value === selectedValue) {
+                    selectedId = option.getAttribute("data-id");
+                }
+
+            });
+
+            customerId.value = selectedId || "";
         });
 
-        // Set the hidden input's value
-        document.getElementById('customerId').value = selectedId || '';
     });
 </script>
