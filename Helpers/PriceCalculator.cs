@@ -80,9 +80,13 @@ namespace CleanHub.Helpers
 
                 if (noTaxCalculation)
                 {
-                    // Tax може да остане 18 за приказ,
-                    // но PriceWithTax останува ист како Price.
-                    product.PriceWithTax = product.Price;
+                    var originalPrice = product.Price;
+
+                    // 18 % MwSt. herausrechnen
+                    product.Price = originalPrice / 1.18f;
+
+                    // Originalpreis bleibt inklusive MwSt.
+                    product.PriceWithTax = originalPrice;
                 }
                 else if (product.Tax.HasValue &&
                          product.Tax.Value > 0)
