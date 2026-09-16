@@ -1,5 +1,6 @@
 ﻿using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace CleanHub.Infrastructure.Data
 {
@@ -14,6 +15,7 @@ namespace CleanHub.Infrastructure.Data
         IBookFinancialsRepository BookFinancials { get; }
         ISpecialInvoiceRepository SpecialInvoices { get; }
         IActivitiesRepository Activities { get; }
+        List<string> GetModifiedEntities();
 
         Task SaveChangesAsync();
     }
@@ -45,10 +47,19 @@ namespace CleanHub.Infrastructure.Data
         public IProductRepository Products { get; private set; }
         public ISpecialInvoiceRepository SpecialInvoices { get; private set; }
         public IBuildingRepository Buildings { get; private set; }
-
         public async Task SaveChangesAsync()
         {
            await _context.SaveChangesAsync();
+        }
+        public List<string> GetModifiedEntities()
+        {
+            return _context.ChangeTracker
+                .Entries()
+                .Where(e => e.State == EntityState.Modified)
+                .Select(e =>
+                    $"{e.Entity.GetType().Name} - Id: " +
+                    $"{e.Property("Id").CurrentValue}")
+                .ToList();
         }
     }
 }

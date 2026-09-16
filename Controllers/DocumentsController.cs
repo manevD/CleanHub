@@ -109,7 +109,8 @@ namespace CleanHub.Controllers
         {
             var unpaidInvoices = await _unitOfWork.Documents.Query()
                 .Where(x => x.CustomerId == customerId && x.PaymentStatus == PaymentStatus.Неплатено)
-                .Select(x => new {
+                .Select(x => new
+                {
                     id = x.Id,
                     documentText = x.ToDocument + " (" + x.TotalOutput + " МКД)",
                 })
@@ -595,7 +596,7 @@ namespace CleanHub.Controllers
                 SendNotificationMail(customer, docViewModel.ToDocument);
             }
 
-            CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, documentViewModel.PaymentDate, documentViewModel.PaymentType, documentViewModel.PaymentNumber);
+            CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, documentViewModel.PaymentDate, documentViewModel.PaymentType, documentViewModel.PaymentNumber, false);
 
             await _unitOfWork.SaveChangesAsync();
 
@@ -706,9 +707,9 @@ namespace CleanHub.Controllers
                     return NotFound("Зградата не е пронајдена.");
 
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
-                    var activeCustomers = building.Customers
-                .Where(x => x.Inactive == false && x.Hide == false)
-                .ToList();
+                var activeCustomers = building.Customers
+            .Where(x => x.Inactive == false && x.Hide == false)
+            .ToList();
                 var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
 
                 var exists = await _unitOfWork.Documents.AnyAsync(
@@ -727,8 +728,6 @@ namespace CleanHub.Controllers
                     .ToListAsync();
 
                 var documentsToInsert = new List<Document>();
-                var bookFinancialsToInsert = new List<BookFinancial>();
-
                 bool hasSetCost = activeCustomers.Any(x => x.SetCost);
 
                 foreach (var customer in activeCustomers)
@@ -748,23 +747,12 @@ namespace CleanHub.Controllers
                         if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
                             continue;
 
-                       CreateBook(buildingProduct, docEntity);
+                        CreateBook(buildingProduct, docEntity);
                     }
-
-                    // Креирање на финансиски записи преку BookFinancials
-                    CreateBookFinancialAndReserveInMemory(
-                        docEntity,
-                        building.ReserveFund ?? 0,
-                        document,
-                        bookFinancialsToInsert);
+                    _unitOfWork.Documents.Add(docEntity);
+                    await _unitOfWork.SaveChangesAsync();
+                    CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, docEntity.PaymentDate, docEntity.PaymentType, "", true);
                 }
-
-               // CreateSpecialInvoiceInMemory(document, documentsToInsert);
-
-                // BATCH SAVE
-                _unitOfWork.Documents.AddRange(documentsToInsert);
-                _unitOfWork.BookFinancials.AddRange(bookFinancialsToInsert);
-
                 await _unitOfWork.SaveChangesAsync();
 
                 var mappedTestDocs = documentsToInsert.Select(d => new DokumentiTest
@@ -783,7 +771,7 @@ namespace CleanHub.Controllers
                 HttpContext.Session.Remove("Documents");
                 return await ProcessPrintAndSend(documentsToInsert, building, allDebts, send);
             }
-            catch (Exception ex)
+            catch (DbUpdateException ex)
             {
                 return Content($"ERROR:\n\n{ex.Message}\n\n{ex.StackTrace}", "text/plain");
             }
@@ -863,22 +851,42 @@ namespace CleanHub.Controllers
          DocumentViewModel document,
          List<BookFinancial> bookFinancials)
         {
-            // Главен финансиски запис за фактурата
-            bookFinancials.Add(new BookFinancial
+            if (document.PaymentStatus == PaymentStatus.Платено)
             {
-                Document = docEntity,
-                CustomerId = docEntity.CustomerId,
-                InvoiceId = (int)InvoiceTyp.Recieve,
-                Owes = docEntity.TotalOutput ?? 0,
-                Demands = 0,
-                PaymentType = document.PaymentType,
-                PaymentNumber = document.PaymentNumber,
-                PaymentDate = document.PaymentDate,
-                DatumF = docEntity.DateReceived,
-                Status = docEntity.PaymentStatus,
-                Time = DateTime.UtcNow
-            });
-
+                // Главен финансиски запис за фактурата
+                bookFinancials.Add(new BookFinancial
+                {
+                    Document = docEntity,
+                    CustomerId = docEntity.CustomerId,
+                    InvoiceId = (int)InvoiceTyp.Recieve,
+                    Owes = 0,
+                    Demands = docEntity.TotalOutput ?? 0,
+                    PaymentType = document.PaymentType,
+                    PaymentNumber = document.PaymentNumber,
+                    PaymentDate = document.PaymentDate,
+                    DatumF = docEntity.DateReceived,
+                    Status = docEntity.PaymentStatus,
+                    Time = DateTime.UtcNow
+                });
+            }
+            else
+            {
+                // Главен финансиски запис за фактурата
+                bookFinancials.Add(new BookFinancial
+                {
+                    Document = docEntity,
+                    CustomerId = docEntity.CustomerId,
+                    InvoiceId = (int)InvoiceTyp.Recieve,
+                    Owes = docEntity.TotalOutput ?? 0,
+                    Demands = 0,
+                    PaymentType = document.PaymentType,
+                    PaymentNumber = document.PaymentNumber,
+                    PaymentDate = document.PaymentDate,
+                    DatumF = docEntity.DateReceived,
+                    Status = docEntity.PaymentStatus,
+                    Time = DateTime.UtcNow
+                });
+            }
             // Доколку има резервен фонд, се внесува во BookFinancials со InvoiceId = 1201
             if (reserveFundAmount > 0)
             {
@@ -1628,6 +1636,10 @@ namespace CleanHub.Controllers
                     {
                         document.PaymentDescription = PaymentDescription;
                     }
+                    if (Total != 0)
+                    {
+                        document.TotalOutput = Total;
+                    }
                     _unitOfWork.Documents.Update(document);
                     if (bookFinancials != null && bookFinancials.Any())
                     {
@@ -1646,12 +1658,32 @@ namespace CleanHub.Controllers
                                 bookFinancial.Demands = Total;
                             }
                             bookFinancial.DateTimeChanges = DateTime.UtcNow;
-                            _unitOfWork.BookFinancials.Update(bookFinancial);
                         }
+                    }
+                    bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == document.CustomerId.Value && x.InvoiceId ==1200).ToList();
+                    var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, document.CustomerId.Value, document.ToDocument);
+
+                    if (existsInBookFinancials)
+                    {
+                        var bookFinancial = FindPaidBookFinancial(bookFinancials, document.CustomerId.Value, document.ToDocument);
+
+                        if (!string.IsNullOrEmpty(PaymentNumber))
+                        {
+                            bookFinancial.PaymentNumber = PaymentNumber;
+                        }
+                        if (!string.IsNullOrEmpty(PaymentDescription))
+                        {
+                            bookFinancial.Description = PaymentDescription;
+                        }
+                        if (Total != 0 && bookFinancial.InvoiceId == 1200)
+                        {
+                            bookFinancial.Demands = Total;
+                        }
+                        bookFinancial.DateTimeChanges = DateTime.UtcNow;
                     }
                     else
                     {
-                        CreateBookFinancialAndReserve(document, document.CustomerId.Value, 0, document.PaymentDate, document.PaymentType, document.PaymentNumber);
+                        CreateBookFinancialAndReserve(document, document.CustomerId.Value, 0, document.PaymentDate, document.PaymentType, document.PaymentNumber, false);
                     }
                 }
 
@@ -1832,14 +1864,35 @@ namespace CleanHub.Controllers
             _unitOfWork.SpecialInvoices.UpdateSpecialInvoices(document, specialInvoice);
         }
 
-        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber)
+        private void CreateBookFinancialAndReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber, bool fromSubscription)
         {
             if (docEntity.PaymentStatus == PaymentStatus.Платено)
             {
                 var bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == customerId).ToList();
                 var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, customerId, docEntity.ToDocument);
-
-                if (!existsInBookFinancials)
+                if (!existsInBookFinancials && fromSubscription)
+                {
+                    var bookFinancialViewModel = new BookFinancialViewModel
+                    {
+                        InvoiceId = Constants.Recieve,
+                        DocumentId = docEntity.Id,
+                        Demands = 0,
+                        Owes = 0,
+                        DocumentTypId = 4,
+                        CustomerId = customerId,
+                        Time = DateTime.Now,
+                        Status = PaymentStatus.Платено,
+                        DatumF = docEntity.DateReceived,
+                        PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue ? paymentDate.Value : DateOnly.FromDateTime(DateTime.UtcNow),
+                        PaymentType = docEntity.PaymentType.Value,
+                        Description = "Платено од претплата за " + docEntity.ToDocument,
+                        PaymentNumber = paymentNumber
+                    };
+                    CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber, fromSubscription);
+                    var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
+                    _unitOfWork.BookFinancials.Add(bookFinancial);
+                }
+                else if (!existsInBookFinancials)
                 {
                     var bookFinancialViewModel = new BookFinancialViewModel
                     {
@@ -1857,18 +1910,36 @@ namespace CleanHub.Controllers
                         Description = string.IsNullOrEmpty(docEntity.PaymentDescription) ? docEntity.PaymentType.GetEnumDescription() : docEntity.PaymentDescription,
                         PaymentNumber = paymentNumber
                     };
-                    CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber);
+                    CreateReserve(docEntity, customerId, reserve, paymentDate, paymentType, paymentNumber, fromSubscription);
                     var bookFinancial = App.FullMapper.Map<BookFinancial>(bookFinancialViewModel);
                     _unitOfWork.BookFinancials.Add(bookFinancial);
                 }
             }
         }
 
-        public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber)
+        public void CreateReserve(Document docEntity, int customerId, int reserve, DateOnly? paymentDate, PaymentType? paymentType, string? paymentNumber, bool fromSubscription)
         {
             var bookFinancialViewModelReserve = new BookFinancialViewModel();
-
-            if (docEntity.PaymentStatus == PaymentStatus.Платено)
+            if (docEntity.PaymentStatus == PaymentStatus.Платено && fromSubscription)
+            {
+                bookFinancialViewModelReserve = new BookFinancialViewModel()
+                {
+                    InvoiceId = 1201, // Заменет Constants.Reserve со 1201
+                    DocumentId = docEntity.Id,
+                    Demands = docEntity.Books.FirstOrDefault(x => x.ArticleNotes.Contains("Резервен фонд"))?.Total ?? 0.0,
+                    DocumentTypId = 4,
+                    Owes = 0,
+                    DatumF = docEntity.DateReceived,
+                    CustomerId = customerId,
+                    Status = docEntity.PaymentStatus,
+                    Time = DateTime.Now,
+                    Description = "Платено од претплата за " + docEntity.ToDocument,
+                    PaymentDate = paymentDate.HasValue && paymentDate.Value != DateOnly.MinValue ? paymentDate.Value : DateOnly.FromDateTime(DateTime.UtcNow),
+                    PaymentType = docEntity.PaymentType.Value,
+                    PaymentNumber = paymentNumber
+                };
+            }
+            else if (docEntity.PaymentStatus == PaymentStatus.Платено)
             {
                 bookFinancialViewModelReserve = new BookFinancialViewModel()
                 {
@@ -2078,7 +2149,94 @@ namespace CleanHub.Controllers
 
             return false;
         }
+        private BookFinancial? FindPaidBookFinancial(
+    List<BookFinancial> bookFinancials,
+    int customerId,
+    string toDocument)
+        {
+            var months = new Dictionary<string, int>
+    {
+        { "Јануари", 1 }, { "Февруари", 2 }, { "Март", 3 }, { "Април", 4 },
+        { "Мај", 5 }, { "Јуни", 6 }, { "Јули", 7 }, { "Август", 8 },
+        { "Септември", 9 }, { "Октомври", 10 }, { "Ноември", 11 }, { "Декември", 12 }
+    };
 
+            if (string.IsNullOrWhiteSpace(toDocument))
+                return null;
+
+            var parts = toDocument.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            if (parts.Length < 2)
+                return null;
+
+            if (!months.TryGetValue(parts[0], out int month))
+                return null;
+
+            if (!int.TryParse(parts[1], out int year))
+                return null;
+
+            string yearText = year.ToString();
+
+            var entries = bookFinancials
+                .Where(x =>
+                    x.CustomerId == customerId &&
+                    !string.IsNullOrWhiteSpace(x.Description) &&
+                    x.Description.Contains(yearText))
+                .ToList();
+
+            foreach (var bf in entries)
+            {
+                var desc = bf.Description!.Trim();
+
+                // Beispiel: 1-3 / 2026
+                var range = Regex.Match(
+                    desc,
+                    @"(\d{1,2})\s*-\s*(\d{1,2})\s*/\s*" + yearText);
+
+                if (range.Success)
+                {
+                    if (int.TryParse(range.Groups[1].Value, out int from) &&
+                        int.TryParse(range.Groups[2].Value, out int to))
+                    {
+                        if (month >= from && month <= to)
+                            return bf;
+                    }
+                }
+
+                // Beispiel: 1, 3, 5 / 2026
+                var list = Regex.Match(
+                    desc,
+                    @"([\d,\s]+)\s*/\s*" + yearText);
+
+                if (list.Success)
+                {
+                    var foundMonths = list.Groups[1].Value
+                        .Split(',')
+                        .Select(x => int.TryParse(x.Trim(), out int m) ? m : -1)
+                        .Where(x => x > 0)
+                        .ToList();
+
+                    if (foundMonths.Contains(month))
+                        return bf;
+                }
+
+                // Beispiel: 5 / 2026
+                var single = Regex.Match(
+                    desc,
+                    @"(\d{1,2})\s*/\s*" + yearText);
+
+                if (single.Success)
+                {
+                    if (int.TryParse(single.Groups[1].Value, out int singleMonth) &&
+                        singleMonth == month)
+                    {
+                        return bf;
+                    }
+                }
+            }
+
+            return null;
+        }
         public void SetStatusPayment(DocumentViewModel model)
         {
             var bookfinancialToUpdate = _unitOfWork.BookFinancials.GetAll(wh => wh.Where(x => x.DocumentId == model.Id));
