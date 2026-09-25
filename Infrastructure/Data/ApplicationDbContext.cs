@@ -53,9 +53,9 @@ namespace CleanHub.Infrastructure.Data
         }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-         => optionsBuilder.UseSqlServer("Data Source=SQL6032.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!");
+         => optionsBuilder.UseSqlServer("Data Source=SQL6034.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!;Encrypt=True;TrustServerCertificate=True;");
         //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         //    => optionsBuilder.UseSqlServer(
-        //"Server=.\\SQLEXPRESS;Database=db_aae56c_2025martiNew;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+        //"Server=.\\SQLEXPRESS;Database=db_aae56c_2025martitest;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }
