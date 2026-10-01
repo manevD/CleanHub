@@ -260,7 +260,7 @@ namespace CleanHub.Helpers
         {
             float totalSum =
                 buildingProducts.Sum(product =>
-                    product.PriceWithTaxTotal.Value);
+                    product.PriceWithTax.Value);
 
             return (float)Math.Round(totalSum);
         }
