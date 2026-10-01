@@ -76,7 +76,12 @@ namespace CleanHub.Helpers
                     ||
                     notes.Contains(
                         "комунална такса за јавно осветлување",
-                        StringComparison.OrdinalIgnoreCase);
+                        StringComparison.OrdinalIgnoreCase)
+                    ||
+                     notes.Contains(
+                        "одржување на лифт",
+                        StringComparison.OrdinalIgnoreCase)
+                    ;
 
                 if (noTaxCalculation)
                 {
