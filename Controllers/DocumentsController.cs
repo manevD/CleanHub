@@ -741,7 +741,6 @@ namespace CleanHub.Controllers
                     var docEntity = CreateCustomerDocumentInMemory(customer, document, building, currentMaxNumber);
                     documentsToInsert.Add(docEntity);
 
-
                     foreach (var buildingProduct in productsForCustomer)
                     {
                         if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
@@ -829,13 +828,13 @@ namespace CleanHub.Controllers
                 Input = 0,
                 Quantity = book.Quantity,
 
-                PriceWithTax = book.PriceWithTax,
+                PriceWithTax = book.PriceWithTaxTotal,
 
                 Price = book.Price,
 
                 Tax = book.Tax,
 
-                Total = book.PriceWithTax,
+                Total = book.PriceWithTaxTotal,
 
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
@@ -1660,7 +1659,7 @@ namespace CleanHub.Controllers
                             bookFinancial.DateTimeChanges = DateTime.UtcNow;
                         }
                     }
-                    bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == document.CustomerId.Value && x.InvoiceId ==1200).ToList();
+                    bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == document.CustomerId.Value && x.InvoiceId == 1200).ToList();
                     var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, document.CustomerId.Value, document.ToDocument);
 
                     if (existsInBookFinancials)

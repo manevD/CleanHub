@@ -91,7 +91,7 @@ namespace CleanHub.Helpers
                     product.Price = originalPrice / 1.18f;
 
                     // Originalpreis bleibt inklusive MwSt.
-                    product.PriceWithTax = originalPrice;
+                    product.PriceWithTaxTotal = originalPrice;
                 }
                 else if (product.Tax.HasValue &&
                          product.Tax.Value > 0)
@@ -99,7 +99,7 @@ namespace CleanHub.Helpers
                     float taxAmount =
                         (product.Price * product.Tax.Value) / 100;
 
-                    product.PriceWithTax =
+                    product.PriceWithTaxTotal =
                         product.Price + taxAmount;
                 }
                 else
@@ -260,7 +260,7 @@ namespace CleanHub.Helpers
         {
             float totalSum =
                 buildingProducts.Sum(product =>
-                    product.PriceWithTax.Value);
+                    product.PriceWithTaxTotal.Value);
 
             return (float)Math.Round(totalSum);
         }
