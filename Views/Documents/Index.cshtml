@@ -301,6 +301,10 @@
                                                class="badge badge-light-primary">
                                                 👁
                                             </a>
+                                               <a asp-action="Edit" asp-route-id="@invoice.Id"
+                                               class="badge badge-light-primary">
+                                                Измени
+                                            </a>
                                             @if (invoice.PaymentStatus == PaymentStatus.Неплатено)
                                             {
 
@@ -679,35 +683,93 @@
             });
         });
     </script>
-    <script>
-            document.getElementById("createPaymentForm").addEventListener("submit", function (e) {
-        e.preventDefault(); // Спречи го класичното рефреширање на формата
+<script>
+    document.getElementById("createPaymentForm").addEventListener("submit", function (e) {
+        e.preventDefault();
 
         const formData = new FormData(this);
 
         fetch('/Documents/CreateBookFinancial', {
-        method: 'POST',
-        body: formData
+            method: 'POST',
+            body: formData
         })
-        .then(response => {
-        if (response.ok) {
-        // 1. Го затвораме модалот програмски
-        const modalElement = document.getElementById('createPaymentModal');
-        const modal = bootstrap.Modal.getInstance(modalElement);
-        if (modal) {
-        modal.hide();
-        }
+        .then(async response => {
 
-        // 2. Ја рефрешираме моменталната филтрирана страница за веднаш да се ажурираат сумите во табелата
-        window.location.reload();
-        } else {
-        alert("Се појави грешка при зачувување на плаќањето.");
-        }
+            if (response.ok) {
+
+                const modalElement = document.getElementById('createPaymentModal');
+                const modal = bootstrap.Modal.getInstance(modalElement);
+
+                if (modal) {
+                    modal.hide();
+                }
+
+                window.location.reload();
+
+            } else {
+
+                const result = await response.json();
+
+                showSaldoErrorModal(
+                    result.message || "Се појави грешка при зачувување на плаќањето."
+                );
+            }
         })
         .catch(error => {
-        console.error("Error:", error);
-        alert("Грешка во конекцијата.");
+            console.error("Error:", error);
+
+            showSaldoErrorModal(
+                "Грешка во конекцијата."
+            );
         });
-        });
-    </script>
+    });
+
+
+    function showSaldoErrorModal(message) {
+
+        let modalHtml = `
+            <div class="modal fade" id="saldoErrorModal" tabindex="-1">
+                <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content">
+
+                        <div class="modal-header bg-danger text-white">
+                            <h5 class="modal-title">
+                                Не може да се креира претплата
+                            </h5>
+
+                            <button type="button"
+                                    class="btn-close btn-close-white"
+                                    data-bs-dismiss="modal">
+                            </button>
+                        </div>
+
+                        <div class="modal-body">
+                            <div class="alert alert-danger mb-0">
+                                ${message}
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button"
+                                    class="btn btn-secondary"
+                                    data-bs-dismiss="modal">
+                                Во ред
+                            </button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById("saldoErrorModal")?.remove();
+
+        document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+        const modalElement = document.getElementById("saldoErrorModal");
+        const modal = new bootstrap.Modal(modalElement);
+
+        modal.show();
+    }
+</script>
 }

@@ -81,6 +81,10 @@ namespace CleanHub.Helpers
                      notes.Contains(
                         "одржување на лифт",
                         StringComparison.OrdinalIgnoreCase)
+                     ||
+                      notes.Contains(
+                        "гаража",
+                        StringComparison.OrdinalIgnoreCase)
                     ;
 
                 if (noTaxCalculation)

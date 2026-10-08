@@ -4,7 +4,7 @@ namespace CleanHub.Entities.Enums
 {
     public enum PaymentType
     {
-        [Description("Банка")] 
+        [Description("Банка")]
         Bank,
         [Description("Пошта")]
         Post,
@@ -15,6 +15,8 @@ namespace CleanHub.Entities.Enums
         [Description("Претплата")]
         Subscription,
         [Description("Каса Прими")]
-        CashRegister
+        CashRegister,
+        [Description("Порамнување")]
+        BalanceAdjustment
     }
 }

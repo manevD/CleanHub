@@ -925,6 +925,283 @@ namespace CleanHub.Controllers
         //        }
         //    }
         //}
+        [HttpGet]
+        public async Task<IActionResult> Edit(int id)
+        {
+            var document = await _unitOfWork.Documents.GetByIdAsync(
+                d => d.Id == id,
+                q => q.Include(d => d.Books)
+            );
+
+            if (document == null)
+                return NotFound();
+
+            return View(document);
+        }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(Document model)
+        {
+            // =========================================================
+            // REMOVE NAVIGATION PROPERTY VALIDATION ERRORS
+            // =========================================================
+
+            foreach (var key in ModelState.Keys
+                .Where(x =>
+                    x.Contains(".Document", StringComparison.OrdinalIgnoreCase) ||
+                    x.Contains(".Article", StringComparison.OrdinalIgnoreCase) ||
+                    x.Contains("Customer", StringComparison.OrdinalIgnoreCase))
+                .ToList())
+            {
+                ModelState.Remove(key);
+            }
+
+
+            // =========================================================
+            // VALIDATE MODEL
+            // =========================================================
+
+            if (!ModelState.IsValid)
+                return View(model);
+
+
+            // =========================================================
+            // LOAD EXISTING DOCUMENT
+            // =========================================================
+
+            var document = await _unitOfWork.Documents.GetByIdAsync(
+                x => x.Id == model.Id,
+                q => q.Include(x => x.Books)
+            );
+
+            if (document == null)
+                return NotFound();
+
+
+            // =========================================================
+            // UPDATE DOCUMENT
+            // =========================================================
+
+            document.Number = model.Number;
+            document.Date = model.Date;
+            document.ToDocument = model.ToDocument;
+            document.Description = model.Description;
+            document.PaymentDescription = model.PaymentDescription;
+            document.DateReceived = model.DateReceived;
+            document.PaymentNumber = model.PaymentNumber;
+            document.TotalInput = model.TotalInput;
+            document.PaymentStatus = model.PaymentStatus;
+            document.PaymentType = model.PaymentType;
+            document.PaymentDate = model.PaymentDate;
+            document.DateTimeChanged = DateTime.Now;
+
+
+            // =========================================================
+            // BOOKS
+            // =========================================================
+
+            var existingBooks = document.Books?.ToList()
+                ?? new List<Book>();
+
+            var submittedBooks = model.Books?.ToList()
+                ?? new List<Book>();
+
+
+            // This will contain the REAL document total.
+            double documentTotal = 0;
+
+
+            // =========================================================
+            // UPDATE / ADD BOOKS
+            // =========================================================
+
+            foreach (var submittedBook in submittedBooks)
+            {
+                Book? book;
+
+
+                // =====================================================
+                // EXISTING BOOK
+                // =====================================================
+
+                if (submittedBook.Id > 0)
+                {
+                    book = existingBooks
+                        .FirstOrDefault(x => x.Id == submittedBook.Id);
+
+                    // Do not update a book that does not belong
+                    // to this document.
+                    if (book == null)
+                        continue;
+
+
+                    book.ArticleId = submittedBook.ArticleId;
+                    book.Input = submittedBook.Input;
+                    book.Output = submittedBook.Output;
+                    book.Quantity = submittedBook.Quantity;
+                    book.Price = submittedBook.Price;
+                    book.Tax = submittedBook.Tax;
+                    book.ArticleNotes = submittedBook.ArticleNotes;
+                    book.UnitOfMeasurement = submittedBook.UnitOfMeasurement;
+                    book.Hide = submittedBook.Hide;
+                }
+
+
+                // =====================================================
+                // NEW BOOK
+                // =====================================================
+
+                else
+                {
+                    book = new Book
+                    {
+                        DocId = document.Id,
+
+                        ArticleId = submittedBook.ArticleId,
+                        Input = submittedBook.Input,
+                        Output = submittedBook.Output,
+
+                        Quantity = submittedBook.Quantity,
+                        Price = submittedBook.Price,
+                        Tax = submittedBook.Tax,
+
+                        ArticleNotes = submittedBook.ArticleNotes,
+                        UnitOfMeasurement = submittedBook.UnitOfMeasurement,
+
+                        Hide = submittedBook.Hide
+                    };
+
+                    _unitOfWork.Books.Add(book);
+                }
+
+
+                // =====================================================
+                // CALCULATE TOTAL
+                // =====================================================
+                //
+                // Quantity = 1
+                // Price    = 95
+                // Tax      = 18
+                //
+                // 1 × 95 = 95
+                // 18% of 95 = 17.10
+                // Total = 112.10
+                //
+                // IMPORTANT:
+                // We DO NOT use submittedBook.Total.
+                //
+
+
+                double quantity =
+                    (double)(book.Quantity ?? 0);
+
+                double price =
+                    (double)(book.Price ?? 0);
+
+                double tax =
+                    (double)(book.Tax ?? 0);
+
+
+                double calculatedTotal =
+                    quantity *
+                    price *
+                    (1.0 + tax / 100.0);
+
+
+                // Round Book.Total to 2 decimal places
+                float bookTotal =
+                    (float)Math.Round(
+                        calculatedTotal,
+                        2,
+                        MidpointRounding.AwayFromZero
+                    );
+
+
+                // Save the calculated value
+                book.Total = bookTotal;
+
+                book.PriceWithTax = bookTotal;
+
+
+                // Add to document total
+                documentTotal += bookTotal;
+
+
+                // Update existing book
+                if (book.Id > 0)
+                {
+                    _unitOfWork.Books.Update(book);
+                }
+            }
+
+
+            // =========================================================
+            // DELETE REMOVED BOOKS
+            // =========================================================
+
+            var submittedBookIds = submittedBooks
+                .Where(x => x.Id > 0)
+                .Select(x => x.Id)
+                .ToHashSet();
+
+
+            var booksToDelete = existingBooks
+                .Where(x => !submittedBookIds.Contains(x.Id))
+                .ToList();
+
+
+            if (booksToDelete.Any())
+            {
+                _unitOfWork.Books.DeleteRange(booksToDelete);
+            }
+
+
+            // =========================================================
+            // DOCUMENT TOTAL
+            // =========================================================
+            //
+            // Example:
+            //
+            // 400.20
+            // + 559.30
+            // = 959.50
+            //
+            // 959.50 -> 960
+            //
+            // 959.30 -> 959
+            //
+
+
+            document.TotalOutput =
+                (int)Math.Round(
+                    documentTotal,
+                    MidpointRounding.AwayFromZero
+                );
+
+
+            // =========================================================
+            // UPDATE DOCUMENT
+            // =========================================================
+
+            _unitOfWork.Documents.Update(document);
+
+
+            // =========================================================
+            // SAVE
+            // =========================================================
+
+            await _unitOfWork.SaveChangesAsync();
+
+
+            // =========================================================
+            // REDIRECT
+            // =========================================================
+
+            return RedirectToAction(
+                nameof(Edit),
+                new { id = document.Id }
+            );
+        }
 
         private List<BuildingProductViewModel> GetProductsForCustomer(List<BuildingProductViewModel> baseProducts, Customer customer, bool hasSetCost)
         {
@@ -1575,6 +1852,46 @@ namespace CleanHub.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBookFinancial(PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total, int customerId)
         {
+
+            if (PaymentType == PaymentType.Subscription)
+            {
+                var customer = customerId != 0 ? await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId) : null;
+                if (customer != null)
+                {
+                    var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == customer.Id));
+                    var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == customerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
+
+                    var pobaruva = dataBookFinancial.Sum(x => x.Demands);
+
+                    double dolzi = customerDocs
+                        .Where(x => x.Date.HasValue && x.Date.Value > new DateOnly(2021, 1, 1))
+                        .Sum(x => (double)(x.TotalOutput ?? 0));
+
+                    if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)))
+                    {
+                        dolzi += dataBookFinancial
+                            .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                            .Sum(x => x.Owes);
+                    }
+
+                    var saldo = pobaruva - dolzi;
+                    if (saldo < 0)
+                    {
+                        return BadRequest(new
+                        {
+                            success = false,
+                            message = "Салдото е помало од 0. Не може да се додаде претплата. Ве молиме платете или порамнете ги неплатените фактури за салдото да биде 0, а потоа обидете се повторно."
+                        });
+                    }
+                    else
+                    {
+                        customer.Subscription += Total;
+                        customer.SubscriptionDescription += string.IsNullOrWhiteSpace(customer.SubscriptionDescription) ? PaymentDescription : "," + Environment.NewLine + PaymentDescription;
+
+                        _unitOfWork.Customers.Update(customer);
+                    }
+                }
+            }
             var bookFinancial = new BookFinancial()
             {
                 CustomerId = customerId,
@@ -1591,6 +1908,8 @@ namespace CleanHub.Controllers
                 DateTimeChanges = DateTime.UtcNow
             };
             _unitOfWork.BookFinancials.Add(bookFinancial);
+
+
             await _unitOfWork.SaveChangesAsync();
 
             return Ok(new { success = true, message = "Успешно зачувано плаќање!" });
@@ -2321,71 +2640,71 @@ namespace CleanHub.Controllers
             }
         }
 
-        public async Task<IActionResult> Edit(int? id)
-        {
-            if (id == null) return NotFound();
+        //public async Task<IActionResult> Edit(int? id)
+        //{
+        //    if (id == null) return NotFound();
 
-            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
-                .Include(x => x.Books)
-                .Include(d => d.Customer));
+        //    var documentEntity = await _unitOfWork.Documents.GetByIdAsync(x => x.Id == id.Value, d => d
+        //        .Include(x => x.Books)
+        //        .Include(d => d.Customer));
 
-            if (documentEntity == null) return NotFound();
+        //    if (documentEntity == null) return NotFound();
 
-            var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
-            document.Company = _config.Value;
-            var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+        //    var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
+        //    document.Company = _config.Value;
+        //    var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
 
-            if (debt != null && debt.Any())
-            {
-                var allParts = debt.OrderBy(x => x.Id)
-                    .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                    .ToList();
+        //    if (debt != null && debt.Any())
+        //    {
+        //        var allParts = debt.OrderBy(x => x.Id)
+        //            .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
+        //            .ToList();
 
-                var distinctExceptLast = allParts
-                    .Reverse<string>()
-                    .Skip(1)
-                    .Reverse()
-                    .Distinct()
-                    .ToList();
+        //        var distinctExceptLast = allParts
+        //            .Reverse<string>()
+        //            .Skip(1)
+        //            .Reverse()
+        //            .Distinct()
+        //            .ToList();
 
-                if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
-                {
-                    document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                }
-                else
-                {
-                    document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                }
-            }
-            ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
-            return PartialView("_DocumentDetailPartial", document);
-        }
+        //        if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
+        //        {
+        //            document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
+        //        }
+        //        else
+        //        {
+        //            document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
+        //        }
+        //    }
+        //    ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
+        //    return PartialView("_DocumentDetailPartial", document);
+        //}
 
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Edit(int id, DocumentViewModel document)
-        {
-            if (id != document.Id) return NotFound();
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public async Task<IActionResult> Edit(int id, DocumentViewModel document)
+        //{
+        //    if (id != document.Id) return NotFound();
 
-            if (ModelState.IsValid)
-            {
-                try
-                {
-                    var documentEntity = App.FullMapper.Map<Document>(document);
-                    _unitOfWork.Documents.Update(documentEntity);
-                    await _unitOfWork.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!InvoiceExists(document.Id)) return NotFound();
-                    throw;
-                }
+        //    if (ModelState.IsValid)
+        //    {
+        //        try
+        //        {
+        //            var documentEntity = App.FullMapper.Map<Document>(document);
+        //            _unitOfWork.Documents.Update(documentEntity);
+        //            await _unitOfWork.SaveChangesAsync();
+        //        }
+        //        catch (DbUpdateConcurrencyException)
+        //        {
+        //            if (!InvoiceExists(document.Id)) return NotFound();
+        //            throw;
+        //        }
 
-                return RedirectToAction(nameof(Index));
-            }
-            ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
-            return View(document);
-        }
+        //        return RedirectToAction(nameof(Index));
+        //    }
+        //    ViewData["CustomerId"] = new SelectList(_unitOfWork.Customers.GetAll().Where(x => !x.Hide), "Id", "Name", document.CustomerId);
+        //    return View(document);
+        //}
 
         public async Task<IActionResult> Delete(int? id)
         {

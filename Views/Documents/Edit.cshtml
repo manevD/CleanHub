@@ -1,0 +1,1014 @@
+﻿@using CleanHub.Entities
+@using CleanHub.Entities.Enums
+@model CleanHub.Entities.Document
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    .edit-document {
+        padding: 20px;
+    }
+
+    .edit-card {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 12px rgba(0,0,0,.06);
+        padding: 24px;
+    }
+
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 18px;
+        color: #333;
+    }
+
+    .form-label {
+        font-weight: 500;
+        font-size: 13px;
+        margin-bottom: 5px;
+    }
+
+    .form-control,
+    .form-select {
+        min-height: 38px;
+    }
+
+    .document-items {
+        margin-top: 30px;
+    }
+
+    .item-table {
+        width: 100%;
+        border-collapse: collapse;
+        white-space: nowrap;
+    }
+
+    .item-table th,
+    .item-table td {
+        padding: 6px 8px !important;
+        vertical-align: middle;
+    }
+
+    .item-table th {
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+        background: #f8f9fa;
+    }
+
+    .item-table tbody tr:hover {
+        background-color: #f8f9fa;
+    }
+
+    .item-table input.form-control {
+        height: 32px;
+        min-width: 90px;
+    }
+
+    .item-table .description-input {
+        min-width: 260px;
+    }
+
+    .item-table .small-input {
+        min-width: 70px;
+        max-width: 100px;
+        text-align: center;
+    }
+
+    .item-table .money-input {
+        min-width: 110px;
+        text-align: right;
+    }
+
+    .total-box {
+        margin-top: 20px;
+        padding: 15px 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        text-align: right;
+    }
+
+    .total-label {
+        font-size: 14px;
+        color: #666;
+    }
+
+    .total-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #222;
+    }
+
+    .actions {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+    }
+
+    .table-responsive {
+        overflow-x: auto;
+    }
+
+    .btn-remove {
+        width: 34px;
+        height: 34px;
+        padding: 0;
+    }
+</style>
+
+
+<div class="container-fluid edit-document">
+
+    <div class="edit-card">
+
+        <form asp-action="Edit"
+              asp-controller="Documents"
+              method="post"
+              novalidate>
+
+            @Html.AntiForgeryToken()
+
+            <!-- DOCUMENT ID -->
+            <input type="hidden" asp-for="Id" />
+
+            <!-- CUSTOMER ID -->
+            <input type="hidden" asp-for="CustomerId" />
+
+
+            <!-- ================= DOCUMENT ================= -->
+
+            <div class="section-title">
+                Документ #@Model.Id
+            </div>
+
+
+            <div class="row">
+
+                <div class="col-md-3 mb-3">
+
+                    <label asp-for="Number"
+                           class="form-label">
+                        Број на документ
+                    </label>
+
+                    <input asp-for="Number"
+                           class="form-control" />
+
+                </div>
+
+
+                <div class="col-md-3 mb-3">
+
+                    <label asp-for="Date"
+                           class="form-label">
+                        Датум
+                    </label>
+
+                    <input asp-for="Date"
+                           class="form-control"
+                           type="date" />
+
+                </div>
+
+
+                <div class="col-md-3 mb-3">
+
+                    <label asp-for="DateReceived"
+                           class="form-label">
+                        Датум на прием
+                    </label>
+
+                    <input asp-for="DateReceived"
+                           class="form-control"
+                           type="date" />
+
+                </div>
+
+
+                <div class="col-md-3 mb-3">
+
+                    <label asp-for="PaymentDate"
+                           class="form-label">
+                        Датум на плаќање
+                    </label>
+
+                    <input asp-for="PaymentDate"
+                           class="form-control"
+                           type="date" />
+
+                </div>
+
+            </div>
+
+
+            <div class="row">
+
+                <div class="col-md-4 mb-3">
+
+                    <label asp-for="PaymentNumber"
+                           class="form-label">
+                        Број на плаќање
+                    </label>
+
+                    <input asp-for="PaymentNumber"
+                           class="form-control" />
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label asp-for="PaymentType"
+                           class="form-label">
+                        Тип на плаќање
+                    </label>
+
+                    <select asp-for="PaymentType"
+                            class="form-select"
+                            asp-items="Html.GetEnumSelectList<PaymentType>()">
+
+                        <option value="">
+                            -- Избери --
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <div class="col-md-4 mb-3">
+
+                    <label asp-for="PaymentStatus"
+                           class="form-label">
+                        Статус на плаќање
+                    </label>
+
+                    <select asp-for="PaymentStatus"
+                            class="form-select"
+                            asp-items="Html.GetEnumSelectList<PaymentStatus>()">
+                    </select>
+
+                </div>
+
+            </div>
+
+
+            <div class="row">
+
+                <div class="col-md-6 mb-3">
+
+                    <label asp-for="ToDocument"
+                           class="form-label">
+                        По документ
+                    </label>
+
+                    <input asp-for="ToDocument"
+                           class="form-control" />
+
+                </div>
+
+            </div>
+
+
+            <div class="mb-3">
+
+                <label asp-for="Description"
+                       class="form-label">
+                    Опис
+                </label>
+
+                <textarea asp-for="Description"
+                          class="form-control"
+                          rows="3"></textarea>
+
+            </div>
+
+
+            <div class="mb-3">
+
+                <label asp-for="PaymentDescription"
+                       class="form-label">
+                    Опис на плаќање
+                </label>
+
+                <textarea asp-for="PaymentDescription"
+                          class="form-control"
+                          rows="3"></textarea>
+
+            </div>
+
+
+            <!-- ================= BOOKS ================= -->
+
+            <div class="document-items">
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+
+                    <div class="section-title mb-0">
+                        Ставки на документот
+                    </div>
+
+                    <button type="button"
+                            class="btn btn-success"
+                            onclick="addBookRow()">
+
+                        ➕ Додај ставка
+
+                    </button>
+
+                </div>
+
+
+                <div class="table-responsive">
+
+                    <table class="table item-table">
+
+                        <thead>
+
+                            <tr>
+
+                                <th>Опис</th>
+                                <th>Ед.м</th>
+                                <th>Кол.</th>
+                                <th>Цена</th>
+                                <th>ДДВ %</th>
+                                <th>Вкупно</th>
+                                <th></th>
+
+                            </tr>
+
+                        </thead>
+
+
+                        <tbody id="booksTableBody">
+
+                            @if (Model.Books != null)
+                            {
+                                @for (var i = 0; i < Model.Books.Count; i++)
+                                {
+                                    <tr>
+
+                                        <!-- HIDDEN FIELDS -->
+
+                                        <td>
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].Id" />
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].DocId" />
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].ArticleId" />
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].Input" />
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].Output" />
+
+                                            <input type="hidden"
+                                                   asp-for="Books[i].Hide" />
+
+                                            <input asp-for="Books[i].ArticleNotes"
+                                                   class="form-control description-input" />
+
+                                        </td>
+
+
+                                        <!-- UNIT -->
+
+                                        <td>
+
+                                            <input asp-for="Books[i].UnitOfMeasurement"
+                                                   class="form-control small-input" />
+
+                                        </td>
+
+
+                                        <!-- QUANTITY -->
+
+                                        <td>
+
+                                            <input asp-for="Books[i].Quantity"
+                                                   class="form-control small-input quantity-input"
+                                                   type="number"
+                                                   step="0.01"
+                                                   min="0" />
+
+                                        </td>
+
+
+                                        <!-- PRICE -->
+
+                                        <td>
+
+                                            <input asp-for="Books[i].Price"
+                                                   class="form-control money-input price-input"
+                                                   type="number"
+                                                   step="0.01"
+                                                   min="0" />
+
+                                        </td>
+
+
+                                        <!-- TAX -->
+
+                                        <td>
+
+                                            <input asp-for="Books[i].Tax"
+                                                   class="form-control money-input tax-input"
+                                                   type="number"
+                                                   step="0.01"
+                                                   min="0" />
+
+                                        </td>
+
+
+                                        <!-- TOTAL -->
+
+                                        <td>
+
+                                            <input asp-for="Books[i].Total"
+                                                   class="form-control money-input total-input"
+                                                   type="number"
+                                                   step="0.01"
+                                                   min="0"
+                                                   readonly />
+
+                                        </td>
+
+
+                                        <!-- DELETE -->
+
+                                        <td>
+
+                                            <button type="button"
+                                                    class="btn btn-danger btn-remove"
+                                                    onclick="removeBookRow(this)">
+
+                                                ×
+
+                                            </button>
+
+                                        </td>
+
+                                    </tr>
+                                }
+                            }
+
+                        </tbody>
+
+                    </table>
+
+                </div>
+
+            </div>
+
+
+            <!-- ================= TOTAL ================= -->
+
+            <div class="total-box">
+
+                <div class="total-label">
+                    Вкупно
+                </div>
+
+                <div class="total-value">
+
+                    <span id="documentTotal">
+                        0,00
+                    </span>
+
+                    МКД
+
+                </div>
+
+            </div>
+
+
+            <!-- ================= ACTIONS ================= -->
+
+            <div class="actions">
+
+                <a asp-action="Index"
+                   asp-controller="Documents"
+                   class="btn btn-secondary">
+
+                    Откажи
+
+                </a>
+
+
+                <button type="submit"
+                        class="btn btn-primary">
+
+                    💾 Зачувај промени
+
+                </button>
+
+            </div>
+
+        </form>
+
+    </div>
+
+</div>
+
+
+@section Scripts {
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        // =========================================================
+        // NUMBER PARSING
+        // =========================================================
+
+        function parseNumber(value) {
+
+            if (
+                value === null ||
+                value === undefined ||
+                value === ''
+            ) {
+                return 0;
+            }
+
+            let text = value.toString().trim();
+
+            // Support decimal comma
+            text = text.replace(',', '.');
+
+            const number = Number(text);
+
+            return Number.isFinite(number)
+                ? number
+                : 0;
+        }
+
+
+        // =========================================================
+        // FORMAT NUMBER FOR INPUT
+        // =========================================================
+
+        function formatInputNumber(value) {
+
+            const number = parseNumber(value);
+
+            return number.toFixed(2);
+        }
+
+
+        // =========================================================
+        // FORMAT NUMBER FOR DISPLAY
+        // =========================================================
+
+        function formatDisplayNumber(value) {
+
+            const number = parseNumber(value);
+
+            return number
+                .toFixed(2)
+                .replace('.', ',');
+        }
+
+
+        // =========================================================
+        // CALCULATE ONE BOOK
+        //
+        // Quantity = 1
+        // Price    = 34
+        // Tax      = 18
+        //
+        // 1 × 34 = 34
+        // 18% of 34 = 6.12
+        // Total = 40.12
+        // =========================================================
+
+        function calculateRow(row) {
+
+            const quantityInput =
+                row.querySelector('.quantity-input');
+
+            const priceInput =
+                row.querySelector('.price-input');
+
+            const taxInput =
+                row.querySelector('.tax-input');
+
+            const totalInput =
+                row.querySelector('.total-input');
+
+
+            if (!totalInput) {
+                return;
+            }
+
+
+            const quantity =
+                parseNumber(quantityInput?.value);
+
+            const price =
+                parseNumber(priceInput?.value);
+
+            const tax =
+                parseNumber(taxInput?.value);
+
+
+            const netTotal =
+                quantity * price;
+
+
+            const taxAmount =
+                netTotal * tax / 100;
+
+
+            const total =
+                netTotal + taxAmount;
+
+
+            // IMPORTANT:
+            // input type="number" must receive ".".
+            // Example: 40.12
+            totalInput.value =
+                formatInputNumber(total);
+
+
+            updateDocumentTotal();
+        }
+
+
+        // =========================================================
+        // DOCUMENT TOTAL
+        // =========================================================
+
+        function updateDocumentTotal() {
+
+            let total = 0;
+
+
+            document
+                .querySelectorAll('.total-input')
+                .forEach(function (input) {
+
+                    total += parseNumber(input.value);
+
+                });
+
+
+            const totalElement =
+                document.getElementById('documentTotal');
+
+
+            if (totalElement) {
+
+                totalElement.innerText =
+                    formatDisplayNumber(total);
+
+            }
+        }
+
+
+        // =========================================================
+        // ATTACH EVENTS
+        // =========================================================
+
+        function attachBookEvents(row) {
+
+            const quantityInput =
+                row.querySelector('.quantity-input');
+
+            const priceInput =
+                row.querySelector('.price-input');
+
+            const taxInput =
+                row.querySelector('.tax-input');
+
+
+            quantityInput?.addEventListener(
+                'input',
+                function () {
+
+                    calculateRow(row);
+
+                }
+            );
+
+
+            priceInput?.addEventListener(
+                'input',
+                function () {
+
+                    calculateRow(row);
+
+                }
+            );
+
+
+            taxInput?.addEventListener(
+                'input',
+                function () {
+
+                    calculateRow(row);
+
+                }
+            );
+        }
+
+
+        // =========================================================
+        // REMOVE BOOK
+        // =========================================================
+
+        function removeBookRow(button) {
+
+            const row =
+                button.closest('tr');
+
+
+            if (!row) {
+                return;
+            }
+
+
+            row.remove();
+
+
+            reindexBooks();
+
+            updateDocumentTotal();
+        }
+
+
+        // =========================================================
+        // REINDEX BOOKS
+        // =========================================================
+
+        function reindexBooks() {
+
+            const rows =
+                document.querySelectorAll(
+                    '#booksTableBody tr'
+                );
+
+
+            rows.forEach(
+                function (row, index) {
+
+                    row
+                        .querySelectorAll('[name]')
+                        .forEach(
+                            function (input) {
+
+                                input.name =
+                                    input.name.replace(
+                                        /Books\[\d+\]/g,
+                                        `Books[${index}]`
+                                    );
+
+                            }
+                        );
+
+                }
+            );
+
+
+            // Next new row gets correct index
+            bookIndex = rows.length;
+        }
+
+
+        // =========================================================
+        // ADD NEW BOOK
+        // =========================================================
+
+        let bookIndex = 0;
+
+
+        function addBookRow() {
+
+            const tbody =
+                document.getElementById(
+                    'booksTableBody'
+                );
+
+
+            // Always use current number of rows
+            bookIndex =
+                tbody.querySelectorAll('tr').length;
+
+
+            const row =
+                document.createElement('tr');
+
+
+            row.innerHTML = `
+
+                <td>
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].Id"
+                           value="0" />
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].DocId"
+                           value="@Model.Id" />
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].ArticleId"
+                           value="" />
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].Input"
+                           value="" />
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].Output"
+                           value="" />
+
+                    <input type="hidden"
+                           name="Books[${bookIndex}].Hide"
+                           value="false" />
+
+                    <input type="text"
+                           name="Books[${bookIndex}].ArticleNotes"
+                           class="form-control description-input" />
+
+                </td>
+
+
+                <td>
+
+                    <input type="text"
+                           name="Books[${bookIndex}].UnitOfMeasurement"
+                           class="form-control small-input"
+                           value="бр." />
+
+                </td>
+
+
+                <td>
+
+                    <input type="number"
+                           name="Books[${bookIndex}].Quantity"
+                           class="form-control small-input quantity-input"
+                           value="1"
+                           step="0.01"
+                           min="0" />
+
+                </td>
+
+
+                <td>
+
+                    <input type="number"
+                           name="Books[${bookIndex}].Price"
+                           class="form-control money-input price-input"
+                           step="0.01"
+                           min="0" />
+
+                </td>
+
+
+                <td>
+
+                    <input type="number"
+                           name="Books[${bookIndex}].Tax"
+                           class="form-control money-input tax-input"
+                           value="0"
+                           step="0.01"
+                           min="0" />
+
+                </td>
+
+
+                <td>
+
+                    <input type="number"
+                           name="Books[${bookIndex}].Total"
+                           class="form-control money-input total-input"
+                           step="0.01"
+                           min="0"
+                           readonly />
+
+                </td>
+
+
+                <td>
+
+                    <button type="button"
+                            class="btn btn-danger btn-remove"
+                            onclick="removeBookRow(this)">
+
+                        ×
+
+                    </button>
+
+                </td>
+
+            `;
+
+
+            tbody.appendChild(row);
+
+
+            attachBookEvents(row);
+
+
+            // Calculate initial value
+            calculateRow(row);
+
+
+            bookIndex++;
+        }
+
+
+        // =========================================================
+        // BEFORE SUBMIT
+        // =========================================================
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+
+                const rows =
+                    document.querySelectorAll(
+                        '#booksTableBody tr'
+                    );
+
+
+                rows.forEach(
+                    function (row) {
+
+                        attachBookEvents(row);
+
+                        // Recalculate existing row
+                        calculateRow(row);
+
+                    }
+                );
+
+
+                reindexBooks();
+
+                updateDocumentTotal();
+            }
+        );
+
+
+        // =========================================================
+        // SUBMIT
+        // =========================================================
+
+        document.addEventListener(
+            'DOMContentLoaded',
+            function () {
+
+                const form =
+                    document.querySelector('form');
+
+
+                if (!form) {
+                    return;
+                }
+
+
+                form.addEventListener(
+                    'submit',
+                    function () {
+
+                        // Recalculate every row before submit
+                        document
+                            .querySelectorAll(
+                                '#booksTableBody tr'
+                            )
+                            .forEach(
+                                function (row) {
+
+                                    calculateRow(row);
+
+                                }
+                            );
+
+
+                        // Make sure Books indexes are:
+                        // Books[0]
+                        // Books[1]
+                        // Books[2]
+                        // ...
+                        reindexBooks();
+
+                    }
+                );
+
+            }
+        );
+
+    </script>
+}
