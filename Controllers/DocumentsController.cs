@@ -748,23 +748,26 @@ namespace CleanHub.Controllers
 
                         CreateBook(buildingProduct, docEntity);
                     }
+                    docEntity.TotalOutput = MathF.Round(docEntity.Books.Sum(b => b.Total ?? 0f), MidpointRounding.AwayFromZero);
+                    documentsToInsert.Add(docEntity);
+
                     _unitOfWork.Documents.Add(docEntity);
                     await _unitOfWork.SaveChangesAsync();
                     CreateBookFinancialAndReserve(docEntity, customer.Id, building.ReserveFund ?? 0, docEntity.PaymentDate, docEntity.PaymentType, "", true);
                 }
                 await _unitOfWork.SaveChangesAsync();
 
-                var mappedTestDocs = documentsToInsert.Select(d => new DokumentiTest
-                {
-                    Dokid = d.Id.ToString(),
-                    Datum = d.Date.Value.ToString("yyyy-MM-dd"),
-                    Broj = d.Number.ToString(),
-                    PartnerID = d.CustomerId.ToString(),
-                    Godina = d.Date.Value.Year.ToString(),
-                    VkupnoIz = d.TotalOutput.ToString()
-                }).ToList();
+                //var mappedTestDocs = documentsToInsert.Select(d => new DokumentiTest
+                //{
+                //    Dokid = d.Id.ToString(),
+                //    Datum = d.Date.Value.ToString("yyyy-MM-dd"),
+                //    Broj = d.Number.ToString(),
+                //    PartnerID = d.CustomerId.ToString(),
+                //    Godina = d.Date.Value.Year.ToString(),
+                //    VkupnoIz = d.TotalOutput.ToString()
+                //}).ToList();
 
-                _context.DokumentiTest.AddRange(mappedTestDocs);
+                //_context.DokumentiTest.AddRange(mappedTestDocs);
                 await _context.SaveChangesAsync();
 
                 HttpContext.Session.Remove("Documents");
@@ -795,10 +798,10 @@ namespace CleanHub.Controllers
 
             calculator.CalculatePrices(tempBuildingProducts, customer);
 
-            if (tempBuildingProducts != null)
-            {
-                documentCustomer.TotalOutput = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
-            }
+            //if (tempBuildingProducts != null)
+            //{
+            //    documentCustomer.TotalOutput = calculator.CalculateTotalPriceWithTaxSum(tempBuildingProducts);
+            //}
 
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
 
