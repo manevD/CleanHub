@@ -1,5 +1,6 @@
 ﻿@using CleanHub.Entities
 @using CleanHub.Entities.Enums
+@using  CleanHub.Extensions
 @model CleanHub.Entities.Document
 
 @{
@@ -222,20 +223,13 @@
 
                 <div class="col-md-4 mb-3">
 
-                    <label asp-for="PaymentType"
-                           class="form-label">
-                        Тип на плаќање
-                    </label>
-
-                    <select asp-for="PaymentType"
-                            class="form-select"
-                            asp-items="Html.GetEnumSelectList<PaymentType>()">
-
-                        <option value="">
-                            -- Избери --
-                        </option>
-
-                    </select>
+                   <label for="paymentType" class="form-label">Тип на плаќање</label>
+                                            <select id="paymentType" name="PaymentType" class="form-control">
+                                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                                                {
+                                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
+                                                }
+                                            </select>
 
                 </div>
 

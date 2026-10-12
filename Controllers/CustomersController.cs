@@ -183,7 +183,7 @@ namespace CleanHub.Controllers
             {
                 return NotFound();
             }
-            var customerEntity = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id, cu => cu.Include(cust => cust.Activity).Include(cus => cus.Documents).Include(x => x.Activity).Include(d => d.Documents));
+            var customerEntity = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id, cu => cu.Include(cust => cust.Activity).Include(cus => cus.Documents));
             //if (customerEntity?.Documents != null && customerEntity.Documents.Any())
             //{
             //    foreach (var doc in customerEntity.Documents)
