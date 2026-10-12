@@ -222,33 +222,35 @@
 
 
                 <div class="col-md-4 mb-3">
+    <label for="paymentType" class="form-label">Тип на плаќање</label>
 
-                   <label for="paymentType" class="form-label">Тип на плаќање</label>
-                                            <select id="paymentType" name="PaymentType" class="form-control">
-                                                @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
-                                                {
-                                                    <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
-                                                }
-                                            </select>
+    <select id="paymentType" name="PaymentType" class="form-control">
+        @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+        {
+            <option value="@((int)paymentType)"
+                    selected="@(Model.PaymentType == paymentType)">
+                @paymentType.GetEnumDescription()
+            </option>
+        }
+    </select>
+</div>
 
-                </div>
 
+<div class="col-md-4 mb-3">
+    <label asp-for="PaymentStatus" class="form-label">
+        Статус на плаќање
+    </label>
 
-                <div class="col-md-4 mb-3">
-
-                    <label asp-for="PaymentStatus"
-                           class="form-label">
-                        Статус на плаќање
-                    </label>
-
-                    <select asp-for="PaymentStatus"
-                            class="form-select"
-                            asp-items="Html.GetEnumSelectList<PaymentStatus>()">
-                    </select>
-
-                </div>
-
-            </div>
+    <select asp-for="PaymentStatus" class="form-select">
+        @foreach (var status in Enum.GetValues(typeof(PaymentStatus)).Cast<PaymentStatus>())
+        {
+            <option value="@((int)status)"
+                    selected="@(Model.PaymentStatus == status)">
+                @status.GetEnumDescription()
+            </option>
+        }
+    </select>
+</div>
 
 
             <div class="row">
