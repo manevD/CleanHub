@@ -139,7 +139,7 @@
                                 <div class="inv--additional-notes mt-2">
                                     @Html.Raw(Model?.Company?.InvoiceNotice ?? "")
                                   <br/>
-                                    <strong>@result</strong>
+                                     @*<strong>@result</strong>
                                     @if (@Model!.Customer.Subscription.HasValue && @Model!.Customer.Subscription > 0)
                                     {
                                         <br />
@@ -149,7 +149,7 @@
                                     {                                       
                                         <br />
                                         <strong>Заостанат долг: @Model.Debt</strong>
-                                    }
+                                    } *@
                                 </div>
                                 <div class="inv--note">
                                     <div class="row mt-4">
