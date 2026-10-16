@@ -739,7 +739,6 @@ namespace CleanHub.Controllers
                     }
                     currentMaxNumber++;
                     var docEntity = CreateCustomerDocumentInMemory(customer, document, building, currentMaxNumber);
-                    documentsToInsert.Add(docEntity);
 
                     foreach (var buildingProduct in productsForCustomer)
                     {
@@ -1888,7 +1887,14 @@ namespace CleanHub.Controllers
                     }
                     else
                     {
-                        customer.Subscription += Total;
+                        if (customer.Subscription == null)
+                        {
+                            customer.Subscription = Total;
+                        }
+                        else
+                        {
+                            customer.Subscription += Total;
+                        }
                         customer.SubscriptionDescription += string.IsNullOrWhiteSpace(customer.SubscriptionDescription) ? PaymentDescription : "," + Environment.NewLine + PaymentDescription;
 
                         _unitOfWork.Customers.Update(customer);
