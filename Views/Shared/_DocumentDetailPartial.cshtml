@@ -1,27 +1,9 @@
-﻿@model CleanHub.ViewModels.DocumentViewModel
+﻿
+@model CleanHub.ViewModels.DocumentViewModel
+
 @{
     double summ = 0;
     double summDemands = 0;
-    string result = "0";
-    if (Model != null)
-    {
-        summ = Model.TotalBuildingOwes;
-        summDemands = Model.TotalBuildingDemands;
-        double difference = (summ - summDemands);
-        var message = "Вашата состојба на резервен фонд: ";
-        if (summDemands == 0)
-        {
-            result = "0 МКД";
-        }
-        else if (summDemands > summ)
-        {
-            result = message + "" + (-difference) + " МКД";
-        }
-        else
-        {
-            result = message + "-" + difference +  " МКД";
-        }
-    }
 }
 
 <link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" media="all" />
@@ -30,13 +12,54 @@
 <link href="~/src/assets/css/light/apps/invoice-preview.css" rel="stylesheet" type="text/css" media="all" />
 
 <style>
-    .medium-small-text {
-        font-size: 12px;
+    /* A4 приказ во browser */
+    #Grid {
+        width: 210mm !important;
+        min-height: 297mm;
+        margin: 20px auto !important;
+        padding: 8mm !important;
+        box-sizing: border-box;
+        background: #fff;
+        position: relative;
+        display: block;
+        font-size: 10px;
+        color: #333;
     }
+
+    #Grid > .col-xl-12,
+    #Grid .doc-container,
+    #Grid .invoice-container,
+    #Grid .invoice-inbox,
+    #Grid #ct,
+    #Grid .invoice-00001,
+    #Grid .content-section {
+        width: 100% !important;
+        max-width: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        box-sizing: border-box;
+    }
+
+    .invoice-00001 {
+        min-height: 279mm;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .invoice-00001 .content-section {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .medium-small-text {
+        font-size: 11px;
+    }
+
     .horizontal_line {
         width: 100%;
-        height: 5px;
-        border-top: 5px dotted black;
+        height: 0;
+        border-top: 2px dotted #000;
     }
 
     .compact-section {
@@ -46,35 +69,380 @@
 
     .boxed {
         border: 1px solid #000;
-        padding: 10px;
-        border-radius: 5px;
+        padding: 4px;
+        border-radius: 3px;
         background-color: #f9f9f9;
-        margin: 10px 0;
+        margin: 0;
     }
 
-    @@media print {
-        body * {
-            visibility: hidden;
-        }
-        .invoice, .invoice * {
-            visibility: visible;
-        }
-        .invoice {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
-            border: none;
-        }
-        .invoice-actions-btn {
-            display: none;
-        }
+    /* Потпис */
+    .inv--note {
+        margin-top: 18px;
+        margin-bottom: 22px;
     }
+
+    .signature-block {
+        text-align: right;
+    }
+
+    .signature-title {
+        margin-bottom: 0;
+        font-size: 11px;
+    }
+
+    /* Дополнителен простор за печат */
+    .signature-space {
+        height: 90px !important;
+        min-height: 90px !important;
+    }
+
+    .signature-line {
+        display: inline-block;
+        width: 55mm;
+        max-width: 100%;
+        border-top: 1px solid #000;
+        padding-top: 7px;
+        text-align: center;
+    }
+
+    .signature-name {
+        margin: 0;
+        font-size: 11px;
+    }
+
+    /* Заглавие */
+    .invoice-00001 .company-logo {
+        max-width: 100px;
+        max-height: 55px;
+        object-fit: contain;
+    }
+
+    .invoice-00001 .inv--head-section p {
+        margin-bottom: 3px;
+        overflow-wrap: anywhere;
+    }
+
+    /* Табела со артикли */
+    .invoice-00001 .inv--customer-detail-section table {
+        width: 100%;
+        margin-bottom: 5px;
+        border-collapse: collapse;
+    }
+
+    .invoice-00001 .inv--customer-detail-section th,
+    .invoice-00001 .inv--customer-detail-section td {
+        padding: 4px;
+        vertical-align: top;
+    }
+
+    /* Дополнителни информации */
+    .invoice-00001 .inv--additional-notes {
+        font-size: 10px;
+        margin-top: 4px;
+        overflow-wrap: anywhere;
+    }
+
+    .invoice-00001 .inv--additional-notes p {
+        margin-bottom: 3px;
+    }
+
+    /* Испрекината линија под потписот */
+    .invoice-separator {
+        width: 100%;
+        height: 0;
+        border-top: 2px dotted #000;
+        margin-top: 25px !important;
+        margin-bottom: 0 !important;
+    }
+
+    /* Долен дел на фактурата */
+    .inv--footer {
+        margin-top: auto !important;
+        padding-top: 5px;
+        font-size: 9px;
+    }
+
+    .inv--footer p {
+        margin-bottom: 2px;
+        overflow-wrap: anywhere;
+    }
+
+    .inv--footer .boxed {
+        padding: 3px;
+    }
+
+    .inv--footer h3 {
+        font-size: 12px;
+        margin-bottom: 3px;
+    }
+
+    .inv--footer .inv-street-addr {
+        margin-top: 3px !important;
+    }
+
+    /* Копче надвор од A4 */
+    .invoice-actions-btn {
+        width: 210mm;
+        max-width: 100%;
+        margin: 0 auto 20px;
+    }
+
+    /* A4 печатење */
+   
+@@page {
+    size: A4 portrait;
+    margin: 0;
+}
+
+@@media print {
+    html,
+    body {
+        width: 210mm !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
+    body * {
+        visibility: hidden;
+    }
+
+    #Grid,
+    #Grid * {
+        visibility: visible;
+    }
+
+    #Grid {
+        position: relative !important;
+        display: block !important;
+        width: 210mm !important;
+        height: 297mm !important;
+        min-height: 297mm !important;
+        margin: 0 !important;
+        padding: 8mm !important;
+        box-sizing: border-box !important;
+        overflow: hidden !important;
+        border: none !important;
+        box-shadow: none !important;
+        background: #fff !important;
+        font-size: 9px !important;
+    }
+
+    #Grid > .col-xl-12,
+    #Grid .doc-container,
+    #Grid .invoice-container,
+    #Grid .invoice-inbox,
+    #Grid #ct {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        height: 100% !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        border: none !important;
+        box-shadow: none !important;
+        overflow: visible !important;
+    }
+
+    /* Една A4 страница со подножје на дното */
+    #Grid .invoice-00001 {
+        position: relative !important;
+        display: block !important;
+        width: 100% !important;
+        height: 281mm !important;
+        min-height: 281mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    #Grid .content-section {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: visible !important;
+    }
+
+    #Grid .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+
+    #Grid .col-sm-6,
+    #Grid .col-sm-4,
+    #Grid .col-12 {
+        padding-left: 4px !important;
+        padding-right: 4px !important;
+    }
+
+    .invoice-actions-btn,
+    .invoice-action-btn {
+        display: none !important;
+    }
+
+    /* Заглавие */
+    .invoice-00001 .company-logo {
+        max-width: 85px !important;
+        max-height: 45px !important;
+        object-fit: contain !important;
+    }
+
+    .invoice-00001 .inv--head-section {
+        margin-bottom: 22px !important;
+    }
+
+    .invoice-00001 .inv--head-section p {
+        margin-bottom: 3px !important;
+        font-size: 9px !important;
+    }
+
+    /* Производи */
+    .invoice-00001 .inv--customer-detail-section table {
+        width: 100% !important;
+        margin-bottom: 5px !important;
+        border-collapse: collapse !important;
+        font-size: 9px !important;
+    }
+
+    .invoice-00001 .inv--customer-detail-section th,
+    .invoice-00001 .inv--customer-detail-section td {
+        padding: 3px !important;
+        vertical-align: top !important;
+    }
+
+    /* Дополнителни информации */
+    .invoice-00001 .inv--additional-notes {
+        margin-top: 18px !important;
+        font-size: 9px !important;
+    }
+
+    .invoice-00001 .inv--additional-notes p {
+        margin-bottom: 3px !important;
+    }
+
+    /* Потпис */
+    .inv--note {
+        margin-top: 18px !important;
+        margin-bottom: 0 !important;
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+
+    .signature-block {
+        text-align: right !important;
+    }
+
+    .signature-title,
+    .signature-name {
+        font-size: 9px !important;
+    }
+
+    .signature-space {
+        display: block !important;
+        height: 90px !important;
+        min-height: 90px !important;
+    }
+
+    .signature-line {
+        display: inline-block !important;
+        width: 55mm !important;
+        max-width: 100% !important;
+        border-top: 1px solid #000 !important;
+        padding-top: 7px !important;
+        text-align: center !important;
+    }
+
+    /* Испрекината линија под потписот */
+    .invoice-separator {
+        display: block !important;
+        position: absolute !important;
+        left: 0 !important;
+        right: 0 !important;
+        bottom: 49mm !important;
+        width: 100% !important;
+        height: 0 !important;
+        margin: 0 !important;
+        border-top: 2px dotted #000 !important;
+    }
+
+    /* Подножје на самиот долен дел на A4 */
+.inv--footer {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+}
+
+.inv--footer p {
+    margin-bottom: 2px !important;
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    line-height: 1.4 !important;
+}
+
+    .inv--footer .row {
+        display: flex !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        margin: 0 !important;
+    }
+
+    .inv--footer .col-sm-4 {
+        width: 33.333333% !important;
+        padding: 0 4px !important;
+    }
+
+    .inv--footer p {
+        margin-bottom: 2px !important;
+    }
+
+    .inv--footer h3 {
+        font-size: 10px !important;
+        margin-bottom: 3px !important;
+    }
+
+    .inv--footer .boxed {
+        padding: 3px !important;
+    }
+
+    .inv--footer .inv-street-addr {
+        margin-top: 2px !important;
+    }
+
+    /* Не ги дели редовите на производите */
+    table {
+        break-inside: auto !important;
+        page-break-inside: auto !important;
+    }
+
+    thead {
+        display: table-header-group;
+    }
+
+    tr {
+        break-inside: avoid !important;
+        page-break-inside: avoid !important;
+    }
+}
+
 </style>
 
-<div class="row invoice layout-top-spacing layout-spacing" id="Grid" style="font-size: 0.70rem;">
+<div class="row invoice layout-top-spacing layout-spacing" id="Grid">
     <div class="col-xl-12">
         <div class="doc-container">
             <div class="invoice-container">
@@ -82,28 +450,51 @@
                     <div id="ct">
                         <div class="invoice-00001">
                             <div class="content-section">
+
+                                <!-- ЗАГЛАВИЕ -->
                                 <div class="inv--head-section inv--detail-section">
                                     <div class="row">
-                                        <div class="col-sm-6">
+                                        <div class="col-sm-6 col-12">
                                             <div class="d-flex">
-                                                <img class="company-logo" src="~/src/logo3.png" alt="Logo">
-                                                <h3 class="in-heading align-self-center">@Model?.Company?.Name</h3>
+                                                <img class="company-logo"
+                                                     src="~/src/logo3.png"
+                                                     alt="Logo" />
+
+                                                <h3 class="in-heading align-self-center">
+                                                    @Model?.Company?.Name
+                                                </h3>
                                             </div>
+
                                             <p>@Model?.Company?.Address</p>
                                             <p>@Model?.Company?.Email</p>
                                             <p>@Model?.Company?.PhoneNumber</p>
                                             <p>ЕДБ: @Model?.Company?.VATID</p>
                                             <p>@Model?.Company?.IBAN</p>
                                         </div>
-                                        <div class="col-sm-6 text-sm-end">
-                                            <p><span>ИСПРАТНИЦА-ФАКТУРА БР: </span><span>@Model?.Number</span></p>
-                                            <p><span>Издадена на : </span><span>@Model?.Date?.ToString("dd.MM.yyyy")</span></p>
-                                            <p><span>Рок на плаќање до: </span><span>@Model?.DateReceived?.ToString("dd.MM.yyyy")</span></p>
+
+                                        <div class="col-sm-6 col-12 text-sm-end">
+                                            <p>
+                                                <span>ИСПРАТНИЦА-ФАКТУРА БР: </span>
+                                                <span>@Model?.Number</span>
+                                            </p>
+
+                                            <p>
+                                                <span>Издадена на: </span>
+                                                <span>@Model?.Date?.ToString("dd.MM.yyyy")</span>
+                                            </p>
+
+                                            <p>
+                                                <span>Рок на плаќање до: </span>
+                                                <span>@Model?.DateReceived?.ToString("dd.MM.yyyy")</span>
+                                            </p>
+
                                             <p>@Model?.Customer?.CustomerInfo</p>
                                             <p>@Model?.Customer?.Adress</p>
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- АРТИКЛИ -->
                                 <div class="inv--detail-section inv--customer-detail-section compact-section medium-small-text">
                                     <table class="table medium-small-text">
                                         <thead>
@@ -111,10 +502,11 @@
                                                 <th>Артикал</th>
                                                 <th class="text-end">Ед.М</th>
                                                 <th class="text-end">Кол</th>
-                                                <th class="text-end" scope="col">Цена</th>
+                                                <th class="text-end">Цена</th>
                                                 <th class="text-end">Цена ДДВ</th>
                                             </tr>
                                         </thead>
+
                                         <tbody>
                                             @if (Model?.Books != null && Model.Books.Any())
                                             {
@@ -124,81 +516,142 @@
                                                         <td>@article.ArticleNotes</td>
                                                         <td class="text-end">@article.UnitOfMeasurement</td>
                                                         <td class="text-end">@article.Quantity</td>
-                                                        <td class="text-end">@article.Price!.Value.ToString("F2")</td>
-                                                        <td class="text-end">@article.PriceWithTax!.Value.ToString("F2")</td>
+                                                        <td class="text-end">
+                                                            @article.Price!.Value.ToString("F2")
+                                                        </td>
+                                                        <td class="text-end">
+                                                            @article.PriceWithTax!.Value.ToString("F2")
+                                                        </td>
                                                     </tr>
                                                 }
                                             }
+
                                             <tr>
                                                 <td colspan="4"></td>
-                                                <td class="text-end">за наплата: @Model?.TotalOutput</td>
+                                                <td class="text-end">
+                                                    <strong>
+                                                        За наплата: @Model?.TotalOutput
+                                                    </strong>
+                                                </td>
                                             </tr>
                                         </tbody>
                                     </table>
                                 </div>
-                                <div class="inv--additional-notes mt-2">
+
+                                <!-- ДОПОЛНИТЕЛНИ ИНФОРМАЦИИ -->
+                                <div class="inv--additional-notes">
                                     @Html.Raw(Model?.Company?.InvoiceNotice ?? "")
-                                  <br/>
-                                     @*<strong>@result</strong>
-                                    @if (@Model!.Customer.Subscription.HasValue && @Model!.Customer.Subscription > 0)
+
+                                    @if (Model?.Customer?.Subscription.HasValue == true
+                                        && Model.Customer.Subscription > 0)
                                     {
                                         <br />
-                                        <strong>Вие сте во претплате : @Model.Customer.Subscription МКД</strong>
+                                        <strong>
+                                            Вие сте во претплате:
+                                            @Model.Customer.Subscription МКД
+                                        </strong>
                                     }
-                                    @if (!string.IsNullOrEmpty(@Model.Debt))
-                                    {                                       
+
+                                    @if (!string.IsNullOrEmpty(Model?.Debt))
+                                    {
                                         <br />
-                                        <strong>Заостанат долг: @Model.Debt</strong>
-                                    } *@
+                                        <strong>
+                                            Заостанат долг: @Model.Debt
+                                        </strong>
+                                    }
                                 </div>
+
+                                <!-- ПОТПИС -->
                                 <div class="inv--note">
-                                    <div class="row mt-4">
-                                        <div class="col-sm-6 col-12 order-sm-0 order-1">
+                                    <div class="row">
+                                        <div class="col-sm-6 col-12">
                                             <p>Примил</p>
                                         </div>
-                                        <div class="col-sm-6 col-12 order-sm-1 order-1 text-sm-end">
-                                            <p>Овластено лице за потпишување на фактури</p>
-                                            <br />
-                                            <p>Виолета Стојанова</p>
+
+                                        <div class="col-sm-6 col-12 signature-block">
+                                            <p class="signature-title">
+                                                Овластено лице за потпишување на фактури
+                                            </p>
+
+                                            <div class="signature-space"></div>
+
+                                            <div class="signature-line">
+                                                <p class="signature-name">
+                                                    Виолета Стојанова
+                                                </p>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
-                                <br />
-                                <div class="horizontal_line" style="margin-top:40px;"></div>
-                                <div class="inv--footer mt-2">
-                                    <div class="row">
+
+                                <!-- ИСПРЕКИНАТА ЛИНИЈА -->
+                                <div class="horizontal_line invoice-separator"></div>
+
+                                <!-- ДОЛЕН ДЕЛ НА ФАКТУРАТА -->
+                                <div class="inv--footer">
+                                    <div class="row align-items-start">
                                         <div class="col-sm-4 col-12">
-                                            <p class="inv-customer-name">@Model?.Customer?.CustomerInfo</p>
-                                            <p class="inv-email-address">@Model?.Customer?.Adress</p>
+                                            <div class="boxed">
+                                                <p class="inv-customer-name">
+                                                    @Model?.Customer?.CustomerInfo
+                                                </p>
+
+                                                <p class="inv-email-address">
+                                                    @Model?.Customer?.Adress
+                                                </p>
+                                            </div>
                                         </div>
-                                        <div class="col-sm-4 col-12 text-center mt-2">
-                                            <p>@Model?.Company?.Name</p>
-                                            <p class="inv-street-addr" >@Model?.Company?.Address</p>
+
+                                        <div class="col-sm-4 col-12 text-center">
+                                            <h3 class="in-heading">
+                                                @Model?.Company?.Name
+                                            </h3>
+
+                                            <p class="inv-street-addr">
+                                                @Model?.Company?.Address
+                                            </p>
                                         </div>
-                                        <div class="col-sm-4 col-12 text-sm-end" >
-                                            <p class="inv-list-number mt-2">
-                                                <span class="inv-title">испратница-фактура бр:</span>
+
+                                        <div class="col-sm-4 col-12 text-sm-end">
+                                            <p class="inv-list-number">
+                                                <span class="inv-title">
+                                                    Испратница-фактура бр:
+                                                </span>
                                                 <span>@Model?.Number</span>
                                             </p>
-                                            <p class="text-end">вкупно за наплата: @Model?.TotalOutput ден</p>
+
+                                            <p>
+                                                Вкупно за наплата:
+                                                @Model?.TotalOutput ден
+                                            </p>
+
                                             <b>@Model?.ToDocument</b>
                                         </div>
                                     </div>
                                 </div>
+
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        @if (Model != null && !Model.IsForPdf )
+
+        <!-- КОПЧЕ ИСПРАТИ СМЕТКА -->
+        @if (Model != null && !Model.IsForPdf)
         {
-            @if (!string.IsNullOrEmpty(@Model?.Customer?.Email))
+            @if (!string.IsNullOrEmpty(Model.Customer?.Email))
             {
                 <div class="invoice-actions-btn">
-                    <form asp-action="GeneratePdfTest" asp-controller="Documents">
+                    <form asp-action="CreateAndSend"
+                          asp-controller="Documents"
+                          method="post">
+
                         <input type="hidden" asp-for="Id" />
-                        <input type="submit" value="Испрати Сметка" class="btn btn-danger" />
+
+                        <input type="submit"
+                               value="Испрати Сметка"
+                               class="btn btn-danger" />
                     </form>
                 </div>
             }

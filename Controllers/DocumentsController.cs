@@ -125,6 +125,14 @@ namespace CleanHub.Controllers
             {
                 smtpClient.Credentials = new NetworkCredential(_smtpConfig.Value.Email, _smtpConfig.Value.Passwort);
                 smtpClient.EnableSsl = true;
+                if (document.CustomerId == null)
+                {
+                    var documentEntity = await _unitOfWork.Documents.GetByIdAsync(d => d.Id == document.Id, query => query.Include(d => d.Books).Include(d => d.Customer));
+                    if (documentEntity != null)
+                    {
+                        document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
+                    }
+                }
 
                 document.IsForPdf = true;
 
@@ -138,18 +146,34 @@ namespace CleanHub.Controllers
 
                 doc.Save(pdfStream);
                 pdfStream.Position = 0;
-                string emailBody =
+                string emailBody = string.Empty;
+                if (document.PaymentStatus == (int)PaymentStatus.Платено)
+                {
+                    emailBody =
                     @$"Почитувани,
 
-                            Во прилог ви ја праќаме сметката за {document.Date.Value.Month}/{document.Date.Value.Year}. Ве молиме, проверете ја прикачената сметка и извршете ги потребните активности за плаќање.
-
+                            Во прилог ви ја праќаме сметката за {document.Date.Value.Month}/{document.Date.Value.Year}. 
                             Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
                             Со почит,
-
                             {_config.Value.Name}
                             {_config.Value.PhoneNumber}
                             {_config.Value.Email}
                             {_config.Value.Address}";
+                }
+                else
+                {
+                    emailBody =
+                    @$"Почитувани,
+
+                            Во прилог ви ја праќаме сметката за {document.Date.Value.Month}/{document.Date.Value.Year}. Ве молиме, проверете ја прикачената сметка и извршете ги потребните активности за плаќање.
+                            Во случај на било какви прашања или недоразбирања можете слободно да не контактирате. Ви благодариме за Вашето внимание и соработка.
+                            Со почит,
+                            {_config.Value.Name}
+                            {_config.Value.PhoneNumber}
+                            {_config.Value.Email}
+                            {_config.Value.Address}";
+                }
+
                 MailMessage message = new MailMessage();
                 message.From = new MailAddress(_smtpConfig.Value.Email);
                 message.To.Add(document?.Customer?.Email);
