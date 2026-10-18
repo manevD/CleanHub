@@ -732,8 +732,18 @@ namespace CleanHub.Controllers
 
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
                 var activeCustomers = building.Customers
-            .Where(x => x.Inactive == false && x.Hide == false)
-            .ToList();
+                  .Where(x => x.Inactive != true && x.Hide != true)
+                  .OrderBy(x =>
+                  {
+                      var match = System.Text.RegularExpressions.Regex.Match(
+                          x.CustomerInfo ?? "",
+                          @"ст\.\s*(\d+)",
+                          System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+
+                      return match.Success
+                          ? int.Parse(match.Groups[1].Value)
+                          : int.MaxValue;
+                  }).ToList();
                 var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
 
                 var exists = await _unitOfWork.Documents.AnyAsync(
@@ -745,11 +755,11 @@ namespace CleanHub.Controllers
                     return RedirectToAction(nameof(Create), new { id = 0, buildingId = building.Id });
                 }
 
-                int currentMaxNumber = await _unitOfWork.Documents.GetMaxAsync(x => x.Number) ?? 0;
+                var lastDocument = await _unitOfWork.Documents.Query().OrderByDescending(x => x.Id).FirstOrDefaultAsync();
 
-                var allDebts = await _unitOfWork.Documents.Query()
-                    .Where(x => activeCustomerIds.Contains(x.CustomerId.Value) && x.PaymentStatus != PaymentStatus.Платено)
-                    .ToListAsync();
+                int currentMaxNumber = lastDocument?.Number ?? 0;
+
+
 
                 var documentsToInsert = new List<Document>();
                 bool hasSetCost = activeCustomers.Any(x => x.SetCost);
@@ -768,10 +778,22 @@ namespace CleanHub.Controllers
                     {
                         if (buildingProduct.ArticleNotes?.Contains("гаража") == true && !customer.Garage)
                             continue;
-
                         CreateBook(buildingProduct, docEntity);
                     }
                     docEntity.TotalOutput = MathF.Round(docEntity.Books.Sum(b => b.Total ?? 0f), MidpointRounding.AwayFromZero);
+                    if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= docEntity.TotalOutput)
+                    {
+                        customer.Subscription -= (int)docEntity.TotalOutput.Value;
+                        docEntity.PaymentStatus = PaymentStatus.Платено;
+                        docEntity.PaymentType = PaymentType.Subscription;
+                        docEntity.Description = customer.Building.Name;
+                        docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
+                        _unitOfWork.Customers.Update(customer);
+                    }
+                    else
+                    {
+                        docEntity.PaymentStatus = PaymentStatus.Неплатено;
+                    }
                     documentsToInsert.Add(docEntity);
 
                     _unitOfWork.Documents.Add(docEntity);
@@ -791,9 +813,12 @@ namespace CleanHub.Controllers
                 //}).ToList();
 
                 //_context.DokumentiTest.AddRange(mappedTestDocs);
-                await _context.SaveChangesAsync();
+                //await _context.SaveChangesAsync();
 
-                HttpContext.Session.Remove("Documents");
+                //HttpContext.Session.Remove("Documents");
+                var allDebts = await _unitOfWork.Documents.Query()
+                  .Where(x => activeCustomerIds.Contains(x.CustomerId.Value) && x.PaymentStatus != PaymentStatus.Платено)
+                  .ToListAsync();
                 return await ProcessPrintAndSend(documentsToInsert, building, allDebts, send);
             }
             catch (DbUpdateException ex)
@@ -828,19 +853,7 @@ namespace CleanHub.Controllers
 
             var docEntity = App.FullMapper.Map<Document>(documentCustomer);
 
-            if (customer.Subscription.HasValue && customer.Subscription != 0 && customer.Subscription >= documentCustomer.TotalOutput)
-            {
-                customer.Subscription -= (int)documentCustomer.TotalOutput.Value;
-                docEntity.PaymentStatus = PaymentStatus.Платено;
-                docEntity.PaymentType = PaymentType.Subscription;
-                docEntity.Description = customer.Building.Name;
-                docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
-                _unitOfWork.Customers.Update(customer);
-            }
-            else
-            {
-                docEntity.PaymentStatus = PaymentStatus.Неплатено;
-            }
+
 
             return docEntity;
         }
@@ -1374,45 +1387,48 @@ namespace CleanHub.Controllers
                             // GET CUSTOMER DEBTS
                             // ====================================================
 
-                            var debtQuery =
-                                allDebts != null && allDebts.Any()
-                                    ? allDebts
-                                        .Where(x =>
-                                            x.CustomerId == item.CustomerId &&
-                                            x.PaymentStatus != 0)
-                                    : _unitOfWork.Documents
-                                        .GetAll()
-                                        .Where(x =>
-                                            x.CustomerId == item.CustomerId &&
-                                            x.PaymentStatus != 0);
+                            var debtQuery = (
+      allDebts != null && allDebts.Any()
+          ? allDebts.Where(x =>
+              x.CustomerId == item.CustomerId &&
+              x.PaymentStatus != 0)
+          : _unitOfWork.Documents
+              .GetAll()
+              .Where(x =>
+                  x.CustomerId == item.CustomerId &&
+                  x.PaymentStatus != 0)
+  ).OrderBy(x => x.Id).ToList();
 
-                            if (debtQuery != null && debtQuery.Any())
+                            // Последната сметка никогаш не се смета за заостанат долг
+                            var previousDebts = debtQuery
+                                .Take(Math.Max(0, debtQuery.Count - 1))
+                                .ToList();
+
+                            if (previousDebts.Any())
                             {
-                                var allParts = debtQuery
-                                 .OrderBy(x => x.Id)
-                                 .SelectMany(x =>
-                                     (
-                                         x.ToDocument ??
-                                         x.DateReceived?.ToString("yyyy-MM") ??
-                                         string.Empty
-                                     )
-                                     .Split(',', StringSplitOptions.RemoveEmptyEntries))
-                                 .ToList();
+                                var allParts = previousDebts
+                                    .SelectMany(x =>
+                                        (
+                                            x.ToDocument ??
+                                            x.DateReceived?.ToString("yyyy-MM") ??
+                                            string.Empty
+                                        )
+                                        .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                                    .ToList();
 
-                                var distinctExceptLast = allParts
-                                    .AsEnumerable()
-                                    .Reverse()
-                                    .Skip(1)
-                                    .Reverse()
+                                var distinctParts = allParts
                                     .Distinct()
                                     .ToList();
 
                                 document.Debt =
-                                    string.Join(",", distinctExceptLast) +
+                                    string.Join(",", distinctParts) +
                                     " : " +
-                                    debtQuery.Sum(x => x.TotalOutput ?? 0);
+                                    previousDebts.Sum(x => x.TotalOutput ?? 0);
                             }
-
+                            else
+                            {
+                                document.Debt = string.Empty;
+                            }
                             // ====================================================
                             // COMPANY
                             // ====================================================
@@ -1503,6 +1519,20 @@ namespace CleanHub.Controllers
                             {
                                 var converter = new HtmlToPdf();
 
+                                converter.Options.PdfPageSize = PdfPageSize.A4;
+                                converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+
+                                converter.Options.MarginTop = 5;
+                                converter.Options.MarginBottom = 5;
+                                converter.Options.MarginLeft = 5;
+                                converter.Options.MarginRight = 5;
+
+                                converter.Options.WebPageWidth = 794;
+                                converter.Options.WebPageHeight = 0;
+                                converter.Options.WebPageFixedSize = false;
+
+                                converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
+                                converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.NoAdjustment;
                                 singleDoc = string.IsNullOrWhiteSpace(baseUrl)
                                     ? converter.ConvertHtmlString(htmlContent)
                                     : converter.ConvertHtmlString(
