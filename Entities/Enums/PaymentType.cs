@@ -17,6 +17,8 @@ namespace CleanHub.Entities.Enums
         [Description("Каса Прими")]
         CashRegister,
         [Description("Порамнување")]
-        BalanceAdjustment
+        BalanceAdjustment,
+        [Description("Уплата од извршител")]
+        PaymentByExecutor
     }
 }

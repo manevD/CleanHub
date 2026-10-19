@@ -786,7 +786,7 @@ namespace CleanHub.Controllers
                         customer.Subscription -= (int)docEntity.TotalOutput.Value;
                         docEntity.PaymentStatus = PaymentStatus.Платено;
                         docEntity.PaymentType = PaymentType.Subscription;
-                        docEntity.Description = customer.Building.Name;
+                        docEntity.Description = "од Претплата за " + docEntity.ToDocument;
                         docEntity.PaymentDate = DateOnly.FromDateTime(DateTime.UtcNow);
                         _unitOfWork.Customers.Update(customer);
                     }
@@ -2109,6 +2109,25 @@ namespace CleanHub.Controllers
             var documentsToDelete = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
             if (documentsToDelete != null && documentsToDelete.Any())
             {
+                foreach (var docu in documentsToDelete)
+                {
+                    if (docu.PaymentStatus == (int)PaymentStatus.Платено)
+                    {
+                        var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == docu.CustomerId, inc => inc.Include(bu => bu.Building));
+                        if (customer != null)
+                        {
+                            if (customer.Subscription == null)
+                            {
+                                customer.Subscription = (int)docu.TotalOutput.Value;
+                            }
+                            if (customer.Subscription.HasValue)
+                            {
+                                customer.Subscription += (int)docu.TotalOutput.Value;
+                            }
+                            _unitOfWork.Customers.Update(customer);
+                        }
+                    }
+                }
                 _unitOfWork.Documents.DeleteRange(documentsToDelete);
                 await _unitOfWork.SaveChangesAsync();
                 var idsDoc = documentsToDelete.Select(d => d.Id.ToString()).ToList();
@@ -2120,8 +2139,9 @@ namespace CleanHub.Controllers
                     _context.SaveChanges();
                 }
                 var customerId = documentsToDelete?.FirstOrDefault()?.CustomerId;
-                var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
-                var building = customer?.Building;
+                var customerFirst = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
+
+                var building = customerFirst?.Building;
                 if (building != null)
                 {
                     TempData["SelectedBuildingId"] = building.Id;
