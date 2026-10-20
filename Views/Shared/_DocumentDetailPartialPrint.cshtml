@@ -102,6 +102,24 @@
         margin: 0 !important;
     }
 
+    /* CustomerInfo und Adress – schwarz, fett und größer */
+    .compact-customer-info .inv-customer-name,
+    .compact-customer-info .inv-email-address {
+        font-size: 13px !important;
+        line-height: 1.35 !important;
+        font-weight: 900 !important;
+        color: #000000 !important;
+        margin-bottom: 4px !important;
+    }
+
+    /* CustomerInfo und Adress im Rechnungsfooter */
+    .invoice-footer-compact .boxed p {
+        font-size: 14px !important;
+        line-height: 1.3 !important;
+        font-weight: 900 !important;
+        color: #000000 !important;
+    }
+
     .medium-small-text,
     .invoice-00001 .inv--product-table-section table {
         font-size: 10px !important;
@@ -329,7 +347,7 @@
                                                     </p>
 
                                                     <p class="inv-email-address">
-                                                        @Model?.Company?.Email
+                                                       martihigiena@gmail.com
                                                     </p>
 
                                                     <p class="inv-email-address">

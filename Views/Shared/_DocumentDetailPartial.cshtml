@@ -66,7 +66,23 @@
         padding: 3px;
         margin: 3px 0;
     }
+/* CustomerInfo und Adress – schwarz, fett und größer */
+.inv--head-section .col-sm-6.text-sm-end > p:nth-last-child(-n+2),
+.inv--footer .inv-customer-name,
+.inv--footer .inv-email-address {
+    font-size: 13px !important;
+    line-height: 1.35 !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+}
 
+/* Kundendaten im unteren Rechnungsbereich */
+.inv--footer .boxed p {
+    font-size: 14px !important;
+    line-height: 1.3 !important;
+    font-weight: 900 !important;
+    color: #000000 !important;
+}
     .boxed {
         border: 1px solid #000;
         padding: 4px;
@@ -466,7 +482,7 @@
                                             </div>
 
                                             <p>@Model?.Company?.Address</p>
-                                            <p>@Model?.Company?.Email</p>
+                                            <p>martihigiena@gmail.com</p>
                                             <p>@Model?.Company?.PhoneNumber</p>
                                             <p>ЕДБ: @Model?.Company?.VATID</p>
                                             <p>@Model?.Company?.IBAN</p>

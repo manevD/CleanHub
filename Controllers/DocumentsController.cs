@@ -452,33 +452,33 @@ namespace CleanHub.Controllers
                 documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
             }
 
-            var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == documentViewModel.CustomerId && x.PaymentStatus != 0);
-            if (debt != null && debt.Any())
+            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == documentViewModel.CustomerId));
+            var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == documentViewModel.CustomerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
+
+            var pobaruva = dataBookFinancial.Sum(x => x.Demands);
+
+            double dolzi = customerDocs
+                .Where(x => x.Date.HasValue && x.Date.Value > new DateOnly(2021, 1, 1))
+                .Sum(x => (double)(x.TotalOutput ?? 0));
+
+            if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)))
             {
-                var allParts = debt.OrderBy(x => x.Id).SelectMany(x => (x.ToDocument ?? string.Empty).Split(',', StringSplitOptions.RemoveEmptyEntries)).ToList();
-
-                var distinctExceptLast = allParts
-                    .Reverse<string>()
-                    .Skip(1)
-                    .Reverse()
-                    .Distinct()
-                    .ToList();
-
-                if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
-                {
-                    documentViewModel.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                }
-                else
-                {
-                    documentViewModel.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                }
+                dolzi += dataBookFinancial
+                    .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                    .Sum(x => x.Owes);
             }
 
-            var results = GetFilteredBookFinancials(1201, documentViewModel.Customer.BuildingId).ToList();
-            var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
-            var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
-            documentViewModel.TotalBuildingOwes = owes;
-            documentViewModel.TotalBuildingDemands = demands;
+            var saldo = pobaruva - dolzi;
+            if (dolzi > pobaruva)
+            {
+                documentViewModel.Debt = saldo.ToString();
+            }
+
+            //var results = GetFilteredBookFinancials(1201, documentViewModel.Customer.BuildingId).ToList();
+            //var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+            //var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+            //documentViewModel.TotalBuildingOwes = owes;
+            //documentViewModel.TotalBuildingDemands = demands;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);
         }
@@ -1386,49 +1386,69 @@ namespace CleanHub.Controllers
                             // ====================================================
                             // GET CUSTOMER DEBTS
                             // ====================================================
+                            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == document.CustomerId));
+                            var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == document.CustomerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
 
-                            var debtQuery = (
-      allDebts != null && allDebts.Any()
-          ? allDebts.Where(x =>
-              x.CustomerId == item.CustomerId &&
-              x.PaymentStatus != 0)
-          : _unitOfWork.Documents
-              .GetAll()
-              .Where(x =>
-                  x.CustomerId == item.CustomerId &&
-                  x.PaymentStatus != 0)
-  ).OrderBy(x => x.Id).ToList();
+                            var pobaruva = dataBookFinancial.Sum(x => x.Demands);
 
-                            // Последната сметка никогаш не се смета за заостанат долг
-                            var previousDebts = debtQuery
-                                .Take(Math.Max(0, debtQuery.Count - 1))
-                                .ToList();
+                            double dolzi = customerDocs
+                                .Where(x => x.Date.HasValue && x.Date.Value > new DateOnly(2021, 1, 1))
+                                .Sum(x => (double)(x.TotalOutput ?? 0));
 
-                            if (previousDebts.Any())
+                            if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)))
                             {
-                                var allParts = previousDebts
-                                    .SelectMany(x =>
-                                        (
-                                            x.ToDocument ??
-                                            x.DateReceived?.ToString("yyyy-MM") ??
-                                            string.Empty
-                                        )
-                                        .Split(',', StringSplitOptions.RemoveEmptyEntries))
-                                    .ToList();
-
-                                var distinctParts = allParts
-                                    .Distinct()
-                                    .ToList();
-
-                                document.Debt =
-                                    string.Join(",", distinctParts) +
-                                    " : " +
-                                    previousDebts.Sum(x => x.TotalOutput ?? 0);
+                                dolzi += dataBookFinancial
+                                    .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                                    .Sum(x => x.Owes);
                             }
-                            else
+
+                            var saldo = pobaruva - dolzi;
+                            if (dolzi > pobaruva)
                             {
-                                document.Debt = string.Empty;
+                                document.Debt = saldo.ToString();
                             }
+                            //                          var debtQuery = (
+                            //    allDebts != null && allDebts.Any()
+                            //        ? allDebts.Where(x =>
+                            //            x.CustomerId == item.CustomerId &&
+                            //            x.PaymentStatus != 0)
+                            //        : _unitOfWork.Documents
+                            //            .GetAll()
+                            //            .Where(x =>
+                            //                x.CustomerId == item.CustomerId &&
+                            //                x.PaymentStatus != 0)
+                            //).OrderBy(x => x.Id).ToList();
+
+                            //                          // Последната сметка никогаш не се смета за заостанат долг
+                            //                          var previousDebts = debtQuery
+                            //                              .Take(Math.Max(0, debtQuery.Count - 1))
+                            //                              .ToList();
+
+                            //                          if (previousDebts.Any())
+                            //                          {
+                            //                              var allParts = previousDebts
+                            //                                  .SelectMany(x =>
+                            //                                      (
+                            //                                          x.ToDocument ??
+                            //                                          x.DateReceived?.ToString("yyyy-MM") ??
+                            //                                          string.Empty
+                            //                                      )
+                            //                                      .Split(',', StringSplitOptions.RemoveEmptyEntries))
+                            //                                  .ToList();
+
+                            //                              var distinctParts = allParts
+                            //                                  .Distinct()
+                            //                                  .ToList();
+
+                            //                              document.Debt =
+                            //                                  string.Join(",", distinctParts) +
+                            //                                  " : " +
+                            //                                  previousDebts.Sum(x => x.TotalOutput ?? 0);
+                            //                          }
+                            //                          else
+                            //                          {
+                            //                              document.Debt = string.Empty;
+                            //                          }
                             // ====================================================
                             // COMPANY
                             // ====================================================
