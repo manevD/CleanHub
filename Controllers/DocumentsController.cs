@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using SelectPdf;
+using System.Data;
 using System.Net;
 using System.Net.Mail;
 using System.Text;
@@ -452,7 +453,13 @@ namespace CleanHub.Controllers
                 documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
             }
 
-            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == documentViewModel.CustomerId));
+            var utcToday = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c =>
+                c.CustomerId == documentViewModel.CustomerId &&
+                c.DateReceived.HasValue &&
+                c.DateReceived.Value < utcToday
+            ));
             var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == documentViewModel.CustomerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
 
             var pobaruva = dataBookFinancial.Sum(x => x.Demands);
@@ -1386,7 +1393,13 @@ namespace CleanHub.Controllers
                             // ====================================================
                             // GET CUSTOMER DEBTS
                             // ====================================================
-                            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == document.CustomerId));
+                            var utcToday = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c =>
+                                c.CustomerId == document.CustomerId &&
+                                c.DateReceived.HasValue &&
+                                c.DateReceived.Value < utcToday
+                            ));
                             var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == document.CustomerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
 
                             var pobaruva = dataBookFinancial.Sum(x => x.Demands);
@@ -1934,7 +1947,13 @@ namespace CleanHub.Controllers
                 var customer = customerId != 0 ? await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId) : null;
                 if (customer != null)
                 {
-                    var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c => c.CustomerId == customer.Id));
+                    var utcToday = DateOnly.FromDateTime(DateTime.UtcNow);
+
+                    var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c =>
+                        c.CustomerId == customerId &&
+                        c.DateReceived.HasValue &&
+                        c.DateReceived.Value < utcToday
+                    ));
                     var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == customerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
 
                     var pobaruva = dataBookFinancial.Sum(x => x.Demands);
