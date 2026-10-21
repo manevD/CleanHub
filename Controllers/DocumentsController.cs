@@ -2297,7 +2297,7 @@ namespace CleanHub.Controllers
                     {
                         InvoiceId = Constants.Recieve,
                         DocumentId = docEntity.Id,
-                        Demands = 0,
+                        Demands = docEntity!.TotalOutput!.Value!,
                         Owes = 0,
                         DocumentTypId = 4,
                         CustomerId = customerId,
