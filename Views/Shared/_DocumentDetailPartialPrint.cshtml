@@ -1,9 +1,12 @@
 @model CleanHub.ViewModels.DocumentViewModel
+@using CleanHub.Entities.Enums
 
 @{
     double summ = 0;
     double summDemands = 0;
     string result = "0";
+        int.TryParse(Model?.Debt, out var debt);
+
 }
 
 <link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" media="all" />
@@ -476,7 +479,7 @@
                                             {
                                                 <br />
                                                 <strong>
-                                                    Заостанат долг: @Model.Debt
+                                                Заостанат долг: @Math.Abs(debt)
                                                 </strong>
                                             }
                                         </div>
@@ -516,6 +519,7 @@
                                                     <div class="boxed">
                                                         <p class="mb-0">@Model?.Customer?.CustomerInfo</p>
                                                         <p class="mb-0">@Model?.Customer?.Adress</p>
+                                                        <p class="mb-0">@Model?.ToDocument</p>
                                                     </div>
                                                 </div>
 
@@ -535,11 +539,23 @@
                                                         Испратница-фактура бр: @Model?.Number
                                                     </p>
                                                     <p class="mb-1">
-                                                        Вкупно за наплата: @Model?.TotalOutput ден
+                                                        Вкупно за наплата: @Model?.TotalOutput ден со рок до @Model?.DateReceived
                                                     </p>
-                                                    <p class="mb-0">
-                                                        @Model?.ToDocument
-                                                    </p>
+                                            
+                                                        @if (!string.IsNullOrEmpty(Model?.Debt) &&
+                                                         Model?.PaymentStatus != (int)PaymentStatus.Платено)
+                                                    {
+                                                        int.TryParse(Model?.Debt, out var parsedDebt);
+
+                                                        <p class="mb-1">
+                                                            Заостанат долг: @Math.Abs(parsedDebt)
+                                                        </p>
+
+                                                        <p class="mb-1">
+                                                            Вкупно за плаќање: @((Model?.TotalOutput ?? 0) - parsedDebt)
+                                                        </p>
+                                                    }
+                                                    
                                                 </div>
 
                                             </div>

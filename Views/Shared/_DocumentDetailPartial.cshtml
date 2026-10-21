@@ -1,9 +1,11 @@
-﻿
+﻿@using CleanHub.Entities.Enums
+
 @model CleanHub.ViewModels.DocumentViewModel
 
 @{
     double summ = 0;
     double summDemands = 0;
+    int.TryParse(Model?.Debt, out var debt);
 }
 
 <link href="~/layouts/horizontal-light-menu/css/light/loader.css" rel="stylesheet" type="text/css" media="all" />
@@ -614,6 +616,8 @@
 
                                                 <p class="inv-email-address">
                                                     @Model?.Customer?.Adress
+                                                    <br />
+                                                    @Model?.ToDocument
                                                 </p>
                                             </div>
                                         </div>
@@ -635,13 +639,24 @@
                                                 </span>
                                                 <span>@Model?.Number</span>
                                             </p>
-
-                                            <p>
-                                                Вкупно за наплата:
-                                                @Model?.TotalOutput ден
+                                          
+                                            <p class="mb-1">
+                                                Вкупно за наплата: @Model?.TotalOutput ден со рок до @Model?.DateReceived
                                             </p>
+                                            @if (!string.IsNullOrEmpty(Model?.Debt) &&
+                                                          Model?.PaymentStatus != (int)PaymentStatus.Платено)
+                                            {
+                                                int.TryParse(Model?.Debt, out var parsedDebt);
 
-                                            <b>@Model?.ToDocument</b>
+                                                <p class="mb-1">
+                                                    Заостанат долг: @Math.Abs(parsedDebt)
+                                                </p>
+
+                                                <p class="mb-1">
+                                                    Вкупно за плаќање: @((Model?.TotalOutput ?? 0) - parsedDebt)
+                                                </p>
+                                            }
+                                          
                                         </div>
                                     </div>
                                 </div>
