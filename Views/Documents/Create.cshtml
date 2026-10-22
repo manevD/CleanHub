@@ -1,4 +1,4 @@
-﻿@using System.Text.RegularExpressions
+@using System.Text.RegularExpressions
 @model CleanHub.ViewModels.DocumentViewModel
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -697,19 +697,64 @@
         });
     </script>
     <script>
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", function () {
+            const form = document.querySelector('form[asp-action="Create"]') ||
+                         document.querySelector('.doc-container form');
+            const buttons = Array.from(document.querySelectorAll(".submit-btn"));
+            const actionTypeHidden = document.getElementById("actionTypeHidden");
 
-            const hidden = document.getElementById("actionTypeHidden");
+            if (!form || buttons.length === 0) return;
 
-            document.querySelectorAll(".submit-btn").forEach(btn => {
-                btn.addEventListener("click", function() {
-                    const hidden = document.getElementById("actionTypeHidden");
-                    if (hidden) {
-                        hidden.value = this.dataset.action;
+            let isSubmitting = false;
+            const originalLabels = new Map(buttons.map(btn => [btn, btn.innerText.trim()]));
+
+            // Запамети кое копче е избрано, пред да се блокираат двете.
+            buttons.forEach(btn => {
+                btn.addEventListener("click", function () {
+                    if (isSubmitting) return;
+                    if (actionTypeHidden) {
+                        actionTypeHidden.value = this.dataset.action || "";
                     }
                 });
             });
 
+            form.addEventListener("submit", function (event) {
+                if (isSubmitting) {
+                    event.preventDefault();
+                    return;
+                }
+
+                isSubmitting = true;
+
+                buttons.forEach(btn => {
+                    btn.disabled = true;
+                    btn.setAttribute("aria-disabled", "true");
+                    btn.classList.add("disabled");
+                    btn.innerText = "Се обработува...";
+                });
+
+                // Ако од некоја причина нема навигација/преземање, дозволи повторен обид.
+                window.setTimeout(function () {
+                    isSubmitting = false;
+                    buttons.forEach(btn => {
+                        btn.disabled = false;
+                        btn.removeAttribute("aria-disabled");
+                        btn.classList.remove("disabled");
+                        btn.innerText = originalLabels.get(btn);
+                    });
+                }, 60000);
+            });
+
+            // Кога browser-от ќе се врати на оваа страница, активирај ги копчињата.
+            window.addEventListener("pageshow", function () {
+                isSubmitting = false;
+                buttons.forEach(btn => {
+                    btn.disabled = false;
+                    btn.removeAttribute("aria-disabled");
+                    btn.classList.remove("disabled");
+                    btn.innerText = originalLabels.get(btn);
+                });
+            });
         });
     </script>
 

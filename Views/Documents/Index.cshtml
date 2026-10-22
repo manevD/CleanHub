@@ -1,4 +1,4 @@
-﻿@using System.Text.RegularExpressions
+@using System.Text.RegularExpressions
 @using CleanHub.Entities.Enums
 @using CleanHub.Extensions
 @using CleanHub.ViewModels
@@ -684,46 +684,80 @@
         });
     </script>
 <script>
-    document.getElementById("createPaymentForm").addEventListener("submit", function (e) {
-        e.preventDefault();
+    const createPaymentForm = document.getElementById("createPaymentForm");
 
-        const formData = new FormData(this);
+    if (createPaymentForm) {
+        let isSaving = false;
 
-        fetch('/Documents/CreateBookFinancial', {
-            method: 'POST',
-            body: formData
-        })
-        .then(async response => {
+        createPaymentForm.addEventListener("submit", async function (e) {
+            e.preventDefault();
 
-            if (response.ok) {
+            // Спречи двоен клик / повторно испраќање додека се зачувува
+            if (isSaving) return;
 
-                const modalElement = document.getElementById('createPaymentModal');
-                const modal = bootstrap.Modal.getInstance(modalElement);
+            if (!this.checkValidity()) {
+                this.reportValidity();
+                return;
+            }
 
-                if (modal) {
-                    modal.hide();
+            isSaving = true;
+
+            const submitButton = this.querySelector('button[type="submit"]');
+            const originalText = submitButton ? submitButton.textContent : "Креирај плаќање";
+
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.textContent = "Се зачувува...";
+            }
+
+            try {
+                const formData = new FormData(this);
+
+                const response = await fetch('/Documents/CreateBookFinancial', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    const modalElement = document.getElementById("createPaymentModal");
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+
+                    // Затвори ја формата само откако серверот ќе потврди успешно зачувување
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    this.reset();
+
+                    // Освежи ја листата; корисникот може повторно да избере „Креирај плаќање“
+                    window.location.reload();
+                    return;
                 }
 
-                window.location.reload();
+                let message = "Се појави грешка при зачувување на плаќањето.";
 
-            } else {
+                try {
+                    const result = await response.json();
+                    message = result.message || message;
+                } catch {
+                    // Одговорот не е JSON; користи ја стандардната порака
+                }
 
-                const result = await response.json();
+                showSaldoErrorModal(message);
+            } catch (error) {
+                console.error("Error:", error);
+                showSaldoErrorModal("Грешка во конекцијата.");
+            } finally {
+                // Ако зачувувањето не успеало, дозволи повторен обид
+                isSaving = false;
 
-                showSaldoErrorModal(
-                    result.message || "Се појави грешка при зачувување на плаќањето."
-                );
+                if (submitButton) {
+                    submitButton.disabled = false;
+                    submitButton.textContent = originalText;
+                }
             }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-
-            showSaldoErrorModal(
-                "Грешка во конекцијата."
-            );
         });
-    });
-
+    }
 
     function showSaldoErrorModal(message) {
 

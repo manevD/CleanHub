@@ -135,12 +135,26 @@
         table-layout: auto !important;
     }
 
+    /* Books / артикли – поголеми букви */
+    .invoice-00001 .inv--product-table-section table,
     .invoice-00001 .inv--product-table-section th,
     .invoice-00001 .inv--product-table-section td {
-        padding: 3px 5px !important;
-        font-size: 10px !important;
-        line-height: 1.2 !important;
+        font-size: 12px !important;
+    }
+
+    .invoice-00001 .inv--product-table-section th,
+    .invoice-00001 .inv--product-table-section td {
+        padding: 4px 5px !important;
+        line-height: 1.3 !important;
         vertical-align: middle !important;
+    }
+
+    /* Сума за наплата – поголема и подебела */
+    .invoice-total-payment {
+        font-size: 15px !important;
+        line-height: 1.35 !important;
+        font-weight: 900 !important;
+        color: #000 !important;
     }
 
     .invoice-00001 .inv--additional-notes {
@@ -451,7 +465,7 @@
                                                     <tr>
                                                         <td colspan="4"></td>
                                                         <td class="text-end">
-                                                            <strong>
+                                                            <strong class="invoice-total-payment">
                                                                 За наплата: @(Model?.TotalOutput ?? 0)
                                                             </strong>
                                                         </td>
@@ -551,7 +565,7 @@
                                                             Заостанат долг: @Math.Abs(parsedDebt)
                                                         </p>
 
-                                                        <p class="mb-1">
+                                                        <p class="mb-1 invoice-total-payment">
                                                             Вкупно за плаќање: @((Model?.TotalOutput ?? 0) - parsedDebt)
                                                         </p>
                                                     }

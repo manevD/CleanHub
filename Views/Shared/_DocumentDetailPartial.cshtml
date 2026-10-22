@@ -1,4 +1,4 @@
-﻿@using CleanHub.Entities.Enums
+@using CleanHub.Entities.Enums
 
 @model CleanHub.ViewModels.DocumentViewModel
 
@@ -140,11 +140,32 @@
         overflow-wrap: anywhere;
     }
 
-    /* Табела со артикли */
+    /* Табела со артикли – поголеми букви */
     .invoice-00001 .inv--customer-detail-section table {
         width: 100%;
         margin-bottom: 5px;
         border-collapse: collapse;
+        font-size: 12px !important;
+    }
+
+    .invoice-00001 .inv--customer-detail-section table th,
+    .invoice-00001 .inv--customer-detail-section table td {
+        font-size: 12px !important;
+        line-height: 1.35 !important;
+    }
+
+    .payable-total {
+        font-size: 15px !important;
+        font-weight: 900 !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
+    }
+
+    .payable-total-main {
+        font-size: 14px !important;
+        font-weight: 900 !important;
+        line-height: 1.4 !important;
+        color: #000 !important;
     }
 
     .invoice-00001 .inv--customer-detail-section th,
@@ -514,7 +535,7 @@
 
                                 <!-- АРТИКЛИ -->
                                 <div class="inv--detail-section inv--customer-detail-section compact-section medium-small-text">
-                                    <table class="table medium-small-text">
+                                    <table class="table medium-small-text article-table">
                                         <thead>
                                             <tr>
                                                 <th>Артикал</th>
@@ -547,7 +568,7 @@
                                             <tr>
                                                 <td colspan="4"></td>
                                                 <td class="text-end">
-                                                    <strong>
+                                                    <strong class="payable-total-main">
                                                         За наплата: @Model?.TotalOutput
                                                     </strong>
                                                 </td>
@@ -640,7 +661,7 @@
                                                 <span>@Model?.Number</span>
                                             </p>
                                           
-                                            <p class="mb-1">
+                                            <p class="mb-1 payable-total-main">
                                                 Вкупно за наплата: @Model?.TotalOutput ден со рок до @Model?.DateReceived
                                             </p>
                                             @if (!string.IsNullOrEmpty(Model?.Debt) &&
@@ -652,7 +673,7 @@
                                                     Заостанат долг: @Math.Abs(parsedDebt)
                                                 </p>
 
-                                                <p class="mb-1">
+                                                <p class="mb-1 payable-total">
                                                     Вкупно за плаќање: @((Model?.TotalOutput ?? 0) - parsedDebt)
                                                 </p>
                                             }
