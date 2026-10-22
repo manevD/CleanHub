@@ -38,26 +38,22 @@ namespace CleanHub.Controllers
         }
         // GET: Customers
         [Route("Станари")]
-        public async Task<IActionResult> Index([FromServices] IMemoryCache cache)
+        public async Task<IActionResult> Index()
         {
-            var customers = await cache.GetOrCreateAsync("Customers", async entry =>
-            {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10);
 
-                return await _unitOfWork.Customers
-                    .Query()
-                    .Where(x => !x.Hide)
-                    .Select(c => new CustomerViewModel
-                    {
-                        Id = c.Id,
-                        CustomerInfo = c.CustomerInfo ?? string.Empty,
-                        Email = c.Email,
-                        Subscription = c.Subscription ?? 0,
-                        PhoneNumber = c.PhoneNumber,
-                        Inactive = c.Inactive ?? false,
-                        Adress = c.Adress
-                    }).ToListAsync();
-            });
+            var customers = await _unitOfWork.Customers
+                .Query()
+                .Where(x => !x.Hide)
+                .Select(c => new CustomerViewModel
+                {
+                    Id = c.Id,
+                    CustomerInfo = c.CustomerInfo ?? string.Empty,
+                    Email = c.Email,
+                    Subscription = c.Subscription ?? 0,
+                    PhoneNumber = c.PhoneNumber,
+                    Inactive = c.Inactive ?? false,
+                    Adress = c.Adress
+                }).ToListAsync();
 
             return View(customers);
         }
@@ -148,6 +144,7 @@ namespace CleanHub.Controllers
 
             return View(customer);
         }
+
         // POST: customer/Create
         // To protect from overposting attacks, enable the specific properties you want to bind to.
         // For more details, see http://go.microsoft.com/fwlink/?LinkId=317598.
@@ -156,22 +153,44 @@ namespace CleanHub.Controllers
         {
             if (ModelState.IsValid)
             {
+                var customerInfo = customer.CustomerInfo?.Trim();
+
+                var customers = await _unitOfWork.Customers.GetAllAsync(
+                    query => query.Where(x =>
+                        x.CustomerInfo.ToLower() == customerInfo!.ToLower())
+                );
+
+                if (customers.Any())
+                {
+                    ModelState.AddModelError(
+                        nameof(customer.CustomerInfo),
+                        "Станарот со тоа име веќе постои");
+
+                    PopulateViewData(customer.BuildingId, customer.ActivityId);
+                    return View(customer);
+                }
+
                 var customerEntity = App.FullMapper.Map<Customer>(customer);
+                customerEntity.CustomerInfo = customerInfo;
                 customerEntity.Inactive = false;
+
                 _unitOfWork.Customers.Add(customerEntity);
                 await _unitOfWork.SaveChangesAsync();
+
                 var partner = new PartneriTest
                 {
                     PartnerID = customerEntity.Id,
                     parAdresa = customerEntity.Adress,
-                    Partner = customerEntity.CustomerInfo,
+                    Partner = customerEntity.CustomerInfo
                 };
+
                 _context.PartneriTest.Add(partner);
-                _context.SaveChanges();
+                await _context.SaveChangesAsync();
+
                 return RedirectToAction(nameof(Index));
             }
-            PopulateViewData(customer.BuildingId, customer.ActivityId);
 
+            PopulateViewData(customer.BuildingId, customer.ActivityId);
             return View(customer);
         }
 
@@ -312,12 +331,24 @@ namespace CleanHub.Controllers
             if (id == null)
                 return NotFound();
 
-            var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == id);
+            var customer = await _unitOfWork.Customers.GetByIdAsync(c => c.Id == id, cu => cu.Include(cust => cust.BookFinancials).Include(cus => cus.Documents));
+
             if (customer == null)
                 return NotFound();
 
             try
             {
+                if (customer.Documents != null && customer.Documents.Any())
+                {
+                    var documents = customer.Documents;
+                    _unitOfWork.Documents.DeleteRange(documents);
+                }
+                if (customer.BookFinancials != null && customer.BookFinancials.Any())
+                {
+                    var bookFinancials = customer.BookFinancials;
+                    _unitOfWork.BookFinancials.DeleteRange(bookFinancials);
+                }
+
                 _unitOfWork.Customers.Delete(customer);
                 await _unitOfWork.SaveChangesAsync();
                 var partnerToDelete = _context.PartneriTest.FirstOrDefault(x => x.PartnerID == id);
