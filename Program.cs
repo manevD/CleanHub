@@ -42,10 +42,15 @@ namespace CleanHub
             // DbContexts
             // ----------------------------------------------------
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseSqlServer(
+              options.UseSqlServer(
                     connectionString,
-                    sql => sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery)
+                    sql =>
+                    {
+                        sql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
+                        sql.CommandTimeout(120);
+                    }
                 ));
+
 
             builder.Services.AddDbContext<ApplicationDbMartiContext>(options =>
                 options.UseMySql(

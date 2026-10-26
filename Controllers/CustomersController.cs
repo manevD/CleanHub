@@ -173,6 +173,7 @@ namespace CleanHub.Controllers
                 var customerEntity = App.FullMapper.Map<Customer>(customer);
                 customerEntity.CustomerInfo = customerInfo;
                 customerEntity.Inactive = false;
+                customerEntity.ActiveDatum = customer.ActiveDatum;
 
                 _unitOfWork.Customers.Add(customerEntity);
                 await _unitOfWork.SaveChangesAsync();

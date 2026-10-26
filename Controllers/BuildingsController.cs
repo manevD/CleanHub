@@ -71,7 +71,7 @@ namespace CleanHub.Controllers
                     })
                     .ToList();
 
-            if (buildingViewModel != null &&  buildingViewModel.Customers.Any())
+            if (buildingViewModel != null && buildingViewModel.Customers.Any())
             {
                 var results = GetFilteredBookFinancials(1201, id.Value).ToList();
                 var totalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
@@ -126,6 +126,20 @@ namespace CleanHub.Controllers
 
             if (ModelState.IsValid)
             {
+                // Prevent duplicate building names
+                var nameExists = _unitOfWork.Buildings
+                    .GetAll()
+                    .Any(x => x.Name.Trim().ToLower() == building.Name.Trim().ToLower());
+
+                if (nameExists)
+                {
+                    ModelState.AddModelError(
+                        nameof(building.Name),
+                        "Веќе постои објект со тоа име.");
+
+                    return View(building);
+                }
+
                 var buildingEntity = App.FullMapper.Map<Building>(building);
 
                 var customer = new Customer
@@ -140,9 +154,13 @@ namespace CleanHub.Controllers
 
                 _unitOfWork.Customers.Add(customer);
                 _unitOfWork.Buildings.Add(buildingEntity);
+
                 await _unitOfWork.SaveChangesAsync();
+
                 buildingEntity.CustomerRefId = customer.Id;
-                 await _unitOfWork.SaveChangesAsync();
+
+                await _unitOfWork.SaveChangesAsync();
+
                 HttpContext.Session.Remove("Buildings");
 
                 return RedirectToAction(nameof(Index));
@@ -295,7 +313,7 @@ namespace CleanHub.Controllers
                     var document = App.FullMapper.Map<DocumentViewModel>(await _unitOfWork.Documents.GetByIdAsync(
                         x => x.CustomerId == item.Id && x.Date!.Value.Year == year && x.Date!.Value.Month == month,
                         inc => inc.Include(x => x.Customer)
-                            .Include(x => x.Books.Where(x=>!x.Hide))));
+                            .Include(x => x.Books.Where(x => !x.Hide))));
                     if (document == null)
                     {
                         RedirectToAction(nameof(Index));

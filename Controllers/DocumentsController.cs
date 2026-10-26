@@ -739,18 +739,18 @@ namespace CleanHub.Controllers
 
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
                 var activeCustomers = building.Customers
-                  .Where(x => x.Inactive != true && x.Hide != true)
-                  .OrderBy(x =>
-                  {
-                      var match = System.Text.RegularExpressions.Regex.Match(
-                          x.CustomerInfo ?? "",
-                          @"ст\.\s*(\d+)",
-                          System.Text.RegularExpressions.RegexOptions.IgnoreCase);
+    .Where(x => x.Inactive != true && x.Hide != true)
+    .OrderBy(x =>
+    {
+        var match = System.Text.RegularExpressions.Regex.Match(
+            x.CustomerInfo ?? "",
+            @"\d+");
 
-                      return match.Success
-                          ? int.Parse(match.Groups[1].Value)
-                          : int.MaxValue;
-                  }).ToList();
+        return match.Success
+            ? int.Parse(match.Value)
+            : int.MaxValue;
+    })
+    .ToList();
                 var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
 
                 var exists = await _unitOfWork.Documents.AnyAsync(
