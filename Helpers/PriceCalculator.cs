@@ -73,10 +73,10 @@ namespace CleanHub.Helpers
                     notes.Contains(
                         "потрошена електрична енергија",
                         StringComparison.OrdinalIgnoreCase)
-                    ||
-                    notes.Contains(
-                        "комунална такса за јавно осветлување",
-                        StringComparison.OrdinalIgnoreCase)
+                    //||
+                    //notes.Contains(
+                    //    "комунална такса за јавно осветлување",
+                    //    StringComparison.OrdinalIgnoreCase)
                     ||
                      notes.Contains(
                         "одржување на лифт",
