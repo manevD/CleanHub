@@ -52,10 +52,10 @@ namespace CleanHub.Infrastructure.Data
             //modelBuilder.Entity<Activity>().ToTable("Activity", t => t.ExcludeFromMigrations());
         }
 
-        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-        // => optionsBuilder.UseSqlServer("Data Source=SQL6034.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!;Encrypt=True;TrustServerCertificate=True;");
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-            => optionsBuilder.UseSqlServer(
-        "Server=.\\SQL2025;Database=db_aae56c_2025martitest;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
+         => optionsBuilder.UseSqlServer("Data Source=SQL6034.site4now.net;Initial Catalog=db_aae56c_2025martitest;User Id=db_aae56c_2025martitest_admin;Password=Hallo123!;Encrypt=True;TrustServerCertificate=True;");
+        //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+        //    => optionsBuilder.UseSqlServer(
+        //"Server=.\\SQL2025;Database=db_aae56c_2025martitest;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
     }
 }
