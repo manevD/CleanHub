@@ -76,7 +76,13 @@
                                                         <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
                                                     </div>
                                                 </div>
-
+                                                <div class="col-md-6">
+    <div class="form-group">
+        <label asp-for="OrderNumber">Број за сортирање</label>
+        <input asp-for="OrderNumber" type="number" min="0" max="255" class="form-control mb-3" id="OrderNumber" placeholder="Број за сортирање" />
+        <span asp-validation-for="OrderNumber" class="text-danger"></span>
+    </div>
+</div>
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Опис</label>

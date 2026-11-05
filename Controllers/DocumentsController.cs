@@ -738,19 +738,7 @@ namespace CleanHub.Controllers
                     return NotFound("Зградата не е пронајдена.");
 
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
-                var activeCustomers = building.Customers
-    .Where(x => x.Inactive != true && x.Hide != true)
-    .OrderBy(x =>
-    {
-        var match = System.Text.RegularExpressions.Regex.Match(
-            x.CustomerInfo ?? "",
-            @"\d+");
-
-        return match.Success
-            ? int.Parse(match.Value)
-            : int.MaxValue;
-    })
-    .ToList();
+                var activeCustomers = building.Customers.Where(x => x.Inactive != true && x.Hide != true).OrderBy(x => x.OrderNumber).ToList();
                 var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
 
                 var exists = await _unitOfWork.Documents.AnyAsync(

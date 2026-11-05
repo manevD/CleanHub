@@ -7,6 +7,7 @@ namespace CleanHub.ViewModels
         public int Id { get; set; }
 
         public string CustomerInfo { get; set; }
+        public int OrderNumber { get; set; }
 
         public string? Adress { get; set; }
         public int? Subscription { get; set; }
@@ -21,7 +22,7 @@ namespace CleanHub.ViewModels
         public string? PartnerOpis { get; set; }
         public bool Garage { get; set; }
         public bool Hide { get; set; }
-        
+
         public string? SubscriptionDescription { get; set; }
         public bool Inactive { get; set; }
 

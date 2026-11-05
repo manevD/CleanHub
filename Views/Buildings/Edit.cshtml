@@ -1,10 +1,16 @@
-﻿@model CleanHub.ViewModels.BuildingViewModel
+@model CleanHub.ViewModels.BuildingViewModel
 
 @{
     ViewData["Title"] = "Измени Објект";
 }
 
 <hr />
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
 <div class="tab-content" id="animateLineContent-4" style=" max-height: 900px;">
     <div class="tab-pane fade show active" id="animated-underline-home" role="tabpanel" aria-labelledby="animated-underline-home-tab">
         <div class="row">
@@ -18,38 +24,34 @@
                         <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
                             <div class="form">
                                 <div class="row">
-                                    <div class="col-xl-10 col-lg-12 col-md-8 mt-md-0 mt-4">
-                                        <div class="form">
-                                            <div class="row">
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Име на Објект</label>
-                                                        <input asp-for="Name" class="form-control form-control-sm" />
-                                                        <span asp-validation-for="Name" class="text-danger"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Резервен фонд</label>
-                                                        <input asp-for="ReserveFund" class="form-control form-control-sm" />
-                                                        <span asp-validation-for="ReserveFund" class="text-danger"></span>
-                                                    </div>
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <div class="form-group">
-                                                        <label>Жиро Сметка</label>
-                                                        <input asp-for="BankAccount" class="form-control form-control-sm" />
-                                                        <span asp-validation-for="BankAccount" class="text-danger"></span>
-                                                    </div>
-                                                </div>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Име на Објект</label>
+                                            <input asp-for="Name" class="form-control form-control-sm" />
+                                            <span asp-validation-for="Name" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Резервен фонд</label>
+                                            <input asp-for="ReserveFund" class="form-control form-control-sm" />
+                                            <span asp-validation-for="ReserveFund" class="text-danger"></span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label>Жиро Сметка</label>
+                                            <input asp-for="BankAccount" class="form-control form-control-sm" />
+                                            <span asp-validation-for="BankAccount" class="text-danger"></span>
                                         </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
+
                     <hr class="my-4">
+
                     <div id="buildingProductsContainer">
                         @for (var i = 0; i < Model.BuildingProducts.Count; i++)
                         {
@@ -103,8 +105,14 @@
                             </div>
                         }
                     </div>
-                    <div class="form-group d-flex justify-content-between mt-3">
+
+                    <div class="form-group d-flex gap-2 mt-3">
                         <input type="submit" value="Зачувај" class="btn btn-primary" />
+                        <button type="button" class="btn btn-outline-primary"
+                                data-bs-toggle="modal" data-bs-target="#orderNumbersModal"
+                                data-toggle="modal" data-target="#orderNumbersModal">
+                            Додади броеви за сортирање
+                        </button>
                     </div>
                 </div>
             </form>
@@ -112,6 +120,55 @@
     </div>
 </div>
 
+@* ===== Модал: броеви за сортирање (надвор од Edit формата) ===== *@
+<div class="modal fade" id="orderNumbersModal" tabindex="-1" aria-labelledby="orderNumbersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <form asp-action="UpdateOrderNumbers" asp-route-id="@Model.Id" method="post" class="modal-content">
+            @Html.AntiForgeryToken()
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="orderNumbersModalLabel">Броеви за сортирање – @Model.Name</h5>
+            </div>
+
+            <div class="modal-body" style="max-height: 60vh; overflow-y: auto;">
+                @if (Model.Customers != null && Model.Customers.Any())
+                {
+                    <table class="table table-sm table-striped align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th>Станар</th>
+                                <th style="width:110px">Бр.</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var c in Model.Customers.OrderBy(x => x.OrderNumber).ThenBy(x => x.CustomerInfo))
+                            {
+                                <tr>
+                                    <td>@c.CustomerInfo</td>
+                                    <td>
+                                        <input type="number" min="0" max="9999"
+                                               name="orderNumbers[@c.Id]"
+                                               value="@c.OrderNumber"
+                                               class="form-control form-control-sm" />
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">Нема станари во овој објект.</p>
+                }
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Откажи</button>
+                <button type="submit" class="btn btn-primary">Зачувај</button>
+            </div>
+        </form>
+    </div>
+</div>
 
 @section Scripts {
     @{

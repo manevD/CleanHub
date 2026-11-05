@@ -184,13 +184,37 @@ namespace CleanHub.Controllers
                 UnitOfMeasurement = "бр."
             }, 4).ToList();
         }
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateOrderNumbers(int id, Dictionary<int, int> orderNumbers)
+        {
+            if (orderNumbers == null || orderNumbers.Count == 0)
+                return RedirectToAction(nameof(Edit), new { id });
+
+            // Само станари од ОВАА зграда
+            var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(id);
+
+            foreach (var customer in customers)
+            {
+                if (orderNumbers.TryGetValue(customer.Id, out var newNumber) && customer.OrderNumber != newNumber)
+                {
+                    customer.OrderNumber = newNumber;
+                    _unitOfWork.Customers.Update(customer);
+                }
+            }
+
+            await _unitOfWork.SaveChangesAsync();
+            HttpContext.Session.Remove("Buildings");
+            TempData["Success"] = "Броевите за сортирање се зачувани.";
+
+            return RedirectToAction(nameof(Edit), new { id });
+        }
         // GET: Buildings/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
             if (id == null) return NotFound();
 
-            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id, inc => inc
-                .Include(x => x.BuildingProducts));
+            var buildingEntity = await _unitOfWork.Buildings.GetByIdAsync(c => c.Id == id, inc => inc.Include(x => x.BuildingProducts).Include(x => x.Customers.Where(c => !c.Hide)));
 
             if (buildingEntity == null) return NotFound();
             var building = App.FullMapper.Map<BuildingViewModel>(buildingEntity);
