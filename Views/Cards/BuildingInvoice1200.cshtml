@@ -89,18 +89,7 @@
                         var counter = 0;
                         double sumPobaruva = 0;
                         float sumDolzi = 0;
-                        var orderedCustomers = Model.OrderBy(c =>
-                                                              {
-                                                                  var match = Regex.Match(
-                                                                      c.CustomerInfo ?? "",
-                                                                      @"\d+"
-                                                                  );
-
-                                                                  return match.Success
-                                                                      ? int.Parse(match.Value)
-                                                                      : int.MaxValue;
-                                                              })
-                                                              .ToList();
+                        var orderedCustomers = Model.OrderBy(c=>c.OrderNumber).ToList();
                         @foreach (var customer in orderedCustomers)
                         {
                             var docs = customer.Documents
