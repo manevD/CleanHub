@@ -1929,8 +1929,30 @@ namespace CleanHub.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateBookFinancial(PaymentType PaymentType, DateTime PaymentDate, string PaymentNumber, string PaymentDescription, int Total, int customerId)
         {
+            if (PaymentType == PaymentType.Owes)
+            {
+                var bookFinancialMinus = new BookFinancial()
+                {
+                    CustomerId = customerId,
+                    Description = PaymentDescription,
+                    Demands = 0,
+                    Owes = Total,
+                    PaymentType = PaymentType,
+                    PaymentDate = DateOnly.FromDateTime(PaymentDate),
+                    InvoiceId = (int)InvoiceTyp.Recieve,
+                    DocumentTypId = 4,
+                    Status = PaymentStatus.Неплатено,
+                    Time = DateTime.UtcNow,
+                    DatumF = DateOnly.FromDateTime(PaymentDate),
+                    DateTimeChanges = DateTime.UtcNow
+                };
+                _unitOfWork.BookFinancials.Add(bookFinancialMinus);
 
-            if (PaymentType == PaymentType.Subscription)
+                await _unitOfWork.SaveChangesAsync();
+
+                return Ok(new { success = true, message = "Успешно зачувано книжење!" });
+            }
+            else if (PaymentType == PaymentType.Subscription)
             {
                 var customer = customerId != 0 ? await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId) : null;
                 if (customer != null)

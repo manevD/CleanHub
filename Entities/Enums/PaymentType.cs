@@ -19,6 +19,8 @@ namespace CleanHub.Entities.Enums
         [Description("Порамнување")]
         BalanceAdjustment,
         [Description("Уплата од извршител")]
-        PaymentByExecutor
+        PaymentByExecutor,
+        [Description("Долг")]
+        Owes
     }
 }
