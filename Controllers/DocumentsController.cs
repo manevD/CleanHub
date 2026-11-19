@@ -1470,10 +1470,10 @@ namespace CleanHub.Controllers
                             // ====================================================
                             // SEND EMAIL
                             // ====================================================
-
-                            if (send &&
+                            var sendToMail = send &&
                                 !string.IsNullOrWhiteSpace(
-                                    document.Customer?.Email))
+                                    document.Customer?.Email);
+                            if (sendToMail)
                             {
                                 try
                                 {
@@ -1533,75 +1533,83 @@ namespace CleanHub.Controllers
                             // ====================================================
                             // CONVERT HTML -> PDF
                             // ====================================================
-
-                            PdfDocument singleDoc = null;
-
-                            try
+                            if (!sendToMail)
                             {
-                                var converter = new HtmlToPdf();
 
-                                converter.Options.PdfPageSize = PdfPageSize.A4;
-                                converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
 
-                                converter.Options.MarginTop = 5;
-                                converter.Options.MarginBottom = 5;
-                                converter.Options.MarginLeft = 5;
-                                converter.Options.MarginRight = 5;
+                                PdfDocument singleDoc = null;
 
-                                converter.Options.WebPageWidth = 794;
-                                converter.Options.WebPageHeight = 0;
-                                converter.Options.WebPageFixedSize = false;
-
-                                converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
-                                converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.NoAdjustment;
-                                singleDoc = string.IsNullOrWhiteSpace(baseUrl)
-                                    ? converter.ConvertHtmlString(htmlContent)
-                                    : converter.ConvertHtmlString(
-                                        htmlContent,
-                                        baseUrl);
-
-                                if (singleDoc == null)
-                                {
-                                    throw new Exception(
-                                        $"SelectPdf returned null PdfDocument. " +
-                                        $"DocumentId={item.Id}");
-                                }
-
-                                if (singleDoc.Pages == null ||
-                                    singleDoc.Pages.Count == 0)
-                                {
-                                    throw new Exception(
-                                        $"SelectPdf generated 0 pages. " +
-                                        $"DocumentId={item.Id}");
-                                }
-
-                                // =================================================
-                                // IMPORTANT
-                                // Append entire document instead of AddPage()
-                                // =================================================
-
-                                endDoc.Append(singleDoc);
-
-                                singleDoc = null;
-                            }
-                            catch (Exception pdfEx)
-                            {
-                                throw new Exception(
-                                    $"ERROR converting HTML to PDF. " +
-                                    $"DocumentId={item.Id}, " +
-                                    $"DocumentNumber={item.Number}, " +
-                                    $"HTML length={htmlContent.Length}, " +
-                                    $"BaseUrl={baseUrl}",
-                                    pdfEx);
-                            }
-                            finally
-                            {
                                 try
                                 {
-                                    singleDoc?.Close();
+                                    var converter = new HtmlToPdf();
+
+                                    converter.Options.PdfPageSize = PdfPageSize.A4;
+                                    converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
+
+                                    converter.Options.MarginTop = 5;
+                                    converter.Options.MarginBottom = 5;
+                                    converter.Options.MarginLeft = 5;
+                                    converter.Options.MarginRight = 5;
+
+                                    converter.Options.WebPageWidth = 794;
+                                    converter.Options.WebPageHeight = 0;
+                                    converter.Options.WebPageFixedSize = false;
+
+                                    converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
+                                    converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.NoAdjustment;
+                                    singleDoc = string.IsNullOrWhiteSpace(baseUrl)
+                                        ? converter.ConvertHtmlString(htmlContent)
+                                        : converter.ConvertHtmlString(
+                                            htmlContent,
+                                            baseUrl);
+
+                                    if (singleDoc == null)
+                                    {
+                                        throw new Exception(
+                                            $"SelectPdf returned null PdfDocument. " +
+                                            $"DocumentId={item.Id}");
+                                    }
+
+                                    if (singleDoc.Pages == null ||
+                                        singleDoc.Pages.Count == 0)
+                                    {
+                                        throw new Exception(
+                                            $"SelectPdf generated 0 pages. " +
+                                            $"DocumentId={item.Id}");
+                                    }
+
+                                    // =================================================
+                                    // IMPORTANT
+                                    // Append entire document instead of AddPage()
+                                    // =================================================
+
+                                    if (true)
+                                    {
+
+                                    }
+                                    endDoc.Append(singleDoc);
+
+                                    singleDoc = null;
                                 }
-                                catch
+                                catch (Exception pdfEx)
                                 {
+                                    throw new Exception(
+                                        $"ERROR converting HTML to PDF. " +
+                                        $"DocumentId={item.Id}, " +
+                                        $"DocumentNumber={item.Number}, " +
+                                        $"HTML length={htmlContent.Length}, " +
+                                        $"BaseUrl={baseUrl}",
+                                        pdfEx);
+                                }
+                                finally
+                                {
+                                    try
+                                    {
+                                        singleDoc?.Close();
+                                    }
+                                    catch
+                                    {
+                                    }
                                 }
                             }
                         }

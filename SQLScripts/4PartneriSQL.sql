@@ -9,6 +9,12 @@ BEGIN TRY
      --vazno inace nema da gi dava stanarite pri kreiranje na smetka !!
       update Customers set ActiveDatum = '2025-01-31' where Inactive = 0 and ActiveDatum is null
       update Customers set Inactive = 0 where Inactive is null
+      UPDATE Customers
+SET OrderNumber = ISNULL(TRY_CAST(
+        CASE WHEN PATINDEX('%[0-9]%', CustomerInfo) > 0 THEN
+            LEFT(SUBSTRING(CustomerInfo, PATINDEX('%[0-9]%', CustomerInfo), 50),
+                 PATINDEX('%[^0-9]%', SUBSTRING(CustomerInfo, PATINDEX('%[0-9]%', CustomerInfo), 50) + 'x') - 1)
+        END AS INT), 255);
     COMMIT TRANSACTION;
 	SET IDENTITY_INSERT Customers OFF;
     PRINT 'Data inserted successfully.';

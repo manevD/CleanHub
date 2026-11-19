@@ -351,7 +351,7 @@
                                                 <div class="form-group mb-0">
                                                     @if (@Model?.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
                                                     {
-                                                        var orderedCustomers = Model.Building.Customers.OrderBy(c =>c.OrderNumber).ToList();
+                                                        var orderedCustomers = Model.Building.Customers.OrderBy(c => c.OrderNumber).ToList();
                                                         @foreach (var customer in orderedCustomers)
                                                         {
                                                             <h6>@customer.CustomerInfo</h6>
@@ -377,15 +377,16 @@
                                     <div class="invoice-action-btn">
                                         <div class="row">
                                             <div class="col-xl-12 col-md-4">
-                                                <input type="hidden" id="actionTypeHidden" name="actionType" />
-                                                <button type="submit" formnovalidate
-                                                        data-action="print"
+                                                <button type="submit"
+                                                        name="actionType"
+                                                        value="print"
                                                         class="btn btn-primary submit-btn">
                                                     Зачувај и принтај
                                                 </button>
 
                                                 <button type="submit"
-                                                        data-action="send"
+                                                        name="actionType"
+                                                        value="send"
                                                         class="btn btn-primary submit-btn">
                                                     Зачувај, прати и принтај
                                                 </button>
@@ -422,6 +423,51 @@
     @{
         await Html.RenderPartialAsync("_ValidationScriptsPartial");
     }
+
+    <!-- ===================== НОВО: поправка за копчињата ===================== -->
+    <script>
+        // 1) jQuery Validate да прифаќа запирка (12,50) како број.
+        //    Без ова валидацијата тивко го блокира submit-от.
+        if (window.jQuery && $.validator) {
+            $.validator.methods.number = function (value, element) {
+                return this.optional(element) || /^-?\d+([.,]\d+)?$/.test(value.trim());
+            };
+            $.validator.methods.range = function (value, element, param) {
+                if (this.optional(element)) return true;
+                var v = parseFloat(value.replace(',', '.'));
+                return !isNaN(v) && v >= param[0] && v <= param[1];
+            };
+        }
+
+        // Кој децимален знак го очекува серверот:
+        //  '.'  -> ако серверот е InvariantCulture / en-US
+        //  ','  -> ако серверот е mk-MK
+        const SERVER_DECIMAL_SEPARATOR = ',';
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const btn = document.querySelector('.submit-btn');
+            const form = btn ? btn.closest('form') : null;
+            if (!form) return;
+
+            form.addEventListener('submit', function () {
+                // Ако валидацијата не помине - покажи во конзола зошто
+                if (window.jQuery && $(form).valid && !$(form).valid()) {
+                    console.warn('Валидацијата не помина:', $(form).validate().errorList);
+                    return;
+                }
+
+                // 2) Пред праќање: децималите во формат што го разбира серверот
+                form.querySelectorAll('input[id^="Price_"], input[id^="Tax_"], input[id^="PriceWithTax_"], input[id^="Total_"], input[id^="PriceWithTaxTotal_"]')
+                    .forEach(function (input) {
+                        if (!input.value) return;
+                        input.value = SERVER_DECIMAL_SEPARATOR === '.'
+                            ? input.value.replace(',', '.')
+                            : input.value.replace('.', ',');
+                    });
+            });
+        });
+    </script>
+    <!-- ===================== КРАЈ НОВО ===================== -->
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -684,66 +730,6 @@
 
         });
     </script>
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const form = document.querySelector('form[asp-action="Create"]') ||
-                         document.querySelector('.doc-container form');
-            const buttons = Array.from(document.querySelectorAll(".submit-btn"));
-            const actionTypeHidden = document.getElementById("actionTypeHidden");
 
-            if (!form || buttons.length === 0) return;
-
-            let isSubmitting = false;
-            const originalLabels = new Map(buttons.map(btn => [btn, btn.innerText.trim()]));
-
-            // Запамети кое копче е избрано, пред да се блокираат двете.
-            buttons.forEach(btn => {
-                btn.addEventListener("click", function () {
-                    if (isSubmitting) return;
-                    if (actionTypeHidden) {
-                        actionTypeHidden.value = this.dataset.action || "";
-                    }
-                });
-            });
-
-            form.addEventListener("submit", function (event) {
-                if (isSubmitting) {
-                    event.preventDefault();
-                    return;
-                }
-
-                isSubmitting = true;
-
-                buttons.forEach(btn => {
-                    btn.disabled = true;
-                    btn.setAttribute("aria-disabled", "true");
-                    btn.classList.add("disabled");
-                    btn.innerText = "Се обработува...";
-                });
-
-                // Ако од некоја причина нема навигација/преземање, дозволи повторен обид.
-                window.setTimeout(function () {
-                    isSubmitting = false;
-                    buttons.forEach(btn => {
-                        btn.disabled = false;
-                        btn.removeAttribute("aria-disabled");
-                        btn.classList.remove("disabled");
-                        btn.innerText = originalLabels.get(btn);
-                    });
-                }, 60000);
-            });
-
-            // Кога browser-от ќе се врати на оваа страница, активирај ги копчињата.
-            window.addEventListener("pageshow", function () {
-                isSubmitting = false;
-                buttons.forEach(btn => {
-                    btn.disabled = false;
-                    btn.removeAttribute("aria-disabled");
-                    btn.classList.remove("disabled");
-                    btn.innerText = originalLabels.get(btn);
-                });
-            });
-        });
-    </script>
 
 }
