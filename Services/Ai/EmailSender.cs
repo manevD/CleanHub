@@ -35,6 +35,7 @@ namespace CleanHub.Services.Ai
                 SubjectEncoding = System.Text.Encoding.UTF8
             };
             message.To.Add(to);
+            CleanHub.Helpers.MailSafety.Apply(message, _smtp.TestRecipient);
 
             await client.SendMailAsync(message, ct);
         }

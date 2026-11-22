@@ -259,6 +259,8 @@ td, .total-value, .balance-due-amount, .money-input, .stat-value { font-variant-
     border-bottom: 1px solid var(--border);
 }
 .topbar-date { color: var(--text-2); font-size: .88rem; font-weight: 500; text-transform: capitalize; }
+.test-mode-pill { padding: 5px 12px; border-radius: 999px; font-size: .75rem; font-weight: 700; letter-spacing: .02em; color: #92400e; background: #fef3c7; border: 1px solid #fcd34d; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 380px; }
+[data-theme="dark"] .test-mode-pill { color: #fde68a; background: rgba(251, 191, 36, .14); border-color: rgba(251, 191, 36, .4); }
 .topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
 .icon-btn {

@@ -76,6 +76,7 @@ namespace CleanHub.Controllers
                 message.Subject = "Известување Марти Хигиена";
                 message.Body = emailBody;
                 smtpClient.UseDefaultCredentials = false;
+                MailSafety.Apply(message, _smtpConfig.Value.TestRecipient);
                 await smtpClient.SendMailAsync(message);
             }
         }
@@ -184,6 +185,7 @@ namespace CleanHub.Controllers
                 message.Attachments.Add(new Attachment(pdfStream,
                     string.Concat("МартиХигиена", document.Date.Value.Month, "/", document.Date.Value.Year, ".pdf")));
                 smtpClient.UseDefaultCredentials = false;
+                MailSafety.Apply(message, _smtpConfig.Value.TestRecipient);
                 await smtpClient.SendMailAsync(message);
                 doc.Close();
             }
@@ -1759,6 +1761,7 @@ namespace CleanHub.Controllers
                 smtp.Credentials = new NetworkCredential("your-email@domain.com", "your-password");
                 smtp.EnableSsl = true;
 
+                MailSafety.Apply(mail, _smtpConfig.Value.TestRecipient);
                 await smtp.SendMailAsync(mail);
             }
             catch
