@@ -1,0 +1,228 @@
+@model CleanHub.ViewModels.AiRemindersViewModel
+@using CleanHub.Services.Ai
+@{
+    ViewData["Title"] = "Потсетници за долг";
+    var debtors = Model.Debtors;
+    int Count(ReminderLevel l) => debtors.Count(d => d.Level == l);
+}
+@Html.AntiForgeryToken()
+
+<p class="page-lead">
+    Станари со неплатени фактури. Нивото зависи од бројот на неплатени месеци:
+    <span class="lvl lvl-1">Љубезно</span> 1 месец,
+    <span class="lvl lvl-2">Потсетник</span> 2 месеци,
+    <span class="lvl lvl-3">Опомена</span> 3 и повеќе.
+    @if (!Model.AiEnabled)
+    {
+        <br /><span class="text-warning-soft">AI не е вклучен — пораките ќе се направат од готов шаблон.</span>
+    }
+</p>
+
+<div class="stat-grid">
+    <div class="stat-card"><span class="stat-label">Должници</span><span class="stat-value">@debtors.Count</span></div>
+    <div class="stat-card"><span class="stat-label">Вкупен долг</span><span class="stat-value">@FinanceDataService.Money(debtors.Sum(d => d.UnpaidTotal))</span></div>
+    <div class="stat-card"><span class="stat-label">Љубезно</span><span class="stat-value lvl-text-1">@Count(ReminderLevel.Polite)</span></div>
+    <div class="stat-card"><span class="stat-label">Потсетник</span><span class="stat-value lvl-text-2">@Count(ReminderLevel.Reminder)</span></div>
+    <div class="stat-card"><span class="stat-label">Опомена</span><span class="stat-value lvl-text-3">@Count(ReminderLevel.Warning)</span></div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="get" asp-action="Reminders" class="toolbar">
+            <div class="toolbar-field">
+                <label class="form-label" for="buildingId">Објект</label>
+                <select id="buildingId" name="buildingId" class="form-select" asp-items="Model.Buildings" onchange="this.form.submit()">
+                    <option value="">Сите објекти</option>
+                </select>
+            </div>
+            <div class="toolbar-actions">
+                <button type="button" class="btn btn-secondary" data-select="all">Избери ги сите</button>
+                <button type="button" class="btn btn-secondary" data-select="3">Само опомени</button>
+                <button type="button" class="btn btn-primary" id="btnGenerate">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z" /></svg>
+                    Генерирај пораки
+                </button>
+            </div>
+        </form>
+
+        @if (debtors.Count == 0)
+        {
+            <div class="empty-state">Нема станари со неплатени фактури. 🎉</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table" id="debtorsTable">
+                    <thead>
+                        <tr>
+                            <th class="no-sort" style="width:36px"><input type="checkbox" class="form-check-input" id="checkAll" aria-label="Избери ги сите" /></th>
+                            <th>Станар</th>
+                            <th>Објект</th>
+                            <th class="text-center">Месеци</th>
+                            <th>Периоди</th>
+                            <th class="text-end">Износ</th>
+                            <th>Ниво</th>
+                            <th>Контакт</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var d in debtors)
+                        {
+                            <tr data-level="@((int)d.Level)">
+                                <td><input type="checkbox" class="form-check-input row-check" value="@d.CustomerId" aria-label="Избери @d.CustomerInfo" /></td>
+                                <td><a href="/КартицаСтанари?customerId=@d.CustomerId" class="fw-semibold">@d.CustomerInfo</a></td>
+                                <td>@d.BuildingName</td>
+                                <td class="text-center">@d.UnpaidCount</td>
+                                <td class="text-muted small">@string.Join(", ", d.Periods.Take(4))@(d.Periods.Count > 4 ? " …" : "")</td>
+                                <td class="text-end fw-semibold">@FinanceDataService.Money(d.UnpaidTotal)</td>
+                                <td><span class="lvl lvl-@((int)d.Level)">@FinanceDataService.LevelName(d.Level)</span></td>
+                                <td class="text-nowrap">
+                                    <span class="contact-dot @(string.IsNullOrWhiteSpace(d.Email) ? "is-off" : "")" title="@(d.Email ?? "Нема е-пошта")">@@</span>
+                                    <span class="contact-dot @(string.IsNullOrWhiteSpace(d.PhoneNumber) ? "is-off" : "")" title="@(d.PhoneNumber ?? "Нема телефон")">☎</span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<section id="messagesSection" class="mt-4" hidden>
+    <div class="section-head">
+        <h2 class="section-title m-0">Пораки за преглед</h2>
+        <div class="d-flex gap-2 flex-wrap">
+            <span class="text-muted small align-self-center" id="messagesInfo"></span>
+            <button type="button" class="btn btn-success" id="btnSend">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+                Испрати е-пошта на означените
+            </button>
+        </div>
+    </div>
+    <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките пред праќање. SMS и Viber се отвораат на вашиот телефон/компјутер со готов текст.</p>
+    <div id="messagesList" class="message-grid"></div>
+</section>
+
+@section Scripts {
+    <script>
+        (function () {
+            const table = document.getElementById('debtorsTable');
+            const checks = () => Array.from(document.querySelectorAll('.row-check'));
+            const checkAll = document.getElementById('checkAll');
+            const btnGenerate = document.getElementById('btnGenerate');
+            const btnSend = document.getElementById('btnSend');
+            const section = document.getElementById('messagesSection');
+            const list = document.getElementById('messagesList');
+            const info = document.getElementById('messagesInfo');
+            const esc = window.mhEscape;
+
+            if (checkAll) checkAll.addEventListener('change', () => checks().forEach(c => c.checked = checkAll.checked));
+            document.querySelectorAll('[data-select]').forEach(btn => btn.addEventListener('click', () => {
+                const mode = btn.getAttribute('data-select');
+                checks().forEach(c => c.checked = mode === 'all' ? true : c.closest('tr').dataset.level === mode);
+            }));
+
+            function setBusy(btn, busy, text) {
+                btn.disabled = busy;
+                if (busy) { btn.dataset.label = btn.innerHTML; btn.innerHTML = '<span class="spinner"></span> ' + text; }
+                else if (btn.dataset.label) { btn.innerHTML = btn.dataset.label; }
+            }
+
+            function smsLink(phone, text) {
+                const p = (phone || '').replace(/[^\d+]/g, '');
+                return 'sms:' + p + '?&body=' + encodeURIComponent(text);
+            }
+
+            function viberLink(text) {
+                return 'viber://forward?text=' + encodeURIComponent(text);
+            }
+
+            function render(messages) {
+                list.innerHTML = '';
+                messages.forEach(m => {
+                    const card = document.createElement('article');
+                    card.className = 'message-card';
+                    card.dataset.customerId = m.customerId;
+                    const levelClass = m.level === 'Опомена' ? 3 : (m.level === 'Потсетник' ? 2 : 1);
+                    card.innerHTML =
+                        '<header class="message-head">' +
+                            '<div><strong>' + esc(m.customerInfo) + '</strong> <span class="lvl lvl-' + levelClass + '">' + esc(m.level) + '</span>' +
+                            (m.aiGenerated ? ' <span class="ai-chip">AI</span>' : ' <span class="ai-chip is-template">шаблон</span>') + '</div>' +
+                            '<label class="form-check m-0"><input type="checkbox" class="form-check-input send-check" ' + (m.email ? 'checked' : 'disabled') + '> <span class="form-check-label small">' + (m.email ? esc(m.email) : 'нема е-пошта') + '</span></label>' +
+                        '</header>' +
+                        '<input class="form-control form-control-sm msg-subject mb-2" aria-label="Наслов">' +
+                        '<textarea class="form-control msg-body" rows="9" aria-label="Порака"></textarea>' +
+                        '<footer class="message-foot">' +
+                            '<a class="btn btn-sm btn-secondary msg-sms' + (m.phoneNumber ? '' : ' disabled') + '" target="_blank" rel="noopener">SMS</a>' +
+                            '<a class="btn btn-sm btn-secondary msg-viber" target="_blank" rel="noopener">Viber</a>' +
+                            '<button type="button" class="btn btn-sm btn-ghost msg-copy">Копирај</button>' +
+                            '<span class="msg-status small"></span>' +
+                        '</footer>';
+                    card.querySelector('.msg-subject').value = m.subject || '';
+                    card.querySelector('.msg-body').value = m.body || '';
+
+                    const refreshLinks = () => {
+                        const text = card.querySelector('.msg-body').value;
+                        card.querySelector('.msg-sms').href = m.phoneNumber ? smsLink(m.phoneNumber, text) : '#';
+                        card.querySelector('.msg-viber').href = viberLink(text);
+                    };
+                    card.querySelector('.msg-body').addEventListener('input', refreshLinks);
+                    card.querySelector('.msg-copy').addEventListener('click', () => {
+                        navigator.clipboard.writeText(card.querySelector('.msg-body').value).then(() => {
+                            card.querySelector('.msg-status').textContent = 'Копирано ✓';
+                        });
+                    });
+                    refreshLinks();
+                    list.appendChild(card);
+                });
+
+                const ai = messages.filter(m => m.aiGenerated).length;
+                info.textContent = messages.length + ' пораки' + (ai ? ' · ' + ai + ' напишани со AI' : '');
+                section.hidden = false;
+                section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+
+            if (btnGenerate) btnGenerate.addEventListener('click', () => {
+                const ids = checks().filter(c => c.checked).map(c => parseInt(c.value, 10));
+                if (!ids.length) { alert('Изберете барем еден станар.'); return; }
+                if (ids.length > 200) { alert('Максимум 200 станари одеднаш.'); return; }
+                setBusy(btnGenerate, true, 'Се пишуваат пораките…');
+                mhPostJson('/Ai/GenerateReminders', { customerIds: ids })
+                    .then(render)
+                    .catch(err => alert(err.message))
+                    .finally(() => setBusy(btnGenerate, false));
+            });
+
+            if (btnSend) btnSend.addEventListener('click', () => {
+                const cards = Array.from(list.querySelectorAll('.message-card'))
+                    .filter(c => c.querySelector('.send-check').checked);
+                if (!cards.length) { alert('Нема означени пораки со е-пошта.'); return; }
+                if (!confirm('Да се испратат ' + cards.length + ' е-пораки?')) return;
+
+                const items = cards.map(c => ({
+                    customerId: parseInt(c.dataset.customerId, 10),
+                    subject: c.querySelector('.msg-subject').value,
+                    body: c.querySelector('.msg-body').value
+                }));
+
+                setBusy(btnSend, true, 'Се праќа…');
+                mhPostJson('/Ai/SendReminders', { items })
+                    .then(results => {
+                        let ok = 0;
+                        results.forEach(r => {
+                            const card = list.querySelector('.message-card[data-customer-id="' + r.customerId + '"]');
+                            if (!card) return;
+                            const status = card.querySelector('.msg-status');
+                            status.textContent = r.sent ? 'Пратено ✓' : (r.error || 'Грешка');
+                            status.className = 'msg-status small ' + (r.sent ? 'is-ok' : 'is-err');
+                            if (r.sent) { ok++; card.querySelector('.send-check').checked = false; }
+                        });
+                        info.textContent = 'Пратени: ' + ok + ' од ' + results.length;
+                    })
+                    .catch(err => alert(err.message))
+                    .finally(() => setBusy(btnSend, false));
+            });
+        })();
+    </script>
+}

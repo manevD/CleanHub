@@ -1,0 +1,95 @@
+@model CleanHub.Services.Ai.AnnualReport
+@using CleanHub.Services.Ai
+@{
+    Layout = null;
+    var s = Model.Stats;
+    var paragraphs = (Model.Narrative ?? "").Replace("\r", "").Split("\n\n", StringSplitOptions.RemoveEmptyEntries);
+}
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="utf-8" />
+    <title>Годишен извештај @s.Year — @s.BuildingName</title>
+    @* PDF шаблон: стиловите мора да бидат тука (SelectPdf не ја вчитува site.css) *@
+    <style>
+        body { font-family: "Segoe UI", Arial, sans-serif; color: #0f172a; font-size: 12.5px; line-height: 1.55; margin: 0; }
+        .head { width: 100%; border-collapse: collapse; border-bottom: 3px solid #059669; margin-bottom: 18px; }
+        .head td { padding: 0 0 14px; vertical-align: top; }
+        .head img { height: 54px; }
+        .head .meta { text-align: right; color: #475569; font-size: 11px; }
+        h1 { font-size: 21px; margin: 0 0 2px; letter-spacing: -.01em; }
+        .sub { color: #475569; margin: 0 0 18px; }
+        .stats { width: 100%; border-collapse: separate; border-spacing: 8px; margin: 0 -8px 10px; }
+        .stats td { background: #f1f5f9; border-radius: 10px; padding: 10px 12px; width: 33%; vertical-align: top; }
+        .stats .l { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: #64748b; font-weight: 700; }
+        .stats .v { display: block; font-size: 15px; font-weight: 700; margin-top: 2px; }
+        .text p { margin: 0 0 10px; white-space: pre-line; }
+        h2 { font-size: 14px; margin: 22px 0 8px; color: #047857; }
+        table.costs { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+        table.costs th { text-align: left; background: #f1f5f9; padding: 6px 8px; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: #475569; }
+        table.costs td { padding: 6px 8px; border-bottom: 1px solid #e5e9f0; }
+        table.costs .n { text-align: right; white-space: nowrap; }
+        table.costs tfoot td { font-weight: 700; border-top: 2px solid #cbd5e1; }
+        .foot { width: 100%; margin-top: 28px; border-collapse: collapse; color: #475569; font-size: 11px; }
+        .foot td { vertical-align: bottom; }
+        .sign { width: 220px; border-top: 1px solid #475569; padding-top: 4px; text-align: center; }
+    </style>
+</head>
+<body>
+    <table class="head">
+        <tr>
+            <td><img src="~/src/logo3.png" alt="" /></td>
+            <td class="meta">
+                <strong>@Model.Company.Name</strong><br />
+                @Model.Company.Address<br />
+                @Model.Company.PhoneNumber · @Model.Company.Email
+            </td>
+        </tr>
+    </table>
+
+    <h1>Годишен извештај за @s.Year година</h1>
+    <p class="sub">Зграда: <strong>@s.BuildingName</strong> · Активни станари: @s.TenantsCount · Изготвено: @Model.GeneratedAt.ToString("dd.MM.yyyy")</p>
+
+    <table class="stats">
+        <tr>
+            <td><span class="l">Фактурирано</span><span class="v">@FinanceDataService.Money(s.Invoiced)</span></td>
+            <td><span class="l">Собрано (редовен фонд)</span><span class="v">@FinanceDataService.Money(s.CollectedRegular)</span></td>
+            <td><span class="l">Процент на наплата</span><span class="v">@s.CollectionRate.ToString("0.#", FinanceDataService.Mk)%</span></td>
+        </tr>
+        <tr>
+            <td><span class="l">Резервен фонд — собрано</span><span class="v">@FinanceDataService.Money(s.CollectedReserve)</span></td>
+            <td><span class="l">Резервен фонд — потрошено</span><span class="v">@FinanceDataService.Money(s.ReserveCosts)</span></td>
+            <td><span class="l">Состојба на 31.12.@s.Year</span><span class="v">@FinanceDataService.Money(s.ReserveBalanceEndOfYear)</span></td>
+        </tr>
+    </table>
+
+    <div class="text">
+        @foreach (var p in paragraphs)
+        {
+            <p>@p.Trim()</p>
+        }
+    </div>
+
+    @if (s.Costs.Count > 0)
+    {
+        <h2>Трошоци од резервниот фонд</h2>
+        <table class="costs">
+            <thead><tr><th>Датум</th><th>Опис</th><th class="n">Износ</th></tr></thead>
+            <tbody>
+                @foreach (var c in s.Costs)
+                {
+                    <tr><td>@c.Date?.ToString("dd.MM.yyyy")</td><td>@c.Description</td><td class="n">@FinanceDataService.Money(c.Amount)</td></tr>
+                }
+            </tbody>
+            <tfoot><tr><td colspan="2">Вкупно</td><td class="n">@FinanceDataService.Money(s.ReserveCosts)</td></tr></tfoot>
+        </table>
+    }
+
+    <table class="foot">
+        <tr>
+            <td>Неплатени фактури за годината: <strong>@FinanceDataService.Money(s.UnpaidTotal)</strong> (@s.TenantsWithDebt станари)</td>
+            <td style="width:240px; padding-top:48px"><div class="sign">Управител</div></td>
+        </tr>
+    </table>
+</body>
+</html>

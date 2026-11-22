@@ -4,6 +4,7 @@ using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
 using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
+using CleanHub.Services.Ai;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -86,6 +87,19 @@ namespace CleanHub
             builder.Services.AddScoped<IBookFinancialsRepository, BookFinancialRepository>();
             builder.Services.AddScoped<IBookRepository, BookRepository>();
             builder.Services.AddScoped<ISpecialInvoiceRepository, SpecialInvoiceRepository>();
+
+            // ----------------------------------------------------
+            // AI (клучот: user-secrets / env AI__ApiKey — никогаш во appsettings.json)
+            // ----------------------------------------------------
+            builder.Services.AddOptions<AiConfig>().Bind(builder.Configuration.GetSection("AI"));
+            builder.Services.AddHttpClient<ClaudeClient>();
+            builder.Services.AddScoped<FinanceDataService>();
+            builder.Services.AddScoped<EmailSender>();
+            builder.Services.AddScoped<DebtReminderService>();
+            builder.Services.AddScoped<AnomalyService>();
+            builder.Services.AddScoped<AssistantService>();
+            builder.Services.AddScoped<AnnualReportService>();
+            builder.Services.AddHostedService<WeeklyReportHostedService>();
 
             // ----------------------------------------------------
             // Session

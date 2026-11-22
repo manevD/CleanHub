@@ -1,0 +1,96 @@
+@model CleanHub.ViewModels.AiAnomaliesViewModel
+@using CleanHub.Services.Ai
+@{
+    ViewData["Title"] = "Извештај за грешки";
+    var report = Model.Report;
+    var categories = new[] { AnomalyService.CatDuplicate, AnomalyService.CatMissingInvoice, AnomalyService.CatUnusualCost, AnomalyService.CatNegativeSaldo };
+    string SevLabel(string s) => s == "high" ? "Итно" : s == "medium" ? "Провери" : "Инфо";
+}
+
+<div class="section-head">
+    <p class="page-lead m-0">
+        Автоматска проверка на книжењата. Генерирано: <strong>@report.GeneratedAt.ToString("dd.MM.yyyy HH:mm")</strong>
+        @if (!string.IsNullOrWhiteSpace(Model.Recipient))
+        {
+            <span class="text-muted"> · Секој понеделник се праќа на @Model.Recipient</span>
+        }
+    </p>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-secondary" asp-action="Anomalies" asp-route-refresh="true">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+            Освежи
+        </a>
+        <form asp-action="SendAnomalyEmail" method="post" class="m-0">
+            <button type="submit" class="btn btn-primary" disabled="@(string.IsNullOrWhiteSpace(Model.Recipient) ? "disabled" : null)">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" /><polyline points="22,6 12,13 2,6" /></svg>
+                Прати на е-пошта
+            </button>
+        </form>
+    </div>
+</div>
+
+<div class="stat-grid">
+    @foreach (var cat in categories)
+    {
+        var n = report.Counts.TryGetValue(cat, out var c) ? c : 0;
+        <a class="stat-card @(n > 0 ? "has-issues" : "is-clean")" href="#cat-@Array.IndexOf(categories, cat)">
+            <span class="stat-label">@cat</span>
+            <span class="stat-value">@n</span>
+        </a>
+    }
+</div>
+
+<div class="card ai-summary mb-4">
+    <div class="card-body">
+        <div class="ai-summary-head">
+            <span class="ai-chip @(report.AiGenerated ? "" : "is-template")">@(report.AiGenerated ? "AI резиме" : "Резиме")</span>
+        </div>
+        <div class="ai-summary-text">@report.Summary</div>
+    </div>
+</div>
+
+@for (var idx = 0; idx < categories.Length; idx++)
+{
+    var cat = categories[idx];
+    var items = report.Items.Where(i => i.Category == cat).ToList();
+    <div class="card mb-3" id="cat-@idx">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>@cat</span>
+            <span class="badge bg-light text-dark">@items.Count</span>
+        </div>
+        @if (items.Count == 0)
+        {
+            <div class="card-body text-muted">Нема пронајдено. ✓</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table m-0">
+                    <tbody>
+                        @foreach (var item in items)
+                        {
+                            <tr>
+                                <td style="width:90px"><span class="sev sev-@item.Severity">@SevLabel(item.Severity)</span></td>
+                                <td class="fw-semibold text-nowrap">
+                                    @if (item.CustomerId.HasValue)
+                                    {
+                                        <a href="/КартицаСтанари?customerId=@item.CustomerId">@item.Title</a>
+                                    }
+                                    else if (item.BuildingId.HasValue)
+                                    {
+                                        <a asp-controller="Buildings" asp-action="Details" asp-route-id="@item.BuildingId">@item.Title</a>
+                                    }
+                                    else
+                                    {
+                                        @item.Title
+                                    }
+                                </td>
+                                <td>@item.Detail</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}

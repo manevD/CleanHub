@@ -1,0 +1,148 @@
+@{
+    ViewData["Title"] = "AI асистент";
+    var aiEnabled = ViewBag.AiEnabled == true;
+}
+@Html.AntiForgeryToken()
+
+<div class="chat-shell">
+    <div class="chat-log" id="chatLog" aria-live="polite">
+        <div class="chat-empty" id="chatEmpty">
+            <div class="chat-orb" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z" /></svg>
+            </div>
+            <h2>Прашајте ја апликацијата</h2>
+            <p>Пишувајте природно, на македонски. Асистентот само чита податоци — ништо не менува.</p>
+            @if (!aiEnabled)
+            {
+                <p class="text-warning-soft">AI не е вклучен. Поставете го клучот <code>AI:ApiKey</code> (види README).</p>
+            }
+            <div class="chat-suggestions">
+                <button type="button" class="suggestion">Кои станари не платиле 3 или повеќе месеци?</button>
+                <button type="button" class="suggestion">Колку е вкупниот долг по објекти?</button>
+                <button type="button" class="suggestion">Колку должи Зграда 4 за @DateTime.Now.Year?</button>
+                <button type="button" class="suggestion">Каква е состојбата на резервниот фонд на сите згради?</button>
+                <button type="button" class="suggestion">Има ли двојни уплати овој месец?</button>
+            </div>
+        </div>
+    </div>
+
+    <form class="chat-input" id="chatForm" autocomplete="off">
+        <textarea id="chatText" class="form-control" rows="1" placeholder="Пр. Колку собравме за резервен фонд во Зграда 12 во 2026?" maxlength="2000" disabled="@(aiEnabled ? null : "disabled")"></textarea>
+        <button type="submit" class="btn btn-primary" id="chatSend" disabled="@(aiEnabled ? null : "disabled")" aria-label="Испрати">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
+        </button>
+    </form>
+    <p class="chat-note">Одговорите ги пишува AI врз основа на податоците од базата. За важни одлуки проверете ги бројките во картиците.</p>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const log = document.getElementById('chatLog');
+            const empty = document.getElementById('chatEmpty');
+            const form = document.getElementById('chatForm');
+            const input = document.getElementById('chatText');
+            const send = document.getElementById('chatSend');
+            const esc = window.mhEscape;
+            const history = [];
+
+            // Мал и безбеден markdown → HTML (табели, задебелено, листи, пасуси). Секој текст прво се escape-ира.
+            function inline(text) {
+                return esc(text)
+                    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/`([^`]+)`/g, '<code>$1</code>');
+            }
+            function markdown(md) {
+                const lines = String(md || '').replace(/\r/g, '').split('\n');
+                let html = '', i = 0;
+                while (i < lines.length) {
+                    const line = lines[i];
+                    if (/^\s*\|.*\|\s*$/.test(line) && i + 1 < lines.length && /^\s*\|?\s*:?-{2,}/.test(lines[i + 1])) {
+                        const cells = l => l.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim());
+                        const head = cells(line);
+                        i += 2;
+                        let rows = '';
+                        while (i < lines.length && /^\s*\|.*\|\s*$/.test(lines[i])) {
+                            rows += '<tr>' + cells(lines[i]).map(c => '<td>' + inline(c) + '</td>').join('') + '</tr>';
+                            i++;
+                        }
+                        html += '<div class="table-responsive"><table class="table table-sm"><thead><tr>' +
+                            head.map(h => '<th>' + inline(h) + '</th>').join('') + '</tr></thead><tbody>' + rows + '</tbody></table></div>';
+                        continue;
+                    }
+                    if (/^\s*[-*•]\s+/.test(line)) {
+                        let items = '';
+                        while (i < lines.length && /^\s*[-*•]\s+/.test(lines[i])) {
+                            items += '<li>' + inline(lines[i].replace(/^\s*[-*•]\s+/, '')) + '</li>'; i++;
+                        }
+                        html += '<ul>' + items + '</ul>';
+                        continue;
+                    }
+                    if (/^\s*\d+[.)]\s+/.test(line)) {
+                        let items = '';
+                        while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) {
+                            items += '<li>' + inline(lines[i].replace(/^\s*\d+[.)]\s+/, '')) + '</li>'; i++;
+                        }
+                        html += '<ol>' + items + '</ol>';
+                        continue;
+                    }
+                    const h = line.match(/^\s*#{1,6}\s+(.*)$/);
+                    if (h) { html += '<p><strong>' + inline(h[1]) + '</strong></p>'; i++; continue; }
+                    if (line.trim() === '') { i++; continue; }
+                    let para = line; i++;
+                    while (i < lines.length && lines[i].trim() !== '' && !/^\s*(\||[-*•]\s|\d+[.)]\s|#)/.test(lines[i])) { para += '<br>' + lines[i]; i++; }
+                    html += '<p>' + para.split('<br>').map(inline).join('<br>') + '</p>';
+                }
+                return html;
+            }
+
+            function bubble(role, content, isHtml) {
+                if (empty) empty.remove();
+                const el = document.createElement('div');
+                el.className = 'chat-msg is-' + role;
+                const body = document.createElement('div');
+                body.className = 'chat-bubble';
+                if (isHtml) body.innerHTML = content; else body.textContent = content;
+                el.appendChild(body);
+                log.appendChild(el);
+                log.scrollTop = log.scrollHeight;
+                return body;
+            }
+
+            function ask(text) {
+                text = (text || '').trim();
+                if (!text) return;
+                history.push({ role: 'user', content: text });
+                bubble('user', text, false);
+                input.value = '';
+                input.style.height = '';
+                send.disabled = true;
+                const pending = bubble('assistant', '<span class="typing"><i></i><i></i><i></i></span>', true);
+
+                mhPostJson('/Ai/Ask', { messages: history })
+                    .then(res => {
+                        const answer = res.answer || 'Немам одговор.';
+                        history.push({ role: 'assistant', content: answer });
+                        pending.innerHTML = markdown(answer);
+                    })
+                    .catch(err => {
+                        history.pop();
+                        pending.innerHTML = '<span class="text-danger">' + esc(err.message) + '</span>';
+                    })
+                    .finally(() => { send.disabled = false; input.focus(); log.scrollTop = log.scrollHeight; });
+            }
+
+            form.addEventListener('submit', e => { e.preventDefault(); ask(input.value); });
+            input.addEventListener('keydown', e => {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
+            });
+            input.addEventListener('input', () => {
+                input.style.height = 'auto';
+                input.style.height = Math.min(input.scrollHeight, 180) + 'px';
+            });
+            document.querySelectorAll('.suggestion').forEach(b => b.addEventListener('click', () => {
+                if (!input.disabled) ask(b.textContent);
+            }));
+        })();
+    </script>
+}

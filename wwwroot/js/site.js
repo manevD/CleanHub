@@ -54,6 +54,30 @@
         startProgress();
     });
 
+    /* ---------- JSON POST со anti-forgery токен (за AI страните) ---------- */
+    window.mhPostJson = function (url, data) {
+        var tokenInput = doc.querySelector('input[name="__RequestVerificationToken"]');
+        return fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'RequestVerificationToken': tokenInput ? tokenInput.value : ''
+            },
+            body: JSON.stringify(data || {})
+        }).then(function (res) {
+            return res.json().catch(function () { return {}; }).then(function (body) {
+                if (!res.ok) throw new Error((body && body.error) || ('Грешка ' + res.status));
+                return body;
+            });
+        });
+    };
+
+    window.mhEscape = function (text) {
+        return String(text == null ? '' : text).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    };
+
     /* Компатибилност со постоечкиот код */
     window.showLoaderAndRedirect = function (url) { startProgress(); window.location.href = url; };
 
