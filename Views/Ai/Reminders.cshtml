@@ -4,6 +4,7 @@
     ViewData["Title"] = "Потсетници за долг";
     var debtors = Model.Debtors;
     int Count(ReminderLevel l) => debtors.Count(d => d.Level == l);
+    var selectedBuildingName = Model.Buildings?.FirstOrDefault(x => x.Selected)?.Text ?? "";
 }
 @Html.AntiForgeryToken()
 
@@ -30,10 +31,22 @@
     <div class="card-body">
         <form method="get" asp-action="Reminders" class="toolbar">
             <div class="toolbar-field">
-                <label class="form-label" for="buildingId">Објект</label>
-                <select id="buildingId" name="buildingId" class="form-select" asp-items="Model.Buildings" onchange="this.form.submit()">
-                    <option value="">Сите објекти</option>
-                </select>
+                <label class="form-label" for="buildingSearch">Објект</label>
+                <div class="search-field">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                    <input type="search" id="buildingSearch" class="form-control" list="buildingOptions" autocomplete="off"
+                           placeholder="Пребарувај објект… (празно = сите)" value="@selectedBuildingName" />
+                </div>
+                <input type="hidden" id="buildingId" name="buildingId" value="@Model.BuildingId" />
+                <datalist id="buildingOptions">
+                    @if (Model.Buildings != null)
+                    {
+                        foreach (var b in Model.Buildings)
+                        {
+                            <option value="@b.Text" data-id="@b.Value"></option>
+                        }
+                    }
+                </datalist>
             </div>
             <div class="toolbar-actions">
                 <button type="button" class="btn btn-secondary" data-select="all">Избери ги сите</button>
@@ -106,6 +119,36 @@
 
 @section Scripts {
     <script>
+        // Live пребарување на објект: при избор од листата веднаш се филтрира
+        (function () {
+            const search = document.getElementById('buildingSearch');
+            const hidden = document.getElementById('buildingId');
+            const options = Array.from(document.querySelectorAll('#buildingOptions option'));
+            if (!search) return;
+            const initial = hidden.value;
+
+            function apply() {
+                const text = search.value.trim().toLowerCase();
+                const match = options.find(o => o.value.trim().toLowerCase() === text);
+                const id = text === '' ? '' : (match ? match.getAttribute('data-id') : null);
+                if (id === null || id === initial) return;
+                hidden.value = id;
+                search.form.submit();
+            }
+
+            search.addEventListener('input', () => { if (search.value.trim() !== '') apply(); });
+            search.addEventListener('change', apply);
+            search.addEventListener('search', apply); // копчето ✕ во полето го чисти филтерот
+            search.addEventListener('keydown', e => {
+                if (e.key !== 'Enter') return;
+                e.preventDefault();
+                const text = search.value.trim().toLowerCase();
+                if (text === '') { apply(); return; }
+                const first = options.find(o => o.value.toLowerCase().includes(text));
+                if (first) { search.value = first.value; apply(); }
+            });
+        })();
+
         (function () {
             const table = document.getElementById('debtorsTable');
             const checks = () => Array.from(document.querySelectorAll('.row-check'));

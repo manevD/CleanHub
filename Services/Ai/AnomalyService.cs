@@ -50,7 +50,7 @@ namespace CleanHub.Services.Ai
             var report = new AnomalyReport();
 
             var customerNames = await _db.Customers.AsNoTracking()
-                .Select(c => new { c.Id, c.CustomerInfo, c.Hide, c.Inactive, c.BuildingId })
+                .Select(c => new { c.Id, c.CustomerInfo, c.Hide, c.Inactive, c.BuildingId, c.Subscription })
                 .ToDictionaryAsync(c => c.Id, ct);
 
             var buildings = await _db.Buildings.AsNoTracking()
@@ -86,7 +86,7 @@ namespace CleanHub.Services.Ai
                 });
             }
 
-            // 2. Згради без фактура за минатиот месец
+            // 2. Згради без фактура за минатиот месец — само партнери со дејност 2 (згради)
             var monthStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-1);
             var monthEnd = monthStart.AddMonths(1).AddDays(-1);
             var invoicedCustomers = (await _db.Documents.AsNoTracking()
@@ -96,37 +96,22 @@ namespace CleanHub.Services.Ai
                     .ToListAsync(ct))
                 .ToHashSet();
 
-            var activeByBuilding = customerNames.Values
-                .Where(c => c.BuildingId != null && !c.Hide && c.Inactive != true)
-                .GroupBy(c => c.BuildingId!.Value);
+            var buildingCustomers = await _db.Customers.AsNoTracking()
+                .Where(c => c.ActivityId == 2 && c.Inactive != true)
+                .Select(c => new { c.Id, c.CustomerInfo, c.BuildingId })
+                .ToListAsync(ct);
 
             var monthName = monthStart.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", FinanceDataService.Mk);
-            foreach (var g in activeByBuilding)
+            foreach (var bc in buildingCustomers.Where(c => !invoicedCustomers.Contains(c.Id)).OrderBy(c => c.CustomerInfo))
             {
-                var total = g.Count();
-                var withInvoice = g.Count(c => invoicedCustomers.Contains(c.Id));
-                if (withInvoice == 0)
+                report.Items.Add(new AnomalyItem
                 {
-                    report.Items.Add(new AnomalyItem
-                    {
-                        Category = CatMissingInvoice,
-                        Severity = "high",
-                        BuildingId = g.Key,
-                        Title = BuildingName(g.Key),
-                        Detail = $"Нема ниту една фактура за {monthName} ({total} активни станари)."
-                    });
-                }
-                else if (withInvoice < total)
-                {
-                    report.Items.Add(new AnomalyItem
-                    {
-                        Category = CatMissingInvoice,
-                        Severity = "low",
-                        BuildingId = g.Key,
-                        Title = BuildingName(g.Key),
-                        Detail = $"{total - withInvoice} од {total} активни станари немаат фактура за {monthName}."
-                    });
-                }
+                    Category = CatMissingInvoice,
+                    Severity = "high",
+                    BuildingId = bc.BuildingId,
+                    Title = bc.CustomerInfo,
+                    Detail = $"Нема фактура за {monthName}."
+                });
             }
 
             // 3. Необично големи трошоци (резервен фонд) во последните 60 дена
@@ -190,7 +175,9 @@ namespace CleanHub.Services.Ai
                     b.CustomerId,
                     Saldo = (docSums.TryGetValue(b.CustomerId, out var d) ? d : 0) + b.Owes - b.Demands
                 })
-                .Where(x => x.Saldo < -1 && customerNames.TryGetValue(x.CustomerId, out var c) && !c.Hide && c.Inactive != true)
+                // Станарите во претплата нормално имаат негативно салдо — не се грешка
+                .Where(x => x.Saldo < -1 && customerNames.TryGetValue(x.CustomerId, out var c)
+                            && !c.Hide && c.Inactive != true && !(c.Subscription > 0))
                 .OrderBy(x => x.Saldo)
                 .Take(30);
 
@@ -202,7 +189,7 @@ namespace CleanHub.Services.Ai
                     Severity = "low",
                     CustomerId = n.CustomerId,
                     Title = CustomerName(n.CustomerId),
-                    Detail = $"Салдо {FinanceDataService.Money(n.Saldo)} — уплатено повеќе од задолжено (претплата или погрешно книжење?)."
+                    Detail = $"Салдо {FinanceDataService.Money(n.Saldo)} — уплатено повеќе од задолжено, а не е во претплата. Проверете го книжењето."
                 });
             }
 
