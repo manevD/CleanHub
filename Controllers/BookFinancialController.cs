@@ -368,7 +368,7 @@ public async Task<IActionResult> SetStatusPayment(int? id)
     }
     catch (DbUpdateConcurrencyException)
     {
-        if (!_unitOfWork.BookFinancials.GetAll().Any(x => x.DocumentId == id)) return NotFound();
+        if (!_unitOfWork.BookFinancials.Query().Any(x => x.DocumentId == id)) return NotFound();
         throw;
     }
 

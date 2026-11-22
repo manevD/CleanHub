@@ -6,9 +6,11 @@ using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.EntityFrameworkCore;
 using System.Configuration;
 using System.Globalization;
+using System.IO.Compression;
 
 namespace CleanHub
 {
@@ -139,7 +141,12 @@ namespace CleanHub
             builder.Services.AddResponseCompression(options =>
             {
                 options.EnableForHttps = true;
+                options.Providers.Add<BrotliCompressionProvider>();
+                options.Providers.Add<GzipCompressionProvider>();
+                options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "image/svg+xml" });
             });
+            builder.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
+            builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = CompressionLevel.Fastest);
 
             // ----------------------------------------------------
             // Build app
@@ -175,6 +182,9 @@ namespace CleanHub
 
             app.UseHttpsRedirection();
 
+            // Компресија (Brotli/Gzip) за HTML, CSS, JS и JSON — мора пред статичните фајлови
+            app.UseResponseCompression();
+
             app.UseStaticFiles(new StaticFileOptions
             {
                 OnPrepareResponse = ctx =>
@@ -190,7 +200,6 @@ namespace CleanHub
             app.UseAuthorization();
 
             app.UseSession();
-            //app.UseResponseCompression();
 
             // ----------------------------------------------------
             // Routes

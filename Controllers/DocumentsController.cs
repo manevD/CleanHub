@@ -495,7 +495,9 @@ namespace CleanHub.Controllers
         {
             var documentViewModel = new DocumentViewModel();
 
-            var customers = _unitOfWork.Customers.GetAll()
+            // Само Id и име (порано: целата табела со следење на промени)
+            var customers = _unitOfWork.Customers.Query()
+                .AsNoTracking()
                 .Select(x => new Customer
                 {
                     Id = x.Id,
@@ -2069,7 +2071,7 @@ namespace CleanHub.Controllers
             {
                 foreach (var document in documents)
                 {
-                    var bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId == document.Id).ToList();
+                    var bookFinancials = _unitOfWork.BookFinancials.GetAll(q => q.Where(x => x.DocumentId == document.Id)).ToList();
 
                     if (PaymentDate != DateTime.MinValue)
                     {
@@ -2111,7 +2113,8 @@ namespace CleanHub.Controllers
                             bookFinancial.DateTimeChanges = DateTime.UtcNow;
                         }
                     }
-                    bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == document.CustomerId.Value && x.InvoiceId == 1200).ToList();
+                    var docCustomerId = document.CustomerId.Value;
+                    bookFinancials = _unitOfWork.BookFinancials.GetAll(q => q.Where(x => x.CustomerId == docCustomerId && x.InvoiceId == 1200)).ToList();
                     var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, document.CustomerId.Value, document.ToDocument);
 
                     if (existsInBookFinancials)
@@ -2165,18 +2168,18 @@ namespace CleanHub.Controllers
             }
             var ids = SelectedInvoiceIds.Split(',').Select(int.Parse).ToList();
 
-            var booksToDelete = _unitOfWork.Books.GetAll().Where(x => ids.Contains(x.DocId)).ToList();
+            var booksToDelete = _unitOfWork.Books.GetAll(q => q.Where(x => ids.Contains(x.DocId))).ToList();
             if (booksToDelete != null && booksToDelete.Any())
             {
                 _unitOfWork.Books.DeleteRange(booksToDelete);
             }
-            var bookFinancialsToDelete = _unitOfWork.BookFinancials.GetAll().Where(x => x.DocumentId.HasValue && ids.Contains(x.DocumentId.Value)).ToList();
+            var bookFinancialsToDelete = _unitOfWork.BookFinancials.GetAll(q => q.Where(x => x.DocumentId.HasValue && ids.Contains(x.DocumentId.Value))).ToList();
             if (bookFinancialsToDelete != null && bookFinancialsToDelete.Any())
             {
                 _unitOfWork.BookFinancials.DeleteRange(bookFinancialsToDelete);
             }
 
-            var documentsToDelete = _unitOfWork.Documents.GetAll().Where(x => ids.Contains(x.Id)).ToList();
+            var documentsToDelete = _unitOfWork.Documents.GetAll(q => q.Where(x => ids.Contains(x.Id))).ToList();
             if (documentsToDelete != null && documentsToDelete.Any())
             {
                 foreach (var docu in documentsToDelete)
@@ -2339,7 +2342,7 @@ namespace CleanHub.Controllers
         {
             if (docEntity.PaymentStatus == PaymentStatus.Платено)
             {
-                var bookFinancials = _unitOfWork.BookFinancials.GetAll().Where(x => x.CustomerId == customerId).ToList();
+                var bookFinancials = _unitOfWork.BookFinancials.GetAll(q => q.Where(x => x.CustomerId == customerId)).ToList();
                 var existsInBookFinancials = AlreadyPayedInBookFinancials(bookFinancials, customerId, docEntity.ToDocument);
                 if (!existsInBookFinancials && fromSubscription)
                 {
@@ -2886,7 +2889,7 @@ namespace CleanHub.Controllers
 
         private bool InvoiceExists(int id)
         {
-            return _unitOfWork.Documents.GetAllAsync().Result.Any(e => e.Id == id);
+            return _unitOfWork.Documents.Query().Any(e => e.Id == id);
         }
 
         public async Task<IActionResult> CombineAndDownloadPdfs(int? buildingId, int? paymentStatusId, int year)
@@ -2918,7 +2921,8 @@ namespace CleanHub.Controllers
 
                 document.TotalBuildingDemands = (int)demands;
                 document.TotalBuildingOwes = (int)owes;
-                var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == document.CustomerId && x.PaymentStatus != 0);
+                var debtCustomerId = document.CustomerId;
+                var debt = _unitOfWork.Documents.GetAll(q => q.Where(x => x.CustomerId == debtCustomerId && x.PaymentStatus != 0)).ToList();
 
                 if (debt != null && debt.Any())
                 {
@@ -2996,7 +3000,8 @@ namespace CleanHub.Controllers
 
                     document.TotalBuildingDemands = (int)demands;
                     document.TotalBuildingOwes = (int)owes;
-                    var debt = _unitOfWork.Documents.GetAll().Where(x => x.CustomerId == item.CustomerId && x.PaymentStatus != 0);
+                    var debtCustomerId = item.CustomerId;
+                    var debt = _unitOfWork.Documents.GetAll(q => q.Where(x => x.CustomerId == debtCustomerId && x.PaymentStatus != 0)).ToList();
 
                     if (debt != null && debt.Any())
                     {

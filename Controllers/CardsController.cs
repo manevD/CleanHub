@@ -10,8 +10,21 @@ namespace CleanHub.Controllers
 {
     public class CardsController(IUnitOfWork _unitOfWork) : Controller
     {
-        public List<Building> BuildingsList { get; set; } = _unitOfWork.Buildings.GetAll(x => x.Include(c => c.Customers)).ToList();
-        public List<Customer> CustomersList { get; set; } = _unitOfWork.Customers.GetAll().Where(x => !x.Hide).ToList();
+        // Се вчитуваат само кога се потребни (порано: при секое барање, со сите станари).
+        private List<Building>? _buildingsList;
+        private List<Customer>? _customersList;
+
+        public List<Building> BuildingsList
+        {
+            get => _buildingsList ??= _unitOfWork.Buildings.GetAllNoTrakcing().ToList();
+            set => _buildingsList = value;
+        }
+
+        public List<Customer> CustomersList
+        {
+            get => _customersList ??= _unitOfWork.Customers.GetAllNoTrakcing(q => q.Where(x => !x.Hide)).ToList();
+            set => _customersList = value;
+        }
 
         [Route("КартицаЗгради")]
         public async Task<IActionResult> Buildings(string dateFrom, string dateTo)
@@ -34,25 +47,32 @@ namespace CleanHub.Controllers
                 ViewBag.DateTo = DateTo;
             }
 
-            foreach (var building in BuildingsList)
-            {
-                building.CustomerRefId = building.CustomerRefId ?? building.Id;
-
-                var bookFinancial = _unitOfWork.BookFinancials.GetAllNoTrakcing(
+            // Сите книжења за периодот се вчитуваат со две барања (наместо 2 барања по објект),
+            // а сумирањето останува исто како порано — во меморија.
+            var financialsByBuilding = _unitOfWork.BookFinancials.GetAllNoTrakcing(
                     inc => inc.Include(x => x.Customer).Where(d =>
-                        d.Customer.BuildingId == building.Id &&
+                        d.Customer.BuildingId != null &&
                         (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || d.DatumF <= DateTo.Value)
-                    )).ToList();
+                    ))
+                .ToLookup(d => d.Customer.BuildingId!.Value);
 
-                var cost = _unitOfWork.BookFinancials.GetAllNoTrakcing(
-                    inc => inc.Include(x => x.Customer).Where(d =>
-                        d.CustomerId == building.CustomerRefId &&
+            var costsByCustomer = _unitOfWork.BookFinancials.GetAllNoTrakcing(
+                    inc => inc.Where(d =>
+                        d.CustomerId != null &&
                         (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || d.DatumF <= DateTo.Value) &&
                         d.DocumentTypId == 5 &&
                         d.InvoiceId == (int)InvoiceTyp.Reserve
-                    )).Sum(bf => bf.Owes);
+                    ))
+                .ToLookup(d => d.CustomerId!.Value);
+
+            foreach (var building in BuildingsList)
+            {
+                building.CustomerRefId = building.CustomerRefId ?? building.Id;
+
+                var bookFinancial = financialsByBuilding[building.Id].ToList();
+                var cost = costsByCustomer[building.CustomerRefId.Value].Sum(bf => bf.Owes);
 
                 var buildingsCard = new BuildingsCardViewModel()
                 {
@@ -91,15 +111,13 @@ namespace CleanHub.Controllers
 
             ViewBag.BuildingId = 1;
             customers = _unitOfWork.Customers
-          .GetAllNoTrakcing(inc => inc
-          .Include(c => c.Documents)
-          .Include(x => x.BookFinancials
-              .Where(bf => bf != null &&
-                           bf.InvoiceId == (int)InvoiceTyp.Recieve)
-          )
-      )
-      .Where(x => x.BuildingId == 1)
-      .ToList();
+                .GetAllNoTrakcing(inc => inc
+                    .Include(c => c.Documents)
+                    .Include(x => x.BookFinancials
+                        .Where(bf => bf != null &&
+                                     bf.InvoiceId == (int)InvoiceTyp.Recieve))
+                    .Where(x => x.BuildingId == 1))
+                .ToList();
 
             return View(customers);
         }
@@ -133,12 +151,12 @@ namespace CleanHub.Controllers
                         ViewBag.DateTo = DateTo;
                     }
 
-                    var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                    var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing(q => q
                         .Where(x =>
                             x.CustomerId == customerId &&
                             x.InvoiceId == (int)InvoiceTyp.Reserve  &&
                             (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
-                            (!DateTo.HasValue || x.DatumF <= DateTo.Value))
+                            (!DateTo.HasValue || x.DatumF <= DateTo.Value)))
                         .ToList();
                     //         var newBookFinancialFromSaldo = new BookFinancial
                     //         {
@@ -313,10 +331,10 @@ namespace CleanHub.Controllers
                 }
 
                 // Dokumente laden
-                var dataDocument = _unitOfWork.Documents.GetAllNoTrakcing()
+                var dataDocument = _unitOfWork.Documents.GetAllNoTrakcing(q => q
                     .Where(x => x.CustomerId == customerId &&
                                 (!DateFrom.HasValue || x.Date >= DateFrom.Value) &&
-                                (!DateTo.HasValue || x.Date <= DateTo.Value))
+                                (!DateTo.HasValue || x.Date <= DateTo.Value)))
                     .Select(cc => new CustomerDataDTO
                     {
                         Description = cc.ToDocument,
@@ -331,11 +349,11 @@ namespace CleanHub.Controllers
                     .ToList();
 
                 // Finanzdaten laden
-                var dataBookFinancial = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                var dataBookFinancial = _unitOfWork.BookFinancials.GetAllNoTrakcing(q => q
                     .Where(x => x.CustomerId == customerId &&
                                 (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                                 (!DateTo.HasValue || x.DatumF <= DateTo.Value) &&
-                                (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11) && x.InvoiceId != (int)InvoiceTyp.Reserve)
+                                (x.InvoiceId == (int)InvoiceTyp.Recieve || x.DocumentTypId == 11) && x.InvoiceId != (int)InvoiceTyp.Reserve))
                     .Select(cc => new CustomerDataDTO
                     {
                         Id = cc.Id,
@@ -464,10 +482,14 @@ namespace CleanHub.Controllers
                     DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
                     ViewBag.DateTo = DateTo;
                 }
-                var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing()
+                // Едно барање до базата за сите резервни книжења на станарот;
+                // периодот и сумите се пресметуваат во меморија (исто како порано).
+                var allReserve = _unitOfWork.BookFinancials.GetAllNoTrakcing(q => q
+                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve))
+                    .ToList();
+
+                var rawFinancials = allReserve
                     .Where(x =>
-                        x.CustomerId == customerId &&
-                        x.InvoiceId == (int)InvoiceTyp.Reserve &&
                         (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || x.DatumF <= DateTo.Value))
                     .ToList();
@@ -486,15 +508,9 @@ namespace CleanHub.Controllers
                     .ToList();
 
                 // Summen
-                cardsViewModel.CustomerDemandsTotal = _unitOfWork.BookFinancials
-                    .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
-                    .Sum(x => x.Demands);
+                cardsViewModel.CustomerDemandsTotal = allReserve.Sum(x => x.Demands);
 
-                cardsViewModel.CustomerOwesTotal = (float)_unitOfWork.BookFinancials
-                    .GetAllNoTrakcing()
-                    .Where(x => x.CustomerId == customerId && x.InvoiceId == (int)InvoiceTyp.Reserve)
-                    .Sum(x => x.Owes);
+                cardsViewModel.CustomerOwesTotal = (float)allReserve.Sum(x => x.Owes);
             }
 
             cardsViewModel.CustomerFinanfical = bookFinancials;

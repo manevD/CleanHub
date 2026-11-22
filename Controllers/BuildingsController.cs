@@ -42,7 +42,7 @@ namespace CleanHub.Controllers
             var settings = new JsonSerializerSettings { ReferenceLoopHandling = ReferenceLoopHandling.Ignore };
 
             List<BuildingViewModel>? buildings = string.IsNullOrEmpty(buildingsJson)
-                ? App.FullMapper.Map<List<BuildingViewModel>>(_unitOfWork.Buildings.GetAll())
+                ? App.FullMapper.Map<List<BuildingViewModel>>(_unitOfWork.Buildings.GetAllNoTrakcing().ToList())
                 : JsonConvert.DeserializeObject<List<BuildingViewModel>>(buildingsJson, settings);
 
             if (string.IsNullOrEmpty(buildingsJson))
@@ -321,7 +321,7 @@ namespace CleanHub.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        private bool BuildingExists(int id) => _unitOfWork.Buildings.GetAll().Any(e => e.Id == id);
+        private bool BuildingExists(int id) => _unitOfWork.Buildings.Query().Any(e => e.Id == id);
 
         [HttpPost, ActionName("SendInvoiceEmail")]
         public async Task<IActionResult> SendInvoiceEmail(int id, int month, int year)
