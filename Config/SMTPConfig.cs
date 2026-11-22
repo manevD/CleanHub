@@ -11,8 +11,5 @@ namespace CleanHub.Config
         [DataType(DataType.EmailAddress)]
         public string Recipient { get; set; }
         public string Passwort { get; set; }
-
-        /// <summary>Тест-режим: ако е пополнето, сите е-пошти одат само на оваа адреса.</summary>
-        public string? TestRecipient { get; set; }
     }
 }

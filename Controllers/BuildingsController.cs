@@ -382,7 +382,6 @@ namespace CleanHub.Controllers
                         string.Concat("МартиХигиена", month, "/", year, ".pdf")));
                     smtpClient.UseDefaultCredentials = false;
                     // send email
-                    CleanHub.Helpers.MailSafety.Apply(message, _smtpConfig.Value.TestRecipient);
                     smtpClient.Send(message);
 
                     // close pdf document

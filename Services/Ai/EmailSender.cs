@@ -5,41 +5,35 @@ using Microsoft.Extensions.Options;
 
 namespace CleanHub.Services.Ai
 {
-    /// <summary>Праќање е-пошта преку постоечките SMTP поставки (секција "SMTP").</summary>
+    /// <summary>
+    /// Праќање е-пошта — истата логика како „Зачувај, прати и принтај“ (DocumentsController.CreateAndSend):
+    /// SmtpClient(SMTP:Server), најава SMTP:Email / SMTP:Passwort, SSL, од SMTP:Email.
+    /// </summary>
     public class EmailSender
     {
         private readonly SMTPConfig _smtp;
-        private readonly CompanyConfig _company;
 
-        public EmailSender(IOptions<SMTPConfig> smtp, IOptions<CompanyConfig> company)
+        public EmailSender(IOptions<SMTPConfig> smtp)
         {
             _smtp = smtp.Value;
-            _company = company.Value;
         }
 
-        /// <summary>
-        /// Се праќа исто како постоечките фактури: од SMTP:Email, со најава SMTP:Email / SMTP:Passwort.
-        /// </summary>
         public async Task SendAsync(string to, string subject, string body, bool isHtml = false, CancellationToken ct = default)
         {
-            using var client = new SmtpClient(_smtp.Server);
-            client.Credentials = new NetworkCredential(_smtp.Email, _smtp.Passwort);
-            client.EnableSsl = true;
-            client.UseDefaultCredentials = false;
-
-            using var message = new MailMessage
+            using (SmtpClient smtpClient = new SmtpClient(_smtp.Server))
             {
-                From = new MailAddress(_smtp.Email),
-                Subject = subject,
-                Body = body,
-                IsBodyHtml = isHtml,
-                BodyEncoding = System.Text.Encoding.UTF8,
-                SubjectEncoding = System.Text.Encoding.UTF8
-            };
-            message.To.Add(to);
-            CleanHub.Helpers.MailSafety.Apply(message, _smtp.TestRecipient);
+                smtpClient.Credentials = new NetworkCredential(_smtp.Email, _smtp.Passwort);
+                smtpClient.EnableSsl = true;
 
-            await client.SendMailAsync(message, ct);
+                MailMessage message = new MailMessage();
+                message.From = new MailAddress(_smtp.Email);
+                message.To.Add(to);
+                message.Subject = subject;
+                message.Body = body;
+                message.IsBodyHtml = isHtml;
+                smtpClient.UseDefaultCredentials = false;
+                await smtpClient.SendMailAsync(message);
+            }
         }
     }
 }
