@@ -24,14 +24,10 @@ namespace CleanHub
             // ----------------------------------------------------
             // Configuration
             // ----------------------------------------------------
-            var config = new ConfigurationBuilder()
-                .SetBasePath(Directory.GetCurrentDirectory())
-                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-
-            config.AddConfiguration<CompanyConfig>(builder.Services, "Company");
-            config.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
+            // builder.Configuration = appsettings.json + appsettings.{Environment}.json
+            // + user-secrets (Development) + променливи на околина
+            builder.Configuration.AddConfiguration<CompanyConfig>(builder.Services, "Company");
+            builder.Configuration.AddConfiguration<SMTPConfig>(builder.Services, "SMTP");
 
             var connectionString =
                 builder.Configuration.GetConnectionString("DefaultConnection")
