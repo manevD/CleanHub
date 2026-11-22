@@ -1,4 +1,4 @@
-﻿@using CleanHub.Entities.Enums
+@using CleanHub.Entities.Enums
 @using CleanHub.Extensions
 
 <!-- МОДАЛОТ Е ИЗВАДЕН КОМПЛЕТНО НАДВОР ОД СИДЕБАРОТ И СЕГА НЕМА ДА ПРАВИ СЕНКА -->
@@ -12,25 +12,25 @@
                     <h5 class="modal-title">Брзо плаќање на сметка</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="font-size: 14px;">
+                <div class="modal-body">
 
                     <!-- 1. Избери Станар / Партнер преку Пребарување -->
                     <div class="form-group mb-3">
-                        <label for="customerSearch">Партнер</label>
-                        <input class="form-control" list="customerOptions" id="customerSearch" name="customerName"
+                        <label for="globalCustomerSearch" class="form-label">Партнер</label>
+                        <input class="form-control" list="globalCustomerOptions" id="globalCustomerSearch" name="customerName"
                                placeholder="Пребарувај..." autocomplete="off">
 
                         <!-- Скриеното поле каде што се чува и се праќа ID-то кон бекендот -->
-                        <input type="hidden" id="customerId" name="customerId">
+                        <input type="hidden" id="globalCustomerId" name="customerId">
 
                         <!-- Динамички ќе се наполни преку fetch од базата -->
-                        <datalist id="customerOptions"></datalist>
+                        <datalist id="globalCustomerOptions"></datalist>
                     </div>
 
                     <!-- 2. Избери Неплатена Сметка -->
                     <div class="form-group mb-3">
                         <label for="globalInvoiceId" class="form-label">Избери Неплатена Сметка</label>
-                        <select id="globalInvoiceId" name="invoiceId" class="form-control" required disabled>
+                        <select id="globalInvoiceId" name="invoiceId" class="form-select" required disabled>
                             <option value="">-- Прво избери станар --</option>
                         </select>
                     </div>
@@ -39,7 +39,7 @@
                         <!-- Начин на плаќање -->
                         <div class="col-md-6 form-group mb-3">
                             <label for="globalPaymentType" class="form-label">Тип на плаќање</label>
-                            <select id="globalPaymentType" name="PaymentType" class="form-control">
+                            <select id="globalPaymentType" name="PaymentType" class="form-select">
                                 @foreach (var paymentType in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
                                 {
                                     <option value="@((int)paymentType)">@paymentType.GetEnumDescription()</option>
@@ -79,9 +79,9 @@
 <script>
     document.addEventListener("DOMContentLoaded", function () {
         const modalElement = document.getElementById('globalPayModal');
-        const customerInput = document.getElementById('customerSearch');
-        const customerHiddenId = document.getElementById('customerId');
-        const customerDatalist = document.getElementById('customerOptions');
+        const customerInput = document.getElementById('globalCustomerSearch');
+        const customerHiddenId = document.getElementById('globalCustomerId');
+        const customerDatalist = document.getElementById('globalCustomerOptions');
         const invoiceSelect = document.getElementById('globalInvoiceId');
         const paymentDateInput = document.getElementById('globalPaymentDate');
         const form = document.getElementById('globalPayForm');
@@ -89,6 +89,14 @@
         if (!modalElement) return;
 
         let debounceTimer;
+        let customersCache = null; // листата се презема само еднаш по страна
+
+        function getCustomers() {
+            if (customersCache) return Promise.resolve(customersCache);
+            return fetch('/Customers/GetAllCustomers')
+                .then(res => res.json())
+                .then(data => (customersCache = data || []));
+        }
 
         // 1. ПРИ ОТВОРАЊЕ НА МОДАЛОТ
         modalElement.addEventListener('show.bs.modal', function () {
@@ -142,8 +150,7 @@
 
                 debounceTimer = setTimeout(() => {
                     // ПРАЌАЊЕ НА ПРЕБАРУВАЊЕТО ДО БЕКЕНДОТ (Овде претпоставуваме дека GetAllCustomers прифаќа query или ги филтрираме тука)
-                    fetch('/Customers/GetAllCustomers')
-                        .then(res => res.json())
+                    getCustomers()
                         .then(data => {
                             customerDatalist.innerHTML = ""; // Исчисти ги старите резултати
 

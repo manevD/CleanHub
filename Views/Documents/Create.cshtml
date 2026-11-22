@@ -30,94 +30,6 @@
         result = message + "-" + difference;
     }
 }
-<style>
-    /* ===== TABLE BASE ===== */
-    .item-table {
-        width: 100%;
-        border-collapse: collapse;
-        white-space: nowrap;
-    }
-
-        /* ===== GENERAL CELL SPACING ===== */
-        .item-table th,
-        .item-table td {
-            padding: 6px 8px !important;
-            vertical-align: middle;
-        }
-
-            /* ===== INPUT DEFAULT ===== */
-            .item-table td .form-control {
-                width: 100%;
-                min-width: 100px;
-            }
-
-            /* ===== DESCRIPTION (Опис) → најширок ===== */
-            .item-table td.description .form-control {
-                min-width: 220px;
-            }
-
-            /* ===== SMALL COLUMNS (Ед.м + Кол.) ===== */
-            .item-table th:nth-child(2),
-            .item-table td:nth-child(2),
-            .item-table th:nth-child(3),
-            .item-table td:nth-child(3) {
-                padding-left: 4px !important;
-                padding-right: 4px !important;
-            }
-
-                .item-table td:nth-child(2) .form-control,
-                .item-table td:nth-child(3) .form-control {
-                    min-width: 60px;
-                    max-width: 90px;
-                    width: 100%;
-                    padding: 2px 4px;
-                    text-align: center;
-                }
-
-            /* ===== MEDIUM COLUMNS (Цена, ДДВ) ===== */
-            .item-table td:nth-child(4) .form-control,
-            .item-table td:nth-child(5) .form-control {
-                min-width: 100px;
-                max-width: 140px;
-                text-align: right;
-            }
-
-            /* ===== TOTAL COLUMNS ===== */
-            .item-table td:nth-child(6) .form-control,
-            .item-table td:nth-child(7) .form-control,
-            .item-table td:nth-child(8) .form-control {
-                min-width: 120px;
-                text-align: right;
-                font-weight: 500;
-            }
-
-        /* ===== HEADER STYLE ===== */
-        .item-table th {
-            font-size: 13px;
-            font-weight: 600;
-            text-align: center;
-        }
-
-        /* ===== ROW HOVER (nice UX) ===== */
-        .item-table tbody tr:hover {
-            background-color: #f5f5f5;
-        }
-
-        /* ===== INPUT LOOK CLEANER ===== */
-        .item-table input.form-control {
-            height: 28px;
-        }
-
-            /* ===== REMOVE INPUT SHADOW FOR CLEAN ERP LOOK ===== */
-            .item-table input.form-control:focus {
-                box-shadow: none;
-            }
-
-    /* ===== RESPONSIVE SCROLL ===== */
-    .table-responsive {
-        overflow-x: auto;
-    }
-</style>
 <div class="col-xl-12 col-lg-12 col-sm-12  layout-spacing">
     <div class="row invoice layout-top-spacing layout-spacing">
         <div class="col-xl-12 col-lg-12 col-md-12 col-sm-12 col-12">
@@ -279,7 +191,7 @@
                                     @if (@Model != null && @Model.Building.BuildingProducts.Any())
                                     {
                                         <div class="invoice-detail-total" style="text-align: right;">
-                                            <div class="invoice-summary-label" style="color:black;">Вкупно</div>
+                                            <div class="invoice-summary-label">Вкупно</div>
                                             <div class="invoice-summary-value">
                                                 <div class="balance-due-amount">
                                                     <span id="totalPriceWithTax">0</span> <span class="currency">МКД</span>

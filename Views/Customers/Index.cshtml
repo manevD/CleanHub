@@ -3,7 +3,6 @@
 @{
     ViewData["Title"] = "Партнер Листа";
 }
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <hr />
 
 <div class="col-lg-12 col-md-12 layout-spacing">
@@ -40,34 +39,34 @@
                             <td>@item.Subscription</td>
 
                             <td class="text-center">
-                                <input type="checkbox" disabled checked="@item.Garage" />
+                                <input type="checkbox" class="form-check-input" disabled checked="@item.Garage" />
                             </td>
 
                             <td class="text-center">
-                                <input type="checkbox" disabled checked="@item.Inactive" />
+                                <input type="checkbox" class="form-check-input" disabled checked="@item.Inactive" />
                             </td>
 
                             <td class="text-nowrap text-center">
 
                                 <a asp-action="Details"
                                    asp-route-id="@item.Id"
-                                   class="btn btn-sm btn-outline-info me-1"
+                                   class="badge badge-light-primary me-1"
                                    title="Детали">
-                                    <i class="bi bi-eye"></i>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" /></svg>
                                 </a>
 
                                 <a asp-action="Edit"
                                    asp-route-id="@item.Id"
-                                   class="btn btn-sm btn-outline-primary me-1"
+                                   class="badge badge-light-primary me-1"
                                    title="Измени">
-                                    <i class="bi bi-pencil"></i>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>
                                 </a>
 
                                 <a asp-action="Delete"
                                    asp-route-id="@item.Id"
-                                   class="btn btn-sm btn-outline-danger"
+                                   class="badge badge-light-danger"
                                    title="Избриши">
-                                    <i class="bi bi-trash"></i>
+                                    <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="3 6 5 6 21 6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg>
                                 </a>
 
                             </td>

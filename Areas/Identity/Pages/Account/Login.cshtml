@@ -5,48 +5,32 @@
     ViewData["Title"] = "Најава";
 }
 
-<body class="form">
+<div class="auth-card">
+    <img src="~/src/logo3.png" alt="Марти Хигиена" class="auth-logo" width="160" height="64" />
+    <h1 class="auth-title">Добредојдовте</h1>
+    <p class="auth-sub">Најавете се за да продолжите</p>
 
-<div class="auth-container d-flex">
+    <form id="account" method="post">
+        <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
 
-    <div class="container mx-auto align-self-center">
-
-        <div class="row">
-
-            <div class="col-xxl-4 col-xl-5 col-lg-5 col-md-8 col-12 d-flex flex-column align-self-center mx-auto">
-                <div class="card mt-3 mb-3">
-                    <div class="card-body">
-                        <div class="row">
-                        
-                            <form id="account" method="post">
-                                <hr />
-                                <div asp-validation-summary="ModelOnly" class="text-danger" role="alert"></div>
-                                                                    <label asp-for="Input.Email" class="form-label">Е-Маил</label>
-                                <div class="col-md-12">
-                                        <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="Е-Маил" />
-                                    <span asp-validation-for="Input.Email" class="text-danger"></span>
-                                </div>
-                                <br />
-                                    <label asp-for="Input.Password" class="form-label">Лозинка</label>
-
-                                <div class="col-12">
-                                        <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="Лозинка" />
-                                    <span asp-validation-for="Input.Password" class="text-danger"></span>
-                                </div>
-                                <br />
-                                <div>
-                                    <button id="login-submit" type="submit" class="w-100 btn btn-lg btn-primary">Најави се</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="form-group mb-3">
+            <label asp-for="Input.Email" class="form-label">Е-пошта</label>
+            <input asp-for="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="ime@primer.mk" autofocus />
+            <span asp-validation-for="Input.Email" class="text-danger"></span>
         </div>
-    </div>
-</div>
-</body>
-@section Scripts {
 
+        <div class="form-group mb-3">
+            <label asp-for="Input.Password" class="form-label">Лозинка</label>
+            <input asp-for="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="••••••••" />
+            <span asp-validation-for="Input.Password" class="text-danger"></span>
+        </div>
+
+        <button id="login-submit" type="submit" class="btn btn-lg btn-primary">Најави се</button>
+    </form>
+
+    <p class="auth-foot">© @DateTime.Now.Year Марти Хигиена</p>
+</div>
+
+@section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

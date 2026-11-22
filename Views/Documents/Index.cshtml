@@ -14,39 +14,23 @@
         ? int.Parse(selectedItem.Value)
         : -1;
 }
-<style>
-    /* Дебела линија после Салдо (4-та колона) */
-    table th:nth-child(4),
-    table td:nth-child(4) {
-        border-right: 3px solid black !important;
-    }
 
-    /* Селектиран ред */
-    .selected-row td {
-        background-color: #e0e0e0 !important;
-    }
-
-    tbody tr {
-        cursor: pointer;
-    }
-</style>
-
-<div class="container-fluid" style="font-size:10px;">
+<div class="container-fluid p-0">
     <div class="row">
 
         <!-- 🔹 SIDEBAR -->
         <div class="col-lg-2 col-md-3">
-            <div class="card p-2 h-100" style="position: sticky; top:20px; font-size:15px;">
+            <div class="card p-2 h-100" style="position: sticky; top:20px;">
 
                 <form asp-action="InvoiceFiltered" asp-controller="Documents" method="get" id="filterForm">
 
-                    <h5 class="mb-3" style="font-size:15px;">Филтер</h5>
+                    <h5 class="mb-3">Филтер</h5>
 
                     @if (ViewBag.Buildings != null)
                     {
                         <div class="form-group mb-3">
-                            <label style="font-size:15px;">Објект</label>
-                            <input class="form-control" style="font-size:15px;" list="buildingOptions" id="buildingSearch"
+                            <label>Објект</label>
+                            <input class="form-control" list="buildingOptions" id="buildingSearch"
                                    name="buildingName" value="@ViewBag.SelectedBuildingName">
 
                             <input type="hidden" id="buildingId" name="buildingId" value="@ViewBag.BuildingId">
@@ -63,19 +47,19 @@
                     @if (ViewBag.PaymentStatusList != null)
                     {
                         <div class="form-group mb-3">
-                            <label style="font-size:15px;">Статус</label>
+                            <label>Статус</label>
                             @Html.DropDownList("paymentStatusId",
                                  (IEnumerable<SelectListItem>)ViewBag.PaymentStatusList,
-                                 new { @class = "form-control", style = "font-size:15px;", id = "paymentStatusId" })
+                                 new { @class = "form-control", id = "paymentStatusId" })
                         </div>
                     }
 
                     <div class="form-group mb-3">
-                        <label style="font-size:15px;">Година</label>
-                        <select name="year" class="form-control" style="font-size:15px;">
+                        <label>Година</label>
+                        <select name="year" class="form-control">
                             @{
                                 var currentYear = DateTime.Now.Year;
-                                @for (int y = 2026; y >= 2019; y--)
+                                @for (int y = currentYear; y >= 2019; y--)
                                 {
                                     <option value="@y" selected="@(ViewBag.Year == y ? "selected" : null)">
                                         @y
@@ -85,11 +69,11 @@
                         </select>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100 mb-2" style="font-size:15px;">
+                    <button type="submit" class="btn btn-primary w-100 mb-2">
                         Пребарувај
                     </button>
 
-                    <button type="button" class="btn btn-secondary w-100" id="navigateButton" style="font-size:15px;">
+                    <button type="button" class="btn btn-secondary w-100" id="navigateButton">
                         Извади сметки
                     </button>
 
@@ -99,7 +83,7 @@
                 @if (ViewBag.BuildingId != null)
                 {
                     <button type="button" class="btn btn-success w-100 mt-2"
-                            data-bs-toggle="modal" data-bs-target="#createPaymentModal" style="font-size:15px;">
+                            data-bs-toggle="modal" data-bs-target="#createPaymentModal">
                         Креирај плаќање
                     </button>
                 }
@@ -216,7 +200,7 @@
             <!-- ✅ TABLE 1 -->
             <div class="statbox widget box box-shadow mb-4">
                 <div class="widget-content widget-content-area">
-                    <table id="html5-extension" class="table dt-table-hover w-100" style="font-size:10px;">
+                    <table id="html5-extension" class="table dt-table-hover w-100">
                         <thead>
                             <tr>
                                 <th></th>
@@ -326,7 +310,7 @@
             </div>
 
             <!-- 🔹 ACTIONS -->
-            <div class="d-flex gap-3 mt-3" style="font-size:10px;">
+            <div class="d-flex gap-3 mt-3">
                 @if (Model != null && Model.Any(x => x.PaymentStatus == PaymentStatus.Неплатено))
                 {
                     <form asp-action="SetMultiplePayments" method="post">
@@ -334,7 +318,7 @@
                         <input type="hidden" id="selectedInvoices" name="SelectedInvoiceIds" />
 
                         <button type="button" class="btn btn-dark"
-                                data-bs-toggle="modal" data-bs-target="#multiPaymentModal" style="font-size:10px;">
+                                data-bs-toggle="modal" data-bs-target="#multiPaymentModal">
                             Плати селектирани
                         </button>
                         <div class="modal fade" id="multiPaymentModal" tabindex="-1" role="dialog" aria-labelledby="multiPaymentModalLabel" aria-hidden="true">
@@ -378,7 +362,7 @@
                     @Html.AntiForgeryToken()
                     <input type="hidden" id="selectedInvoicesForDelete" name="SelectedInvoiceIds" />
 
-                    <button type="submit" class="btn btn-danger" style="font-size:10px;">
+                    <button type="submit" class="btn btn-danger">
                         Избриши селектирани
                     </button>
                 </form>
@@ -390,7 +374,7 @@
                         <input type="hidden" id="selectedInvoicesMultipleChange" name="SelectedInvoiceIds" />
 
                         <button type="button" class="btn btn-secondary"
-                                data-bs-toggle="modal" data-bs-target="#multiChangeModal" style="font-size:10px;">
+                                data-bs-toggle="modal" data-bs-target="#multiChangeModal">
                             Измени плаќање
                         </button>
                         <div class="modal fade" id="multiChangeModal" tabindex="-1" role="dialog" aria-labelledby="multiChangeModalLabel" aria-hidden="true">
@@ -462,7 +446,7 @@
                     <h5 class="modal-title">Креирај ново плаќање</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
-                <div class="modal-body" style="font-size: 14px;">
+                <div class="modal-body">
 
                     <div class="form-group mb-3">
                         <label for="createPaymentCustomerId" class="form-label">Станар</label>

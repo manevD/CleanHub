@@ -18,11 +18,6 @@
         }
     }
 }
-<style>
-    th.no-sort::after {
-        display: none !important;
-    }
-</style>
 <hr />
 <form asp-action="LastInvoice" asp-controller="BookFinancial" method="post">
     <div class="row">
@@ -57,7 +52,7 @@
                 <select id="year" name="year" class="form-control">
                     @{
                         int currentYear = DateTime.Now.Year;
-                        for (int y = 2026; y >= 2014; y--)
+                        for (int y = DateTime.Now.Year; y >= 2014; y--)
                         {
                             if (ViewBag.Year != null && ViewBag.Year == y)
                             {
