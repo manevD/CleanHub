@@ -727,6 +727,10 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
 .message-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(380px, 1fr)); gap: 16px; }
 .message-card { display: flex; flex-direction: column; padding: 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); box-shadow: var(--shadow); }
 .message-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: center; margin-bottom: 10px; }
+.msg-email-row { margin-bottom: 8px; }
+.msg-email:placeholder-shown { border-color: color-mix(in srgb, var(--warning) 55%, var(--border-strong)); background: var(--warning-50); }
+.message-card.is-sent { border-color: color-mix(in srgb, var(--success) 50%, var(--border)); }
+.message-foot { flex-wrap: wrap; }
 .message-card textarea { font-size: .86rem; line-height: 1.55; resize: vertical; }
 .message-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
 .msg-status { margin-left: auto; font-weight: 600; color: var(--text-2); }

@@ -92,15 +92,17 @@ namespace CleanHub.Services.Ai
 
             foreach (var item in items)
             {
-                // Е-поштата секогаш се зема од базата, никогаш од прелистувачот.
                 if (!debtors.TryGetValue(item.CustomerId, out var debtor))
                 {
                     results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Error = "Станарот нема неплатени фактури." });
                     continue;
                 }
-                if (string.IsNullOrWhiteSpace(debtor.Email))
+
+                // Адресата внесена/изменета на картичката има предност; инаку — онаа од базата.
+                var to = !string.IsNullOrWhiteSpace(item.Email) ? item.Email.Trim() : debtor.Email?.Trim();
+                if (string.IsNullOrWhiteSpace(to) || !System.Net.Mail.MailAddress.TryCreate(to, out _))
                 {
-                    results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Error = "Нема е-пошта." });
+                    results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Error = string.IsNullOrWhiteSpace(to) ? "Нема е-пошта." : "Неважечка е-пошта." });
                     continue;
                 }
                 if (string.IsNullOrWhiteSpace(item.Body))
@@ -112,7 +114,7 @@ namespace CleanHub.Services.Ai
                 try
                 {
                     var subject = string.IsNullOrWhiteSpace(item.Subject) ? $"Известување од {_company.Name}" : item.Subject.Trim();
-                    await _email.SendAsync(debtor.Email!.Trim(), subject, item.Body.Trim(), false, ct);
+                    await _email.SendAsync(to, subject, item.Body.Trim(), false, ct);
                     results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Sent = true });
                 }
                 catch (Exception ex)

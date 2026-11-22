@@ -109,11 +109,11 @@
             <span class="text-muted small align-self-center" id="messagesInfo"></span>
             <button type="button" class="btn btn-success" id="btnSend">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
-                Испрати е-пошта на означените
+                Испрати е-пошта на сите означени
             </button>
         </div>
     </div>
-    <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките пред праќање. SMS и Viber се отвораат на вашиот телефон/компјутер со готов текст.</p>
+    <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките. „Е-пошта“ ја праќа само таа порака. Ако станарот нема е-пошта, внесете ја. „Viber“ ја копира целата порака и го отвора разговорот — само залепете (Ctrl+V).</p>
     <div id="messagesList" class="message-grid"></div>
 </section>
 
@@ -172,13 +172,55 @@
                 else if (btn.dataset.label) { btn.innerHTML = btn.dataset.label; }
             }
 
-            function smsLink(phone, text) {
-                const p = (phone || '').replace(/[^\d+]/g, '');
-                return 'sms:' + p + '?&body=' + encodeURIComponent(text);
+            // Македонски број → меѓународен формат (+389...)
+            function intlPhone(phone) {
+                let p = (phone || '').replace(/[^\d+]/g, '');
+                if (!p) return '';
+                if (p.startsWith('00')) p = '+' + p.slice(2);
+                else if (p.startsWith('389')) p = '+' + p;
+                else if (p.startsWith('0')) p = '+389' + p.slice(1);
+                else if (!p.startsWith('+')) p = '+389' + p;
+                return p;
             }
 
-            function viberLink(text) {
-                return 'viber://forward?text=' + encodeURIComponent(text);
+            function smsLink(phone, text) {
+                return 'sms:' + intlPhone(phone) + '?&body=' + encodeURIComponent(text);
+            }
+
+            function copyText(text) {
+                if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+                return new Promise((resolve, reject) => {
+                    const ta = document.createElement('textarea');
+                    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+                    document.body.appendChild(ta); ta.select();
+                    try { document.execCommand('copy') ? resolve() : reject(); } catch (e) { reject(e); } finally { ta.remove(); }
+                });
+            }
+
+            function setStatus(card, text, kind) {
+                const st = card.querySelector('.msg-status');
+                st.textContent = text;
+                st.className = 'msg-status small' + (kind ? ' is-' + kind : '');
+            }
+
+            function itemFrom(card) {
+                return {
+                    customerId: parseInt(card.dataset.customerId, 10),
+                    subject: card.querySelector('.msg-subject').value,
+                    body: card.querySelector('.msg-body').value,
+                    email: card.querySelector('.msg-email').value.trim()
+                };
+            }
+
+            function applyResults(results) {
+                let ok = 0;
+                results.forEach(r => {
+                    const card = list.querySelector('.message-card[data-customer-id="' + r.customerId + '"]');
+                    if (!card) return;
+                    setStatus(card, r.sent ? 'Пратено ✓' : (r.error || 'Грешка'), r.sent ? 'ok' : 'err');
+                    if (r.sent) { ok++; card.querySelector('.send-check').checked = false; card.classList.add('is-sent'); }
+                });
+                return ok;
             }
 
             function render(messages) {
@@ -188,35 +230,70 @@
                     card.className = 'message-card';
                     card.dataset.customerId = m.customerId;
                     const levelClass = m.level === 'Опомена' ? 3 : (m.level === 'Потсетник' ? 2 : 1);
+                    const phone = intlPhone(m.phoneNumber);
                     card.innerHTML =
                         '<header class="message-head">' +
                             '<div><strong>' + esc(m.customerInfo) + '</strong> <span class="lvl lvl-' + levelClass + '">' + esc(m.level) + '</span>' +
                             (m.aiGenerated ? ' <span class="ai-chip">AI</span>' : ' <span class="ai-chip is-template">шаблон</span>') + '</div>' +
-                            '<label class="form-check m-0"><input type="checkbox" class="form-check-input send-check" ' + (m.email ? 'checked' : 'disabled') + '> <span class="form-check-label small">' + (m.email ? esc(m.email) : 'нема е-пошта') + '</span></label>' +
+                            '<label class="form-check m-0" title="Вклучи во масовното праќање"><input type="checkbox" class="form-check-input send-check"> <span class="form-check-label small">за праќање</span></label>' +
                         '</header>' +
+                        '<div class="msg-email-row"><input type="email" class="form-control form-control-sm msg-email" placeholder="Нема е-пошта — внесете адреса" aria-label="Е-пошта"></div>' +
                         '<input class="form-control form-control-sm msg-subject mb-2" aria-label="Наслов">' +
-                        '<textarea class="form-control msg-body" rows="9" aria-label="Порака"></textarea>' +
+                        '<textarea class="form-control msg-body" rows="10" aria-label="Порака"></textarea>' +
                         '<footer class="message-foot">' +
-                            '<a class="btn btn-sm btn-secondary msg-sms' + (m.phoneNumber ? '' : ' disabled') + '" target="_blank" rel="noopener">SMS</a>' +
-                            '<a class="btn btn-sm btn-secondary msg-viber" target="_blank" rel="noopener">Viber</a>' +
+                            '<button type="button" class="btn btn-sm btn-primary msg-send">' +
+                                '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Е-пошта</button>' +
+                            '<button type="button" class="btn btn-sm btn-secondary msg-viber" title="' + (phone ? 'Ја копира пораката и го отвора Viber разговорот со ' + esc(phone) : 'Ја копира пораката и го отвора Viber') + '">Viber</button>' +
+                            '<a class="btn btn-sm btn-secondary msg-sms' + (phone ? '' : ' disabled') + '">SMS</a>' +
                             '<button type="button" class="btn btn-sm btn-ghost msg-copy">Копирај</button>' +
                             '<span class="msg-status small"></span>' +
                         '</footer>';
+
+                    const emailInput = card.querySelector('.msg-email');
+                    const sendCheck = card.querySelector('.send-check');
+                    emailInput.value = m.email || '';
+                    sendCheck.checked = !!m.email;
+                    emailInput.addEventListener('input', () => { sendCheck.checked = emailInput.value.trim() !== ''; });
                     card.querySelector('.msg-subject').value = m.subject || '';
                     card.querySelector('.msg-body').value = m.body || '';
 
-                    const refreshLinks = () => {
-                        const text = card.querySelector('.msg-body').value;
-                        card.querySelector('.msg-sms').href = m.phoneNumber ? smsLink(m.phoneNumber, text) : '#';
-                        card.querySelector('.msg-viber').href = viberLink(text);
+                    const refreshSms = () => {
+                        card.querySelector('.msg-sms').href = phone ? smsLink(phone, card.querySelector('.msg-body').value) : '#';
                     };
-                    card.querySelector('.msg-body').addEventListener('input', refreshLinks);
+                    card.querySelector('.msg-body').addEventListener('input', refreshSms);
+                    refreshSms();
+
                     card.querySelector('.msg-copy').addEventListener('click', () => {
-                        navigator.clipboard.writeText(card.querySelector('.msg-body').value).then(() => {
-                            card.querySelector('.msg-status').textContent = 'Копирано ✓';
-                        });
+                        copyText(card.querySelector('.msg-body').value)
+                            .then(() => setStatus(card, 'Копирано ✓', 'ok'))
+                            .catch(() => setStatus(card, 'Не може да се копира', 'err'));
                     });
-                    refreshLinks();
+
+                    // Viber не прима долг текст преку линк — затоа целата порака се копира,
+                    // се отвора разговорот и само се залепува (Ctrl+V / држи → Залепи).
+                    card.querySelector('.msg-viber').addEventListener('click', () => {
+                        copyText(card.querySelector('.msg-body').value)
+                            .then(() => {
+                                setStatus(card, 'Копирано — во Viber залепете (Ctrl+V)', 'ok');
+                                window.location.href = phone
+                                    ? 'viber://chat?number=' + encodeURIComponent(phone)
+                                    : 'viber://forward?text=';
+                            })
+                            .catch(() => setStatus(card, 'Не може да се копира', 'err'));
+                    });
+
+                    card.querySelector('.msg-send').addEventListener('click', e => {
+                        const item = itemFrom(card);
+                        if (!item.email) { setStatus(card, 'Внесете е-пошта', 'err'); emailInput.focus(); return; }
+                        if (!confirm('Да се испрати пораката на ' + item.email + '?')) return;
+                        const btn = e.currentTarget;
+                        setBusy(btn, true, 'Се праќа…');
+                        mhPostJson('/Ai/SendReminders', { items: [item] })
+                            .then(applyResults)
+                            .catch(err => setStatus(card, err.message, 'err'))
+                            .finally(() => setBusy(btn, false));
+                    });
+
                     list.appendChild(card);
                 });
 
@@ -239,30 +316,13 @@
 
             if (btnSend) btnSend.addEventListener('click', () => {
                 const cards = Array.from(list.querySelectorAll('.message-card'))
-                    .filter(c => c.querySelector('.send-check').checked);
+                    .filter(c => c.querySelector('.send-check').checked && c.querySelector('.msg-email').value.trim() !== '');
                 if (!cards.length) { alert('Нема означени пораки со е-пошта.'); return; }
                 if (!confirm('Да се испратат ' + cards.length + ' е-пораки?')) return;
 
-                const items = cards.map(c => ({
-                    customerId: parseInt(c.dataset.customerId, 10),
-                    subject: c.querySelector('.msg-subject').value,
-                    body: c.querySelector('.msg-body').value
-                }));
-
                 setBusy(btnSend, true, 'Се праќа…');
-                mhPostJson('/Ai/SendReminders', { items })
-                    .then(results => {
-                        let ok = 0;
-                        results.forEach(r => {
-                            const card = list.querySelector('.message-card[data-customer-id="' + r.customerId + '"]');
-                            if (!card) return;
-                            const status = card.querySelector('.msg-status');
-                            status.textContent = r.sent ? 'Пратено ✓' : (r.error || 'Грешка');
-                            status.className = 'msg-status small ' + (r.sent ? 'is-ok' : 'is-err');
-                            if (r.sent) { ok++; card.querySelector('.send-check').checked = false; }
-                        });
-                        info.textContent = 'Пратени: ' + ok + ' од ' + results.length;
-                    })
+                mhPostJson('/Ai/SendReminders', { items: cards.map(itemFrom) })
+                    .then(results => { info.textContent = 'Пратени: ' + applyResults(results) + ' од ' + results.length; })
                     .catch(err => alert(err.message))
                     .finally(() => setBusy(btnSend, false));
             });
