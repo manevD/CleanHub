@@ -1226,6 +1226,19 @@ namespace CleanHub.Controllers
 
             await _unitOfWork.SaveChangesAsync();
 
+            var docToUpdate = _context.DokumentiTest.FirstOrDefault(x => x.Dokid == document.Id.ToString());
+            if (docToUpdate != null)
+            {
+                docToUpdate.Dokid = document.Id.ToString();
+                docToUpdate.Datum = document.Date.Value.ToString("yyyy-MM-dd");
+                docToUpdate.Broj = document.Number.ToString();
+                docToUpdate.PartnerID = document.CustomerId.ToString();
+                docToUpdate.Godina = document.Date.Value.Year.ToString();
+                docToUpdate.VkupnoIz = document.TotalOutput.ToString();
+
+                _context.DokumentiTest.Update(docToUpdate);
+                await _context.SaveChangesAsync();
+            }
 
             // =========================================================
             // REDIRECT
