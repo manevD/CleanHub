@@ -431,7 +431,7 @@ namespace CleanHub.Controllers
         {
             if (id == null) return NotFound();
 
-            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer).ThenInclude(b => b.Building));
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
             if (documentViewModel == null) return NotFound();
