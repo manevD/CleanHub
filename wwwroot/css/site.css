@@ -729,6 +729,13 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
 .msg-email:placeholder-shown { border-color: color-mix(in srgb, var(--warning) 55%, var(--border-strong)); background: var(--warning-50); }
 .message-card.is-sent { border-color: color-mix(in srgb, var(--success) 50%, var(--border)); }
 .message-foot { flex-wrap: wrap; }
+.sms-box { margin-top: 10px; padding: 10px; border: 1px dashed var(--border-strong); border-radius: 12px; background: var(--surface-2); }
+.sms-box-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sms-box-head .msg-phone { flex: 1; }
+.msg-phone:placeholder-shown { border-color: color-mix(in srgb, var(--warning) 55%, var(--border-strong)); background: var(--warning-50); }
+.sms-box-foot { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
+.sms-counter { margin-right: auto; color: var(--text-2); font-weight: 600; }
+.sms-counter.is-costly { color: var(--warning); }
 .message-card textarea { font-size: .86rem; line-height: 1.55; resize: vertical; }
 .message-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
 .msg-status { margin-left: auto; font-weight: 600; color: var(--text-2); }

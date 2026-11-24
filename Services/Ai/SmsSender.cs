@@ -1,0 +1,91 @@
+using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json.Nodes;
+using CleanHub.Config;
+using Microsoft.Extensions.Options;
+
+namespace CleanHub.Services.Ai
+{
+    /// <summary>Праќање SMS преку Telnyx Messaging API (без NuGet пакети).</summary>
+    public class SmsSender
+    {
+        private readonly HttpClient _http;
+        private readonly TelnyxConfig _config;
+        private readonly ILogger<SmsSender> _logger;
+
+        public SmsSender(HttpClient http, IOptions<TelnyxConfig> config, ILogger<SmsSender> logger)
+        {
+            _http = http;
+            _config = config.Value;
+            _logger = logger;
+            _http.Timeout = TimeSpan.FromSeconds(30);
+        }
+
+        public bool IsConfigured => _config.IsConfigured;
+
+        /// <summary>
+        /// Македонски број → E.164 (+389...). „070 123 456“ → „+38970123456“. Враќа null ако не е валиден.
+        /// </summary>
+        public static string? NormalizePhone(string? phone)
+        {
+            if (string.IsNullOrWhiteSpace(phone)) return null;
+            var p = new string(phone.Where(c => char.IsDigit(c) || c == '+').ToArray());
+            if (p.StartsWith("00")) p = "+" + p[2..];
+            else if (p.StartsWith("389")) p = "+" + p;
+            else if (p.StartsWith("0")) p = "+389" + p[1..];
+            else if (!p.StartsWith("+")) p = "+389" + p;
+
+            var digits = p.Count(char.IsDigit);
+            return digits is >= 10 and <= 15 ? p : null;
+        }
+
+        /// <summary>Враќа null ако е успешно, или текст на грешката.</summary>
+        public async Task<string?> SendAsync(string phone, string text, CancellationToken ct = default)
+        {
+            if (!IsConfigured) return "SMS не е поставен (Telnyx:ApiKey).";
+
+            var to = NormalizePhone(phone);
+            if (to == null) return "Неважечки телефонски број.";
+            if (string.IsNullOrWhiteSpace(text)) return "Празна порака.";
+
+            var body = new JsonObject
+            {
+                ["from"] = _config.From,
+                ["to"] = to,
+                ["text"] = text.Trim()
+            };
+            if (!string.IsNullOrWhiteSpace(_config.MessagingProfileId))
+                body["messaging_profile_id"] = _config.MessagingProfileId;
+
+            using var request = new HttpRequestMessage(HttpMethod.Post, _config.Endpoint);
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            request.Content = new StringContent(body.ToJsonString(), Encoding.UTF8, "application/json");
+
+            try
+            {
+                using var response = await _http.SendAsync(request, ct);
+                if (response.IsSuccessStatusCode) return null;
+
+                var json = await response.Content.ReadAsStringAsync(ct);
+                _logger.LogWarning("Telnyx {Status}: {Body}", (int)response.StatusCode, json.Length > 500 ? json[..500] : json);
+
+                // Telnyx враќа {"errors":[{"title":"...","detail":"..."}]}
+                try
+                {
+                    var err = (JsonNode.Parse(json)?["errors"] as JsonArray)?.FirstOrDefault();
+                    var detail = err?["detail"]?.GetValue<string>() ?? err?["title"]?.GetValue<string>();
+                    if (!string.IsNullOrWhiteSpace(detail)) return "Telnyx: " + detail;
+                }
+                catch { /* не е JSON */ }
+
+                return $"Telnyx грешка {(int)response.StatusCode}.";
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+            {
+                _logger.LogWarning(ex, "SMS не е пратен");
+                return "Нема врска со Telnyx.";
+            }
+        }
+    }
+}

@@ -89,6 +89,8 @@ namespace CleanHub
             // ----------------------------------------------------
             builder.Services.AddOptions<AiConfig>().Bind(builder.Configuration.GetSection("AI"));
             builder.Services.AddHttpClient<ClaudeClient>();
+            builder.Services.AddOptions<TelnyxConfig>().Bind(builder.Configuration.GetSection("Telnyx"));
+            builder.Services.AddHttpClient<SmsSender>();
             builder.Services.AddScoped<FinanceDataService>();
             builder.Services.AddScoped<EmailSender>();
             builder.Services.AddScoped<DebtReminderService>();
