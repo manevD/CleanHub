@@ -15,6 +15,9 @@ namespace CleanHub.Services.Ai
         public bool AiGenerated { get; set; }
         public string? Email { get; set; }
         public string? PhoneNumber { get; set; }
+
+        /// <summary>Кратка порака за SMS (поевтино од целата порака).</summary>
+        public string Sms { get; set; } = "";
     }
 
     public class ReminderSendResult
@@ -36,15 +39,17 @@ namespace CleanHub.Services.Ai
         private readonly FinanceDataService _data;
         private readonly ClaudeClient _ai;
         private readonly EmailSender _email;
+        private readonly SmsSender _sms;
         private readonly CompanyConfig _company;
         private readonly ILogger<DebtReminderService> _logger;
 
-        public DebtReminderService(FinanceDataService data, ClaudeClient ai, EmailSender email,
+        public DebtReminderService(FinanceDataService data, ClaudeClient ai, EmailSender email, SmsSender sms,
             IOptions<CompanyConfig> company, ILogger<DebtReminderService> logger)
         {
             _data = data;
             _ai = ai;
             _email = email;
+            _sms = sms;
             _company = company.Value;
             _logger = logger;
         }
@@ -127,6 +132,49 @@ namespace CleanHub.Services.Ai
             return results;
         }
 
+        /// <summary>SMS преку Telnyx. Бројот: внесениот на картичката или оној од базата.</summary>
+        public async Task<List<ReminderSendResult>> SendSmsAsync(IEnumerable<ReminderMessage> items, CancellationToken ct = default)
+        {
+            var results = new List<ReminderSendResult>();
+            var debtors = (await _data.GetDebtorsAsync(null, 1, ct)).ToDictionary(d => d.CustomerId);
+
+            foreach (var item in items)
+            {
+                if (!debtors.TryGetValue(item.CustomerId, out var debtor))
+                {
+                    results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Error = "Станарот нема неплатени фактури." });
+                    continue;
+                }
+
+                var phone = !string.IsNullOrWhiteSpace(item.PhoneNumber) ? item.PhoneNumber : debtor.PhoneNumber;
+                if (string.IsNullOrWhiteSpace(phone))
+                {
+                    results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Error = "Нема телефон." });
+                    continue;
+                }
+
+                var text = string.IsNullOrWhiteSpace(item.Sms) ? item.Body : item.Sms;
+                var error = await _sms.SendAsync(phone, text, ct);
+                results.Add(new ReminderSendResult { CustomerId = item.CustomerId, Sent = error == null, Error = error });
+            }
+
+            return results;
+        }
+
+        /// <summary>Кратка SMS порака на латиница (без AI — износите се точни, а цената пониска).</summary>
+        private string ShortSms(DebtorInfo d)
+        {
+            var amount = FinanceDataService.Money(d.UnpaidTotal);
+            var phone = string.IsNullOrWhiteSpace(_company.PhoneNumber) ? "" : " " + _company.PhoneNumber;
+            var text = d.Level switch
+            {
+                ReminderLevel.Polite => $"Почитувани, имате неплатена сметка од {amount}. Ако веќе платиле, занемарете. {_company.Name}{phone}",
+                ReminderLevel.Reminder => $"Потсетник: имате {d.UnpaidCount} неплатени сметки, вкупно {amount}. Ве молиме уплатете во рок од 8 дена. {_company.Name}{phone}",
+                _ => $"ОПОМЕНА: долг од {amount} за {d.UnpaidCount} месеци. Подмирете во рок од 8 дена за да избегнете понатамошни мерки. {_company.Name}{phone}"
+            };
+            return SmsSender.ToLatin(text); // секогаш латиница — поевтино
+        }
+
         private ReminderMessage Template(DebtorInfo d)
         {
             var periods = d.Periods.Count > 0 ? string.Join(", ", d.Periods) : $"{d.UnpaidCount} месец(и)";
@@ -156,6 +204,7 @@ namespace CleanHub.Services.Ai
                 Body = text + signature,
                 Email = d.Email,
                 PhoneNumber = d.PhoneNumber,
+                Sms = ShortSms(d),
                 AiGenerated = false
             };
         }

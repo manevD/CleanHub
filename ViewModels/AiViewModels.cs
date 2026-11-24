@@ -9,6 +9,8 @@ namespace CleanHub.ViewModels
         public SelectList? Buildings { get; set; }
         public int? BuildingId { get; set; }
         public bool AiEnabled { get; set; }
+        public bool SmsEnabled { get; set; }
+        public string? SmsFrom { get; set; }
     }
 
     public class AiAnomaliesViewModel

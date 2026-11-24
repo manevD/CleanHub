@@ -111,9 +111,25 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13" /><polygon points="22 2 15 22 11 13 2 9 22 2" /></svg>
                 Испрати е-пошта на сите означени
             </button>
+            @if (Model.SmsEnabled)
+            {
+                <button type="button" class="btn btn-primary" id="btnSendSms">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" /></svg>
+                    Испрати SMS на сите означени
+                </button>
+            }
         </div>
     </div>
-    <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките. „Е-пошта“ ја праќа само таа порака. Ако станарот нема е-пошта, внесете ја. „Viber“ ја копира целата порака и го отвора разговорот — само залепете (Ctrl+V).</p>
+    <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките. „Е-пошта“ ја праќа само таа порака. Ако станарот нема е-пошта, внесете ја. „Viber“ ја копира целата порака и го отвора разговорот — само залепете (Ctrl+V).
+        @if (Model.SmsEnabled)
+        {
+            <text>SMS се праќа преку Telnyx како <strong>@Model.SmsFrom</strong> — кратката порака, секогаш на латиница (поевтино); бројачот покажува колку SMS се наплаќаат.</text>
+        }
+        else
+        {
+            <text>SMS не е поврзан (Telnyx:ApiKey) — копчето SMS ја отвора апликацијата за пораки на уредот.</text>
+        }
+    </p>
     <div id="messagesList" class="message-grid"></div>
 </section>
 
@@ -155,6 +171,8 @@
             const checkAll = document.getElementById('checkAll');
             const btnGenerate = document.getElementById('btnGenerate');
             const btnSend = document.getElementById('btnSend');
+            const btnSendSms = document.getElementById('btnSendSms');
+            const smsEnabled = @(Model.SmsEnabled ? "true" : "false");
             const section = document.getElementById('messagesSection');
             const list = document.getElementById('messagesList');
             const info = document.getElementById('messagesInfo');
@@ -197,6 +215,32 @@
                 });
             }
 
+            // Кирилица → латиница (македонска транслитерација): SMS на латиница е до 2× поевтин
+            const MK = { 'а':'a','б':'b','в':'v','г':'g','д':'d','ѓ':'gj','е':'e','ж':'zh','з':'z','ѕ':'dz','и':'i','ј':'j','к':'k','л':'l','љ':'lj','м':'m','н':'n','њ':'nj','о':'o','п':'p','р':'r','с':'s','т':'t','ќ':'kj','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','џ':'dj','ш':'sh' };
+            function toLatin(text) {
+                return String(text || '')
+                    .replace(/[„“”«»]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-').replace(/…/g, '...').replace(/№/g, 'br.').replace(/\u00A0/g, ' ')
+                    .replace(/[\u0400-\u04FF]/g, ch => {
+                    const low = ch.toLowerCase();
+                    const t = MK[low];
+                    if (t === undefined) return ch;
+                    return ch === low ? t : t.charAt(0).toUpperCase() + t.slice(1);
+                });
+            }
+
+            // Број на SMS делови: GSM-7 (латиница) 160/153 знаци, Unicode (кирилица) 70/67
+            const GSM = /^[\n\r\x20-\x7E\x40£¥èéùìòÇØøÅåΔΦΓΛΩΠΨΣΘΞÆæßÉ¡ÄÖÑÜ§¿äöñüà€]*$/;
+            function smsInfo(text) {
+                text = String(text || '');
+                if (!text) return { parts: 0, chars: 0, unicode: false };
+                if (GSM.test(text)) {
+                    const len = text.length + (text.match(/[\^{}\\\[~\]|€]/g) || []).length;
+                    return { parts: len <= 160 ? 1 : Math.ceil(len / 153), chars: len, unicode: false };
+                }
+                const len = Array.from(text).length;
+                return { parts: len <= 70 ? 1 : Math.ceil(len / 67), chars: len, unicode: true };
+            }
+
             function setStatus(card, text, kind) {
                 const st = card.querySelector('.msg-status');
                 st.textContent = text;
@@ -208,17 +252,24 @@
                     customerId: parseInt(card.dataset.customerId, 10),
                     subject: card.querySelector('.msg-subject').value,
                     body: card.querySelector('.msg-body').value,
-                    email: card.querySelector('.msg-email').value.trim()
+                    email: card.querySelector('.msg-email').value.trim(),
+                    phoneNumber: card.querySelector('.msg-phone').value.trim(),
+                    sms: card.querySelector('.msg-sms-text').value
                 };
             }
 
-            function applyResults(results) {
+            function applyResults(results, channel) {
                 let ok = 0;
                 results.forEach(r => {
                     const card = list.querySelector('.message-card[data-customer-id="' + r.customerId + '"]');
                     if (!card) return;
-                    setStatus(card, r.sent ? 'Пратено ✓' : (r.error || 'Грешка'), r.sent ? 'ok' : 'err');
-                    if (r.sent) { ok++; card.querySelector('.send-check').checked = false; card.classList.add('is-sent'); }
+                    const label = channel === 'sms' ? 'SMS' : 'Е-пошта';
+                    setStatus(card, r.sent ? label + ' пратено ✓' : label + ': ' + (r.error || 'Грешка'), r.sent ? 'ok' : 'err');
+                    if (r.sent) {
+                        ok++;
+                        card.querySelector(channel === 'sms' ? '.sms-check' : '.send-check').checked = false;
+                        card.classList.add('is-sent');
+                    }
                 });
                 return ok;
             }
@@ -240,11 +291,22 @@
                         '<div class="msg-email-row"><input type="email" class="form-control form-control-sm msg-email" placeholder="Нема е-пошта — внесете адреса" aria-label="Е-пошта"></div>' +
                         '<input class="form-control form-control-sm msg-subject mb-2" aria-label="Наслов">' +
                         '<textarea class="form-control msg-body" rows="10" aria-label="Порака"></textarea>' +
+                        '<div class="sms-box">' +
+                            '<div class="sms-box-head">' +
+                                '<label class="form-check m-0"><input type="checkbox" class="form-check-input sms-check"> <span class="form-check-label small fw-semibold">SMS</span></label>' +
+                                '<input type="tel" class="form-control form-control-sm msg-phone" placeholder="Нема телефон — внесете број" aria-label="Телефон">' +
+                            '</div>' +
+                            '<textarea class="form-control form-control-sm msg-sms-text" rows="3" aria-label="SMS порака"></textarea>' +
+                            '<div class="sms-box-foot">' +
+                                '<span class="sms-counter small"></span>' +
+                                '<span class="sms-latin-note small">латиница</span>' +
+                                (smsEnabled ? '<button type="button" class="btn btn-sm btn-primary msg-sms-send">Прати SMS</button>' : '<a class="btn btn-sm btn-secondary msg-sms">Отвори SMS</a>') +
+                            '</div>' +
+                        '</div>' +
                         '<footer class="message-foot">' +
                             '<button type="button" class="btn btn-sm btn-primary msg-send">' +
                                 '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg> Е-пошта</button>' +
                             '<button type="button" class="btn btn-sm btn-secondary msg-viber" title="' + (phone ? 'Ја копира пораката и го отвора Viber разговорот со ' + esc(phone) : 'Ја копира пораката и го отвора Viber') + '">Viber</button>' +
-                            '<a class="btn btn-sm btn-secondary msg-sms' + (phone ? '' : ' disabled') + '">SMS</a>' +
                             '<button type="button" class="btn btn-sm btn-ghost msg-copy">Копирај</button>' +
                             '<span class="msg-status small"></span>' +
                         '</footer>';
@@ -257,11 +319,41 @@
                     card.querySelector('.msg-subject').value = m.subject || '';
                     card.querySelector('.msg-body').value = m.body || '';
 
+                    const phoneInput = card.querySelector('.msg-phone');
+                    const smsText = card.querySelector('.msg-sms-text');
+                    const smsCheck = card.querySelector('.sms-check');
+                    phoneInput.value = m.phoneNumber || '';
+                    smsText.value = m.sms || '';
+                    smsCheck.checked = smsEnabled && !!m.phoneNumber;
+
                     const refreshSms = () => {
-                        card.querySelector('.msg-sms').href = phone ? smsLink(phone, card.querySelector('.msg-body').value) : '#';
+                        const info = smsInfo(toLatin(smsText.value)); // се праќа секогаш на латиница
+                        const counter = card.querySelector('.sms-counter');
+                        counter.textContent = info.chars + ' знаци · ' + info.parts + ' SMS' + (info.unicode ? ' (има посебни знаци)' : '');
+                        counter.classList.toggle('is-costly', info.parts > 2);
+                        const link = card.querySelector('.msg-sms');
+                        if (link) link.href = phoneInput.value.trim() ? smsLink(phoneInput.value, smsText.value) : '#';
                     };
-                    card.querySelector('.msg-body').addEventListener('input', refreshSms);
+                    smsText.addEventListener('input', refreshSms);
+                    phoneInput.addEventListener('input', () => { smsCheck.checked = smsEnabled && phoneInput.value.trim() !== ''; refreshSms(); });
+                    // Ако се внесе кирилица, веднаш се претвора во латиница
+                    smsText.addEventListener('blur', () => { const l = toLatin(smsText.value); if (l !== smsText.value) { smsText.value = l; refreshSms(); } });
                     refreshSms();
+
+                    const smsSendBtn = card.querySelector('.msg-sms-send');
+                    if (smsSendBtn) smsSendBtn.addEventListener('click', e => {
+                        const item = itemFrom(card);
+                        if (!item.phoneNumber) { setStatus(card, 'Внесете телефон', 'err'); phoneInput.focus(); return; }
+                        item.sms = toLatin(item.sms);
+                        const parts = smsInfo(item.sms).parts;
+                        if (!confirm('Да се испрати SMS на ' + intlPhone(item.phoneNumber) + ' (' + parts + ' SMS)?')) return;
+                        const btn = e.currentTarget;
+                        setBusy(btn, true, 'Се праќа…');
+                        mhPostJson('/Ai/SendSmsReminders', { items: [item] })
+                            .then(r => applyResults(r, 'sms'))
+                            .catch(err => setStatus(card, err.message, 'err'))
+                            .finally(() => setBusy(btn, false));
+                    });
 
                     card.querySelector('.msg-copy').addEventListener('click', () => {
                         copyText(card.querySelector('.msg-body').value)
@@ -322,9 +414,24 @@
 
                 setBusy(btnSend, true, 'Се праќа…');
                 mhPostJson('/Ai/SendReminders', { items: cards.map(itemFrom) })
-                    .then(results => { info.textContent = 'Пратени: ' + applyResults(results) + ' од ' + results.length; })
+                    .then(results => { info.textContent = 'Е-пошта пратени: ' + applyResults(results, 'email') + ' од ' + results.length; })
                     .catch(err => alert(err.message))
                     .finally(() => setBusy(btnSend, false));
+            });
+
+            if (btnSendSms) btnSendSms.addEventListener('click', () => {
+                const cards = Array.from(list.querySelectorAll('.message-card'))
+                    .filter(c => c.querySelector('.sms-check').checked && c.querySelector('.msg-phone').value.trim() !== '');
+                if (!cards.length) { alert('Нема означени пораки со телефон.'); return; }
+                const items = cards.map(itemFrom).map(i => Object.assign(i, { sms: toLatin(i.sms) }));
+                const total = items.reduce((n, i) => n + smsInfo(i.sms).parts, 0);
+                if (!confirm('Да се испратат SMS до ' + items.length + ' станари (вкупно ' + total + ' SMS)?')) return;
+
+                setBusy(btnSendSms, true, 'Се праќа…');
+                mhPostJson('/Ai/SendSmsReminders', { items })
+                    .then(results => { info.textContent = 'SMS пратени: ' + applyResults(results, 'sms') + ' од ' + results.length; })
+                    .catch(err => alert(err.message))
+                    .finally(() => setBusy(btnSendSms, false));
             });
         })();
     </script>

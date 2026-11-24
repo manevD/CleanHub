@@ -24,6 +24,7 @@ namespace CleanHub.Controllers
         IMemoryCache _cache,
         ICompositeViewEngine _viewEngine,
         IOptions<AiConfig> _aiConfig,
+        IOptions<TelnyxConfig> _telnyxConfig,
         IOptions<SMTPConfig> _smtpConfig) : Controller
     {
         private const string AnomalyCacheKey = "ai-anomaly-report";
@@ -43,7 +44,9 @@ namespace CleanHub.Controllers
                 BuildingId = buildingId,
                 Buildings = await BuildingsSelectAsync(buildingId),
                 Debtors = await _data.GetDebtorsAsync(buildingId, 1, HttpContext.RequestAborted),
-                AiEnabled = _aiConfig.Value.IsConfigured
+                AiEnabled = _aiConfig.Value.IsConfigured,
+                SmsEnabled = _telnyxConfig.Value.IsConfigured,
+                SmsFrom = _telnyxConfig.Value.From
             };
             return View(model);
         }
@@ -67,6 +70,20 @@ namespace CleanHub.Controllers
             if (items.Count == 0) return BadRequest(new { error = "Нема пораки за праќање." });
 
             var results = await _reminders.SendEmailsAsync(items.Take(200), HttpContext.RequestAborted);
+            return Json(results);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendSmsReminders([FromBody] AiSendRequest request)
+        {
+            if (!_telnyxConfig.Value.IsConfigured)
+                return BadRequest(new { error = "SMS не е поставен (Telnyx:ApiKey)." });
+
+            var items = request?.Items ?? new List<ReminderMessage>();
+            if (items.Count == 0) return BadRequest(new { error = "Нема пораки за праќање." });
+
+            var results = await _reminders.SendSmsAsync(items.Take(200), HttpContext.RequestAborted);
             return Json(results);
         }
 
