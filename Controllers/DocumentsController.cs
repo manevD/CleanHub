@@ -185,6 +185,7 @@ namespace CleanHub.Controllers
                 var request = _httpContextAccessor?.HttpContext?.Request;
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                 HtmlToPdf converter = new HtmlToPdf();
+                htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                 PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                 MemoryStream pdfStream = new MemoryStream();
 
@@ -469,12 +470,11 @@ namespace CleanHub.Controllers
                 buildingName = buildingName
             });
         }
-
         public async Task<IActionResult> Details(int? id)
         {
             if (id == null) return NotFound();
 
-            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer));
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer).ThenInclude(b => b.Building));
             var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
 
             if (documentViewModel == null) return NotFound();
@@ -531,6 +531,68 @@ namespace CleanHub.Controllers
             //documentViewModel.TotalBuildingDemands = demands;
 
             return PartialView("_DocumentDetailPartial", documentViewModel);
+        }
+        public async Task<IActionResult> DetailsMemorandum(int? id)
+        {
+            if (id == null) return NotFound();
+
+            var documentEntity = await _unitOfWork.Documents.GetByIdAsync(xd => xd.Id == id, d => d.Include(x => x.Books).Include(d => d.Customer).ThenInclude(b => b.Building));
+            var documentViewModel = App.FullMapper.Map<DocumentViewModel>(documentEntity);
+
+            if (documentViewModel == null) return NotFound();
+
+            documentViewModel.Company = App.FullMapper.Map<CompanyConfig>(_config.Value);
+            if (documentViewModel.Books != null && documentViewModel.Books.Any(x => x.Hide))
+            {
+                var sb = new StringBuilder();
+                if (!string.IsNullOrWhiteSpace(documentViewModel.Company?.InvoiceNotice))
+                    sb.AppendLine(documentViewModel.Company.InvoiceNotice);
+
+                foreach (var book in documentViewModel.Books.Where(x => x.Hide))
+                {
+                    if (!string.IsNullOrWhiteSpace(book.ArticleNotes))
+                        sb.AppendLine($"<b style='color: red;'> за {documentViewModel.ToDocument} трошок за {book.ArticleNotes} имате {book.Total} мкд </b><br/>");
+                }
+                documentViewModel.Company.InvoiceNotice = sb.ToString();
+
+                documentViewModel.Books = documentViewModel.Books.Where(x => !x.Hide).ToList();
+            }
+
+            var utcToday = DateOnly.FromDateTime(DateTime.UtcNow);
+
+            var customerDocs = await _unitOfWork.Documents.GetAllAsync(x => x.Where(c =>
+                c.CustomerId == documentViewModel.CustomerId &&
+                c.DateReceived.HasValue &&
+                c.DateReceived.Value < utcToday
+            ));
+            var dataBookFinancial = await _unitOfWork.BookFinancials.GetAllAsync(x => x.Where(b => b.CustomerId == documentViewModel.CustomerId && b.InvoiceId == (int)InvoiceTyp.Recieve));
+
+            var pobaruva = dataBookFinancial.Sum(x => x.Demands);
+
+            double dolzi = customerDocs
+                .Where(x => x.Date.HasValue && x.Date.Value > new DateOnly(2021, 1, 1))
+                .Sum(x => (double)(x.TotalOutput ?? 0));
+
+            if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1)))
+            {
+                dolzi += dataBookFinancial
+                    .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= new DateOnly(2021, 1, 1))
+                    .Sum(x => x.Owes);
+            }
+
+            var saldo = pobaruva - dolzi;
+            if (dolzi > pobaruva)
+            {
+                documentViewModel.Debt = saldo.ToString();
+            }
+
+            //var results = GetFilteredBookFinancials(1201, documentViewModel.Customer.BuildingId).ToList();
+            //var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+            //var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+            //documentViewModel.TotalBuildingOwes = owes;
+            //documentViewModel.TotalBuildingDemands = demands;
+
+            return PartialView("_DocumentDetailPartialMemorandum", documentViewModel);
         }
 
         [Route("креирајФактураЗаСтанар")]
@@ -1615,6 +1677,7 @@ namespace CleanHub.Controllers
 
                                     converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
                                     converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.NoAdjustment;
+                                    htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                                     singleDoc = string.IsNullOrWhiteSpace(baseUrl)
                                         ? converter.ConvertHtmlString(htmlContent)
                                         : converter.ConvertHtmlString(
@@ -2998,6 +3061,7 @@ namespace CleanHub.Controllers
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
                 HtmlToPdf converter = new HtmlToPdf();
+                htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                 PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                 endDoc.Append(doc);
             }
@@ -3077,6 +3141,7 @@ namespace CleanHub.Controllers
                         string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
                         HtmlToPdf converter = new HtmlToPdf();
+                        htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                         PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
 
                         endDoc.Append(doc);

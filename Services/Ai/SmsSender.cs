@@ -23,6 +23,52 @@ namespace CleanHub.Services.Ai
 
         public bool IsConfigured => _config.IsConfigured;
 
+        // ID на профилот пронајден автоматски (ако Telnyx:MessagingProfileId не е поставен)
+        private static string? _discoveredProfileId;
+
+        /// <summary>
+        /// Го враќа Messaging Profile ID: од поставките, или автоматски од Telnyx
+        /// (профилот чиј Alpha sender е еднаков на Telnyx:From, инаку единствениот профил).
+        /// </summary>
+        private async Task<string?> GetProfileIdAsync(CancellationToken ct)
+        {
+            if (!string.IsNullOrWhiteSpace(_config.MessagingProfileId)) return _config.MessagingProfileId.Trim();
+            if (_discoveredProfileId != null) return _discoveredProfileId;
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, "https://api.telnyx.com/v2/messaging_profiles?page[size]=50");
+            request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);
+            request.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+            using var response = await _http.SendAsync(request, ct);
+            var json = await response.Content.ReadAsStringAsync(ct);
+            if (!response.IsSuccessStatusCode)
+            {
+                _logger.LogWarning("Telnyx messaging_profiles {Status}: {Body}", (int)response.StatusCode, json.Length > 300 ? json[..300] : json);
+                return null;
+            }
+
+            var profiles = (JsonNode.Parse(json)?["data"] as JsonArray)?
+                .Where(p => p != null)
+                .Select(p => new
+                {
+                    Id = p!["id"]?.GetValue<string>(),
+                    Alpha = p["alpha_sender"]?.GetValue<string>(),
+                    Enabled = p["enabled"]?.GetValue<bool>() ?? true
+                })
+                .Where(p => !string.IsNullOrWhiteSpace(p.Id) && p.Enabled)
+                .ToList();
+
+            if (profiles == null || profiles.Count == 0) return null;
+
+            var match = profiles.FirstOrDefault(p => string.Equals(p.Alpha, _config.From, StringComparison.OrdinalIgnoreCase))
+                        ?? (profiles.Count == 1 ? profiles[0] : null);
+
+            _discoveredProfileId = match?.Id;
+            if (_discoveredProfileId != null)
+                _logger.LogInformation("Telnyx Messaging Profile пронајден автоматски: {Id}", _discoveredProfileId);
+            return _discoveredProfileId;
+        }
+
         /// <summary>
         /// Македонски број → E.164 (+389...). „070 123 456“ → „+38970123456“. Враќа null ако не е валиден.
         /// </summary>
@@ -86,14 +132,26 @@ namespace CleanHub.Services.Ai
             if (to == null) return "Неважечки телефонски број.";
             if (string.IsNullOrWhiteSpace(text)) return "Празна порака.";
 
+            string? profileId;
+            try
+            {
+                profileId = await GetProfileIdAsync(ct);
+            }
+            catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or System.Text.Json.JsonException)
+            {
+                _logger.LogWarning(ex, "Telnyx профилот не може да се прочита");
+                return "Нема врска со Telnyx.";
+            }
+            if (profileId == null)
+                return "Не е пронајден Messaging Profile во Telnyx. Поставете Telnyx:MessagingProfileId.";
+
             var body = new JsonObject
             {
                 ["from"] = _config.From,
                 ["to"] = to,
-                ["text"] = ToLatin(text.Trim())
+                ["text"] = ToLatin(text.Trim()),
+                ["messaging_profile_id"] = profileId
             };
-            if (!string.IsNullOrWhiteSpace(_config.MessagingProfileId))
-                body["messaging_profile_id"] = _config.MessagingProfileId;
 
             using var request = new HttpRequestMessage(HttpMethod.Post, _config.Endpoint);
             request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", _config.ApiKey);

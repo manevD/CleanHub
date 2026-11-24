@@ -350,6 +350,7 @@ namespace CleanHub.Controllers
                     var request = _httpContextAccessor?.HttpContext?.Request;
                     string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                     HtmlToPdf converter = new HtmlToPdf();
+                    htmlContent = CleanHub.Helpers.PdfSpeed.Prepare(converter, htmlContent);
                     PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                     // create memory stream to save PDF
                     MemoryStream pdfStream = new MemoryStream();
