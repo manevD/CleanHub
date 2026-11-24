@@ -108,7 +108,10 @@ namespace CleanHub.Services.Ai
             return list.Select(b => (b.Id, b.Name ?? $"Објект {b.Id}")).ToList();
         }
 
-        /// <summary>Станари со неплатени фактури (статус Неплатено / Делумно / Задоцнето).</summary>
+        /// <summary>
+        /// Станари со заостанат долг. Износот е пресметан ИСТО како „Заостанат долг“ на фактурата;
+        /// бројот на неплатени месеци (статус Неплатено / Делумно / Задоцнето) го одредува нивото.
+        /// </summary>
         public async Task<List<DebtorInfo>> GetDebtorsAsync(int? buildingId = null, int minUnpaid = 1, CancellationToken ct = default)
         {
             var customers = await _db.Customers.AsNoTracking()
@@ -127,22 +130,63 @@ namespace CleanHub.Services.Ai
             var customerIds = customers.Select(c => c.Id).ToList();
             if (customerIds.Count == 0) return new List<DebtorInfo>();
 
-            var unpaid = await _db.Documents.AsNoTracking()
+            var today = DateOnly.FromDateTime(DateTime.UtcNow);
+            var from2021 = new DateOnly(2021, 1, 1);
+
+            // ---- „Заостанат долг“ — ИСТА логика како на фактурата (DocumentsController, GET CUSTOMER DEBTS) ----
+            // долг (dolzi)   = фактури со DateReceived < денес и Date > 01.01.2021 (TotalOutput)
+            //                + 1200 книжења со Owes != 0 и DatumF >= 01.01.2021 (Owes)
+            // побарува       = сите 1200 книжења (Demands)
+            // заостанат долг = dolzi - pobaruva, само ако dolzi > pobaruva
+            var docsRows = await _db.Documents.AsNoTracking()
                 .Where(d => d.CustomerId != null
                             && customerIds.Contains(d.CustomerId.Value)
-                            && UnpaidStatuses.Contains(d.PaymentStatus)
-                            && d.TotalOutput > 0)
-                .Select(d => new { CustomerId = d.CustomerId!.Value, d.TotalOutput, d.Date, d.ToDocument })
+                            && d.DateReceived.HasValue
+                            && d.DateReceived.Value < today)
+                .Select(d => new { CustomerId = d.CustomerId!.Value, d.TotalOutput, d.Date, d.ToDocument, d.PaymentStatus })
                 .ToListAsync(ct);
 
-            var byCustomer = unpaid.GroupBy(d => d.CustomerId).ToDictionary(g => g.Key, g => g.ToList());
+            var bfRows = await _db.BookFinancials.AsNoTracking()
+                .Where(b => b.CustomerId != null
+                            && customerIds.Contains(b.CustomerId.Value)
+                            && b.InvoiceId == (int)InvoiceTyp.Recieve)
+                .Select(b => new { CustomerId = b.CustomerId!.Value, b.Demands, b.Owes, b.DatumF })
+                .ToListAsync(ct);
+
+            var docsByCustomer = docsRows.GroupBy(d => d.CustomerId).ToDictionary(g => g.Key, g => g.ToList());
+            var bfByCustomer = bfRows.GroupBy(b => b.CustomerId).ToDictionary(g => g.Key, g => g.ToList());
 
             var result = new List<DebtorInfo>();
             foreach (var c in customers)
             {
-                if (!byCustomer.TryGetValue(c.Id, out var docs) || docs.Count < minUnpaid) continue;
+                docsByCustomer.TryGetValue(c.Id, out var customerDocs);
+                bfByCustomer.TryGetValue(c.Id, out var dataBookFinancial);
+                customerDocs ??= new();
+                dataBookFinancial ??= new();
 
-                var ordered = docs.OrderBy(d => d.Date).ToList();
+                var pobaruva = dataBookFinancial.Sum(x => x.Demands);
+
+                double dolzi = customerDocs
+                    .Where(x => x.Date.HasValue && x.Date.Value > from2021)
+                    .Sum(x => (double)(x.TotalOutput ?? 0));
+
+                if (dataBookFinancial.Any(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= from2021))
+                {
+                    dolzi += dataBookFinancial
+                        .Where(x => x.Owes != 0 && x.DatumF.HasValue && x.DatumF.Value >= from2021)
+                        .Sum(x => x.Owes);
+                }
+
+                if (!(dolzi > pobaruva)) continue; // нема заостанат долг — исто како на фактурата
+
+                // Неплатени месеци (за нивото на потсетникот и листата на периоди)
+                var unpaidDocs = customerDocs
+                    .Where(d => UnpaidStatuses.Contains(d.PaymentStatus) && d.TotalOutput > 0)
+                    .OrderBy(d => d.Date)
+                    .ToList();
+                var unpaidCount = Math.Max(1, unpaidDocs.Count);
+                if (unpaidCount < minUnpaid) continue;
+
                 result.Add(new DebtorInfo
                 {
                     CustomerId = c.Id,
@@ -151,14 +195,14 @@ namespace CleanHub.Services.Ai
                     PhoneNumber = c.PhoneNumber,
                     BuildingId = c.BuildingId,
                     BuildingName = c.BuildingName,
-                    UnpaidCount = docs.Count,
-                    UnpaidTotal = docs.Sum(d => (double)(d.TotalOutput ?? 0)),
-                    OldestDate = ordered.FirstOrDefault()?.Date,
-                    Periods = ordered
+                    UnpaidCount = unpaidCount,
+                    UnpaidTotal = Math.Abs(pobaruva - dolzi),
+                    OldestDate = unpaidDocs.FirstOrDefault()?.Date,
+                    Periods = unpaidDocs
                         .Select(d => !string.IsNullOrWhiteSpace(d.ToDocument) ? d.ToDocument!.Trim() : d.Date?.ToString("MM.yyyy") ?? "")
                         .Where(p => p.Length > 0)
                         .ToList(),
-                    Level = LevelFor(docs.Count)
+                    Level = LevelFor(unpaidCount)
                 });
             }
 

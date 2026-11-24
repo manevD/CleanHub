@@ -185,6 +185,7 @@ namespace CleanHub.Controllers
                 var request = _httpContextAccessor?.HttpContext?.Request;
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
                 HtmlToPdf converter = new HtmlToPdf();
+                htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                 PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                 MemoryStream pdfStream = new MemoryStream();
 
@@ -1676,6 +1677,7 @@ namespace CleanHub.Controllers
 
                                     converter.Options.AutoFitWidth = HtmlToPdfPageFitMode.ShrinkOnly;
                                     converter.Options.AutoFitHeight = HtmlToPdfPageFitMode.NoAdjustment;
+                                    htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                                     singleDoc = string.IsNullOrWhiteSpace(baseUrl)
                                         ? converter.ConvertHtmlString(htmlContent)
                                         : converter.ConvertHtmlString(
@@ -3059,6 +3061,7 @@ namespace CleanHub.Controllers
                 string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
                 HtmlToPdf converter = new HtmlToPdf();
+                htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                 PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
                 endDoc.Append(doc);
             }
@@ -3138,6 +3141,7 @@ namespace CleanHub.Controllers
                         string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
                         HtmlToPdf converter = new HtmlToPdf();
+                        htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                         PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
 
                         endDoc.Append(doc);
