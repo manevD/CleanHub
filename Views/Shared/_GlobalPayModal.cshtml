@@ -14,6 +14,19 @@
                 </div>
                 <div class="modal-body">
 
+                    <!-- 0. Директно пребарување по број на фактура -->
+                    <div class="form-group mb-2">
+                        <label for="globalInvoiceNumber" class="form-label">Број на фактура</label>
+                        <div class="search-field">
+                            <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" /></svg>
+                            <input type="number" min="1" inputmode="numeric" id="globalInvoiceNumber" class="form-control"
+                                   placeholder="Внесете број, пр. 1245" autocomplete="off">
+                        </div>
+                    </div>
+                    <div id="globalInvoiceResult" class="pay-result" hidden></div>
+
+                    <div class="pay-divider"><span>или пребарај по партнер</span></div>
+
                     <!-- 1. Избери Станар / Партнер преку Пребарување -->
                     <div class="form-group mb-3">
                         <label for="globalCustomerSearch" class="form-label">Партнер</label>
@@ -85,10 +98,84 @@
         const invoiceSelect = document.getElementById('globalInvoiceId');
         const paymentDateInput = document.getElementById('globalPaymentDate');
         const form = document.getElementById('globalPayForm');
+        const numberInput = document.getElementById('globalInvoiceNumber');
+        const resultBox = document.getElementById('globalInvoiceResult');
+        const esc = window.mhEscape || (t => String(t == null ? '' : t));
 
         if (!modalElement) return;
 
+        // 0. ПРЕБАРУВАЊЕ ПО БРОЈ НА ФАКТУРА
+        function selectInvoice(inv) {
+            customerHiddenId.value = inv.customerId || "";
+            customerInput.value = inv.customer || "";
+            invoiceSelect.innerHTML = "";
+            const opt = document.createElement('option');
+            opt.value = inv.id;
+            opt.textContent = '№ ' + inv.number + ' · ' + (inv.period || inv.date || '') + ' (' + inv.total + ')';
+            invoiceSelect.appendChild(opt);
+            invoiceSelect.disabled = false;
+            selectedPaid = !!inv.paid;
+
+            resultBox.innerHTML =
+                '<div class="pay-card ' + (inv.paid ? 'is-paid' : 'is-open') + '">' +
+                    '<div class="pay-card-head"><strong>Фактура № ' + esc(inv.number) + '</strong>' +
+                        '<span class="pay-status">' + (inv.paid ? 'Платена' : esc(inv.status)) + '</span></div>' +
+                    '<dl>' +
+                        '<dt>Партнер</dt><dd>' + esc(inv.customer || '-') + '</dd>' +
+                        '<dt>Објект</dt><dd>' + esc(inv.building || '-') + '</dd>' +
+                        '<dt>Период</dt><dd>' + esc(inv.period || '-') + '</dd>' +
+                        '<dt>Датум</dt><dd>' + esc(inv.date || '-') + '</dd>' +
+                        '<dt>Износ</dt><dd class="pay-amount">' + esc(inv.total) + '</dd>' +
+                        (inv.paid ? '<dt>Платено</dt><dd>' + esc(inv.paymentDate || '') + (inv.paymentNumber ? ' · ' + esc(inv.paymentNumber) : '') + '</dd>' : '') +
+                    '</dl>' +
+                    (inv.paid ? '<p class="pay-warn">Оваа фактура е веќе платена.</p>' : '') +
+                '</div>';
+            resultBox.hidden = false;
+        }
+
+        function findByNumber() {
+            const n = parseInt(numberInput.value, 10);
+            if (!n) { resultBox.hidden = true; return; }
+            resultBox.hidden = false;
+            resultBox.innerHTML = '<div class="pay-card"><span class="spinner"></span> Се бара фактура № ' + n + '…</div>';
+
+            fetch('/Documents/FindInvoiceByNumber?number=' + n)
+                .then(res => res.json())
+                .then(list => {
+                    if (!list || list.length === 0) {
+                        resultBox.innerHTML = '<div class="pay-card is-missing">Нема фактура со број ' + n + '.</div>';
+                        return;
+                    }
+                    if (list.length === 1) { selectInvoice(list[0]); return; }
+
+                    // Ист број во повеќе години/периоди — корисникот избира
+                    resultBox.innerHTML = '<div class="pay-card"><div class="pay-card-head"><strong>Пронајдени ' + list.length + ' фактури со број ' + n + '</strong></div><div class="pay-choices"></div></div>';
+                    const box = resultBox.querySelector('.pay-choices');
+                    list.forEach(inv => {
+                        const b = document.createElement('button');
+                        b.type = 'button';
+                        b.className = 'pay-choice';
+                        b.innerHTML = '<strong>' + esc(inv.customer || '-') + '</strong><span>' + esc(inv.period || inv.date || '') + ' · ' + esc(inv.total) + (inv.paid ? ' · платена' : '') + '</span>';
+                        b.addEventListener('click', () => selectInvoice(inv));
+                        box.appendChild(b);
+                    });
+                })
+                .catch(() => { resultBox.innerHTML = '<div class="pay-card is-missing">Грешка при пребарување.</div>'; });
+        }
+
+        if (numberInput) {
+            numberInput.addEventListener('input', () => {
+                clearTimeout(numberTimer);
+                numberTimer = setTimeout(findByNumber, 350);
+            });
+            numberInput.addEventListener('keydown', e => {
+                if (e.key === 'Enter') { e.preventDefault(); clearTimeout(numberTimer); findByNumber(); }
+            });
+        }
+
         let debounceTimer;
+        let numberTimer;
+        let selectedPaid = false;
         let customersCache = null; // листата се презема само еднаш по страна
 
         function getCustomers() {
@@ -106,6 +193,11 @@
 
             invoiceSelect.innerHTML = '<option value="">-- Прво избери станар --</option>';
             invoiceSelect.disabled = true;
+            numberInput.value = "";
+            resultBox.hidden = true;
+            resultBox.innerHTML = "";
+            selectedPaid = false;
+            setTimeout(() => numberInput.focus(), 300);
 
             if (paymentDateInput) {
                 const today = new Date().toISOString().split('T')[0];
@@ -186,6 +278,7 @@
                         return;
                     }
 
+                    selectedPaid = false;
                     invoiceSelect.innerHTML = '<option value="">-- Избери сметка --</option>';
                     invoiceSelect.disabled = false;
 
@@ -206,8 +299,11 @@
         form.addEventListener('submit', function (e) {
             e.preventDefault();
 
-            if (!customerHiddenId.value) {
-                alert("Ве молиме изберете валиден партнер од листата.");
+            if (!invoiceSelect.value) {
+                alert("Внесете број на фактура или изберете партнер и сметка.");
+                return;
+            }
+            if (selectedPaid && !confirm("Оваа фактура е веќе платена. Дали сигурно сакате повторно да ја зачувате?")) {
                 return;
             }
 
