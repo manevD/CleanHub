@@ -786,6 +786,26 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
     .toolbar-actions { margin-left: 0; }
 }
 
+/* Брзо плаќање — резултат од пребарување по број */
+.pay-result { margin-bottom: 8px; }
+.pay-card { padding: 14px 16px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-2); font-size: .88rem; }
+.pay-card.is-open { border-color: color-mix(in srgb, var(--brand) 45%, var(--border)); background: var(--brand-50); }
+.pay-card.is-paid { border-color: color-mix(in srgb, var(--warning) 50%, var(--border)); background: var(--warning-50); }
+.pay-card.is-missing { color: var(--text-2); }
+.pay-card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+.pay-status { padding: 2px 9px; border-radius: 999px; font-size: .72rem; font-weight: 700; background: var(--surface); border: 1px solid var(--border); }
+.pay-card dl { display: grid; grid-template-columns: 90px 1fr; gap: 3px 10px; margin: 0; }
+.pay-card dt { color: var(--text-2); font-weight: 600; font-size: .8rem; }
+.pay-card dd { margin: 0; font-weight: 550; }
+.pay-amount { font-size: 1.05rem; font-weight: 750 !important; }
+.pay-warn { margin: 8px 0 0; color: var(--warning); font-weight: 650; }
+.pay-choices { display: grid; gap: 6px; }
+.pay-choice { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 8px 12px; border: 1px solid var(--border-strong); border-radius: 10px; background: var(--surface); color: var(--text); text-align: left; }
+.pay-choice:hover { border-color: var(--brand); background: var(--brand-50); }
+.pay-choice span { font-size: .8rem; color: var(--text-2); }
+.pay-divider { display: flex; align-items: center; gap: 10px; margin: 14px 0 10px; color: var(--text-3); font-size: .75rem; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.pay-divider::before, .pay-divider::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
 /* 8. НАЈАВА ---------------------------------------------------------------- */
 .auth-shell {
     min-height: 100vh;

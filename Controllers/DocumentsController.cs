@@ -120,6 +120,49 @@ namespace CleanHub.Controllers
             return Json(unpaidInvoices);
         }
 
+        /// <summary>Брзо плаќање: пребарување фактура директно по број (Number).</summary>
+        [HttpGet]
+        public async Task<IActionResult> FindInvoiceByNumber(int number)
+        {
+            var docs = await _unitOfWork.Documents.Query()
+                .AsNoTracking()
+                .Where(x => x.Number == number)
+                .OrderByDescending(x => x.Date)
+                .Take(10)
+                .Select(x => new
+                {
+                    x.Id,
+                    x.Number,
+                    x.CustomerId,
+                    Customer = x.Customer != null ? x.Customer.CustomerInfo : null,
+                    Building = x.Customer != null && x.Customer.Building != null ? x.Customer.Building.Name : null,
+                    x.ToDocument,
+                    x.Date,
+                    x.TotalOutput,
+                    x.PaymentStatus,
+                    x.PaymentDate,
+                    x.PaymentNumber
+                })
+                .ToListAsync();
+
+            var mk = new System.Globalization.CultureInfo("mk-MK");
+            return Json(docs.Select(d => new
+            {
+                id = d.Id,
+                number = d.Number,
+                customerId = d.CustomerId,
+                customer = d.Customer,
+                building = d.Building,
+                period = d.ToDocument,
+                date = d.Date?.ToString("dd.MM.yyyy"),
+                total = ((double)(d.TotalOutput ?? 0)).ToString("N2", mk) + " МКД",
+                status = d.PaymentStatus.ToString(),
+                paid = d.PaymentStatus == PaymentStatus.Платено,
+                paymentDate = d.PaymentDate?.ToString("dd.MM.yyyy"),
+                paymentNumber = d.PaymentNumber
+            }));
+        }
+
         public async Task CreateAndSend(DocumentViewModel document)
         {
             using (SmtpClient smtpClient = new SmtpClient(_smtpConfig.Value.Server))
