@@ -39,6 +39,44 @@ namespace CleanHub.Services.Ai
             return digits is >= 10 and <= 15 ? p : null;
         }
 
+        private static readonly Dictionary<char, string> MkLatin = new()
+        {
+            ['а'] = "a", ['б'] = "b", ['в'] = "v", ['г'] = "g", ['д'] = "d", ['ѓ'] = "gj", ['е'] = "e", ['ж'] = "zh",
+            ['з'] = "z", ['ѕ'] = "dz", ['и'] = "i", ['ј'] = "j", ['к'] = "k", ['л'] = "l", ['љ'] = "lj", ['м'] = "m",
+            ['н'] = "n", ['њ'] = "nj", ['о'] = "o", ['п'] = "p", ['р'] = "r", ['с'] = "s", ['т'] = "t", ['ќ'] = "kj",
+            ['у'] = "u", ['ф'] = "f", ['х'] = "h", ['ц'] = "c", ['ч'] = "ch", ['џ'] = "dj", ['ш'] = "sh"
+        };
+
+        /// <summary>
+        /// Македонска кирилица → латиница. SMS секогаш се праќа на латиница: 160 знаци по SMS наместо 70
+        /// (до 2× поевтино). Се отстрануваат и „паметни“ наводници/цртички што би го вратиле во Unicode.
+        /// </summary>
+        public static string ToLatin(string? text)
+        {
+            if (string.IsNullOrEmpty(text)) return "";
+            var sb = new StringBuilder(text.Length + 16);
+            foreach (var ch in text)
+            {
+                var low = char.ToLowerInvariant(ch);
+                if (MkLatin.TryGetValue(low, out var lat))
+                {
+                    sb.Append(ch == low ? lat : char.ToUpperInvariant(lat[0]) + lat[1..]);
+                    continue;
+                }
+                sb.Append(ch switch
+                {
+                    '„' or '“' or '”' or '«' or '»' => "\"",
+                    '‘' or '’' => "'",
+                    '–' or '—' => "-",
+                    '…' => "...",
+                    '№' => "br.",
+                    '\u00A0' => " ",
+                    _ => ch.ToString()
+                });
+            }
+            return sb.ToString();
+        }
+
         /// <summary>Враќа null ако е успешно, или текст на грешката.</summary>
         public async Task<string?> SendAsync(string phone, string text, CancellationToken ct = default)
         {
@@ -52,7 +90,7 @@ namespace CleanHub.Services.Ai
             {
                 ["from"] = _config.From,
                 ["to"] = to,
-                ["text"] = text.Trim()
+                ["text"] = ToLatin(text.Trim())
             };
             if (!string.IsNullOrWhiteSpace(_config.MessagingProfileId))
                 body["messaging_profile_id"] = _config.MessagingProfileId;

@@ -161,17 +161,18 @@ namespace CleanHub.Services.Ai
             return results;
         }
 
-        /// <summary>Кратка SMS порака (без AI — износите се точни, а цената пониска).</summary>
+        /// <summary>Кратка SMS порака на латиница (без AI — износите се точни, а цената пониска).</summary>
         private string ShortSms(DebtorInfo d)
         {
             var amount = FinanceDataService.Money(d.UnpaidTotal);
             var phone = string.IsNullOrWhiteSpace(_company.PhoneNumber) ? "" : " " + _company.PhoneNumber;
-            return d.Level switch
+            var text = d.Level switch
             {
                 ReminderLevel.Polite => $"Почитувани, имате неплатена сметка од {amount}. Ако веќе платиле, занемарете. {_company.Name}{phone}",
                 ReminderLevel.Reminder => $"Потсетник: имате {d.UnpaidCount} неплатени сметки, вкупно {amount}. Ве молиме уплатете во рок од 8 дена. {_company.Name}{phone}",
                 _ => $"ОПОМЕНА: долг од {amount} за {d.UnpaidCount} месеци. Подмирете во рок од 8 дена за да избегнете понатамошни мерки. {_company.Name}{phone}"
             };
+            return SmsSender.ToLatin(text); // секогаш латиница — поевтино
         }
 
         private ReminderMessage Template(DebtorInfo d)

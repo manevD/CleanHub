@@ -736,6 +736,7 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
 .sms-box-foot { display: flex; align-items: center; gap: 6px; margin-top: 6px; }
 .sms-counter { margin-right: auto; color: var(--text-2); font-weight: 600; }
 .sms-counter.is-costly { color: var(--warning); }
+.sms-latin-note { padding: 1px 8px; border-radius: 999px; color: var(--success); background: var(--success-50); font-weight: 650; }
 .message-card textarea { font-size: .86rem; line-height: 1.55; resize: vertical; }
 .message-foot { display: flex; align-items: center; gap: 6px; margin-top: 10px; }
 .msg-status { margin-left: auto; font-weight: 600; color: var(--text-2); }

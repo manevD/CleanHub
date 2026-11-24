@@ -123,7 +123,7 @@
     <p class="text-muted small">Прегледајте ги и по потреба изменете ги пораките. „Е-пошта“ ја праќа само таа порака. Ако станарот нема е-пошта, внесете ја. „Viber“ ја копира целата порака и го отвора разговорот — само залепете (Ctrl+V).
         @if (Model.SmsEnabled)
         {
-            <text>SMS се праќа преку Telnyx како <strong>@Model.SmsFrom</strong> — се праќа кратката порака; бројачот покажува колку SMS се наплаќаат.</text>
+            <text>SMS се праќа преку Telnyx како <strong>@Model.SmsFrom</strong> — кратката порака, секогаш на латиница (поевтино); бројачот покажува колку SMS се наплаќаат.</text>
         }
         else
         {
@@ -218,7 +218,9 @@
             // Кирилица → латиница (македонска транслитерација): SMS на латиница е до 2× поевтин
             const MK = { 'а':'a','б':'b','в':'v','г':'g','д':'d','ѓ':'gj','е':'e','ж':'zh','з':'z','ѕ':'dz','и':'i','ј':'j','к':'k','л':'l','љ':'lj','м':'m','н':'n','њ':'nj','о':'o','п':'p','р':'r','с':'s','т':'t','ќ':'kj','у':'u','ф':'f','х':'h','ц':'c','ч':'ch','џ':'dj','ш':'sh' };
             function toLatin(text) {
-                return String(text || '').replace(/[\u0400-\u04FF]/g, ch => {
+                return String(text || '')
+                    .replace(/[„“”«»]/g, '"').replace(/[‘’]/g, "'").replace(/[–—]/g, '-').replace(/…/g, '...').replace(/№/g, 'br.').replace(/\u00A0/g, ' ')
+                    .replace(/[\u0400-\u04FF]/g, ch => {
                     const low = ch.toLowerCase();
                     const t = MK[low];
                     if (t === undefined) return ch;
@@ -297,7 +299,7 @@
                             '<textarea class="form-control form-control-sm msg-sms-text" rows="3" aria-label="SMS порака"></textarea>' +
                             '<div class="sms-box-foot">' +
                                 '<span class="sms-counter small"></span>' +
-                                '<button type="button" class="btn btn-sm btn-ghost msg-latin" title="Претвори во латиница — поевтино">Латиница</button>' +
+                                '<span class="sms-latin-note small">латиница</span>' +
                                 (smsEnabled ? '<button type="button" class="btn btn-sm btn-primary msg-sms-send">Прати SMS</button>' : '<a class="btn btn-sm btn-secondary msg-sms">Отвори SMS</a>') +
                             '</div>' +
                         '</div>' +
@@ -325,22 +327,24 @@
                     smsCheck.checked = smsEnabled && !!m.phoneNumber;
 
                     const refreshSms = () => {
-                        const info = smsInfo(smsText.value);
+                        const info = smsInfo(toLatin(smsText.value)); // се праќа секогаш на латиница
                         const counter = card.querySelector('.sms-counter');
-                        counter.textContent = info.chars + ' знаци · ' + info.parts + ' SMS' + (info.unicode ? ' (кирилица)' : '');
+                        counter.textContent = info.chars + ' знаци · ' + info.parts + ' SMS' + (info.unicode ? ' (има посебни знаци)' : '');
                         counter.classList.toggle('is-costly', info.parts > 2);
                         const link = card.querySelector('.msg-sms');
                         if (link) link.href = phoneInput.value.trim() ? smsLink(phoneInput.value, smsText.value) : '#';
                     };
                     smsText.addEventListener('input', refreshSms);
                     phoneInput.addEventListener('input', () => { smsCheck.checked = smsEnabled && phoneInput.value.trim() !== ''; refreshSms(); });
-                    card.querySelector('.msg-latin').addEventListener('click', () => { smsText.value = toLatin(smsText.value); refreshSms(); });
+                    // Ако се внесе кирилица, веднаш се претвора во латиница
+                    smsText.addEventListener('blur', () => { const l = toLatin(smsText.value); if (l !== smsText.value) { smsText.value = l; refreshSms(); } });
                     refreshSms();
 
                     const smsSendBtn = card.querySelector('.msg-sms-send');
                     if (smsSendBtn) smsSendBtn.addEventListener('click', e => {
                         const item = itemFrom(card);
                         if (!item.phoneNumber) { setStatus(card, 'Внесете телефон', 'err'); phoneInput.focus(); return; }
+                        item.sms = toLatin(item.sms);
                         const parts = smsInfo(item.sms).parts;
                         if (!confirm('Да се испрати SMS на ' + intlPhone(item.phoneNumber) + ' (' + parts + ' SMS)?')) return;
                         const btn = e.currentTarget;
@@ -419,7 +423,7 @@
                 const cards = Array.from(list.querySelectorAll('.message-card'))
                     .filter(c => c.querySelector('.sms-check').checked && c.querySelector('.msg-phone').value.trim() !== '');
                 if (!cards.length) { alert('Нема означени пораки со телефон.'); return; }
-                const items = cards.map(itemFrom);
+                const items = cards.map(itemFrom).map(i => Object.assign(i, { sms: toLatin(i.sms) }));
                 const total = items.reduce((n, i) => n + smsInfo(i.sms).parts, 0);
                 if (!confirm('Да се испратат SMS до ' + items.length + ' станари (вкупно ' + total + ' SMS)?')) return;
 
