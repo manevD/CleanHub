@@ -62,12 +62,9 @@ namespace CleanHub.Controllers
             if (pending.Count > 0)
             {
                 var pendingDocs = await LoadDocsAsync(pending);
-                foreach (var p in pending)
-                {
-                    var r = BuildRow(p, pendingDocs, tz);
-                    if (r.InvoicePaid)
-                        _store.SetStatus(p.Key, OnlinePaymentStatus.AlreadyPaid, "автоматски");
-                }
+                var paidKeys = pending.Where(p => BuildRow(p, pendingDocs, tz).InvoicePaid).Select(p => p.Key).ToList();
+                if (paidKeys.Count > 0)
+                    _store.SetStatusMany(paidKeys, OnlinePaymentStatus.AlreadyPaid, "автоматски");
             }
 
             var data = _store.Snapshot();
