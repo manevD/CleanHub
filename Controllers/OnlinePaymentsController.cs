@@ -54,6 +54,22 @@ namespace CleanHub.Controllers
         [Route("ОнлајнУплати")]
         public async Task<IActionResult> Index(string show = "new")
         {
+            var tz = SkopjeTimeZone();
+
+            // Уплати чија фактура веќе е платена (на пр. рачно во Сметки) не се нудат повторно:
+            // автоматски се затвораат како „Веќе платена“, за да нема двојно книжење.
+            var pending = _store.Snapshot().Payments.Where(p => p.Status == OnlinePaymentStatus.New).ToList();
+            if (pending.Count > 0)
+            {
+                var pendingDocs = await LoadDocsAsync(pending);
+                foreach (var p in pending)
+                {
+                    var r = BuildRow(p, pendingDocs, tz);
+                    if (r.InvoicePaid)
+                        _store.SetStatus(p.Key, OnlinePaymentStatus.AlreadyPaid, "автоматски");
+                }
+            }
+
             var data = _store.Snapshot();
             var all = data.Payments.OrderByDescending(p => p.ReceivedAt).ToList();
 
@@ -65,27 +81,8 @@ namespace CleanHub.Controllers
             };
             var payments = list.ToList();
 
-            // Фактури по број (само читање)
-            var numbers = payments.Select(p => (int?)p.InvoiceNumber).Distinct().ToList();
-            var docs = numbers.Count == 0
-                ? new List<DocRow>()
-                : await _db.Documents.AsNoTracking()
-                    .Where(d => numbers.Contains(d.Number))
-                    .Select(d => new DocRow
-                    {
-                        Id = d.Id,
-                        Number = d.Number,
-                        Date = d.Date,
-                        ToDocument = d.ToDocument,
-                        TotalOutput = d.TotalOutput,
-                        PaymentStatus = d.PaymentStatus,
-                        CustomerId = d.CustomerId,
-                        CustomerInfo = d.Customer != null ? d.Customer.CustomerInfo : null,
-                        BuildingName = d.Customer != null && d.Customer.Building != null ? d.Customer.Building.Name : null
-                    })
-                    .ToListAsync();
+            var docs = await LoadDocsAsync(payments);
 
-            var tz = SkopjeTimeZone();
             var rows = payments.Select(p => BuildRow(p, docs, tz)).ToList();
 
             return View(new OnlinePaymentsViewModel
@@ -121,6 +118,28 @@ namespace CleanHub.Controllers
         {
             var ok = _store.SetStatus(key, status, User.Identity?.Name);
             return ok ? Json(new { success = true }) : NotFound(new { success = false, message = "Уплатата не е пронајдена." });
+        }
+
+        // Фактури по број (само читање)
+        private async Task<List<DocRow>> LoadDocsAsync(List<OnlinePayment> payments)
+        {
+            var numbers = payments.Select(p => (int?)p.InvoiceNumber).Distinct().ToList();
+            if (numbers.Count == 0) return new List<DocRow>();
+            return await _db.Documents.AsNoTracking()
+                .Where(d => numbers.Contains(d.Number))
+                .Select(d => new DocRow
+                {
+                    Id = d.Id,
+                    Number = d.Number,
+                    Date = d.Date,
+                    ToDocument = d.ToDocument,
+                    TotalOutput = d.TotalOutput,
+                    PaymentStatus = d.PaymentStatus,
+                    CustomerId = d.CustomerId,
+                    CustomerInfo = d.Customer != null ? d.Customer.CustomerInfo : null,
+                    BuildingName = d.Customer != null && d.Customer.Building != null ? d.Customer.Building.Name : null
+                })
+                .ToListAsync();
         }
 
         private static OnlinePaymentRow BuildRow(OnlinePayment p, List<DocRow> docs, TimeZoneInfo tz)
