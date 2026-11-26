@@ -329,7 +329,7 @@
             }
 
             function formatNumber(val) {
-                return String(Math.round(val || 0));
+                return (val || 0).toFixed(2).replace('.', ',');
             }
 
 
@@ -382,7 +382,7 @@
                 });
 
                 document.querySelector('#totalPriceWithTax').innerText =
-                    String(Math.round(totalSum));
+                    String(Math.round(totalSum)) /* вкупно — цел број */;
             }
 
 

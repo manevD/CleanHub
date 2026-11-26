@@ -139,7 +139,7 @@ namespace CleanHub.Infrastructure.Data
                     var received = date.AddDays(10);
                     var monthText = DocumentService.GetMonthAsString(month) + " " + Year;
                     var mmYyyy = $"{month:00}/{Year}";
-                    var energy = (float)Math.Round(def.Energy * (0.85 + rnd.NextDouble() * 0.3), MidpointRounding.AwayFromZero);
+                    var energy = (float)Math.Round(def.Energy * (0.85 + rnd.NextDouble() * 0.3), 2);
                     var energyTotal = 0f;
 
                     foreach (var (tenant, profile) in tenants)
@@ -389,7 +389,7 @@ namespace CleanHub.Infrastructure.Data
         {
             yield return new BuildingProduct { ArticleNotes = "Административни трошоци", UnitOfMeasurement = "бр.", Quantity = 1, Price = 30f, Tax = 18 };
             yield return new BuildingProduct { ArticleNotes = "Потрошена електр. енер. за", UnitOfMeasurement = "бр.", Quantity = 1, Price = def.Energy, Tax = 18 };
-            yield return new BuildingProduct { ArticleNotes = "Комунална такса за јавно осветлување", UnitOfMeasurement = "бр.", Quantity = 1, Price = 12f, Tax = 0 };
+            yield return new BuildingProduct { ArticleNotes = "Комунална такса за јавно осветлување", UnitOfMeasurement = "бр.", Quantity = 1, Price = 11.5f, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Одржување на сметки за", UnitOfMeasurement = "бр.", Quantity = 1, Price = 15f, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Резервен фонд за", UnitOfMeasurement = "бр.", Quantity = 1, Price = def.ReserveFund, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Управител за", UnitOfMeasurement = "бр.", Quantity = 1, Price = 100f, Tax = 18 };
@@ -405,7 +405,7 @@ namespace CleanHub.Infrastructure.Data
             {
                 Line("Административни трошоци", "бр.", 30f, 18),
                 Line($"Потрошена електрична енергија за месец {mmYyyy}", "бр.", energy, 18),
-                Line("Комунална такса за јавно осветлување", "бр.", 12f, 0),
+                Line("Комунална такса за јавно осветлување", "бр.", 11.5f, 0),
                 Line("Одржување на сметки", "бр.", 15f, 0),
                 Line("Резервен фонд", "бр.", def.ReserveFund, 0),
                 Line($"Управител за месец {mmYyyy}", "бр.", 100f, 18),
@@ -418,14 +418,14 @@ namespace CleanHub.Infrastructure.Data
 
         private static Book Line(string notes, string unit, float price, float tax)
         {
-            // Цели броеви: 76,6 → 77, 73,43 → 73
-            var withTax = (float)Math.Round(price * (1 + tax / 100f), MidpointRounding.AwayFromZero);
+            // Ставката: 2 децимали
+            var withTax = (float)Math.Round(price * (1 + tax / 100f), 2);
             return new Book
             {
                 ArticleNotes = notes,
                 UnitOfMeasurement = unit,
                 Quantity = 1,
-                Price = (float)Math.Round(price, MidpointRounding.AwayFromZero),
+                Price = (float)Math.Round(price, 2),
                 Tax = tax,
                 PriceWithTax = withTax,
                 Total = withTax,

@@ -280,7 +280,7 @@
                                             <input asp-for="Books[i].Quantity"
                                                    class="form-control small-input quantity-input"
                                                    type="number"
-                                                   step="1"
+                                                   step="0.01"
                                                    min="0" />
 
                                         </td>
@@ -293,7 +293,7 @@
                                             <input asp-for="Books[i].Price"
                                                    class="form-control money-input price-input"
                                                    type="number"
-                                                   step="1"
+                                                   step="0.01"
                                                    min="0" />
 
                                         </td>
@@ -306,7 +306,7 @@
                                             <input asp-for="Books[i].Tax"
                                                    class="form-control money-input tax-input"
                                                    type="number"
-                                                   step="1"
+                                                   step="0.01"
                                                    min="0" />
 
                                         </td>
@@ -319,7 +319,7 @@
                                             <input asp-for="Books[i].Total"
                                                    class="form-control money-input total-input"
                                                    type="number"
-                                                   step="1"
+                                                   step="0.01"
                                                    min="0"
                                                    readonly />
 
@@ -444,7 +444,7 @@
 
             const number = parseNumber(value);
 
-            return String(Math.round(number));
+            return number.toFixed(2);
         }
 
 
@@ -456,7 +456,9 @@
 
             const number = parseNumber(value);
 
-            return String(Math.round(number));
+            return number
+                .toFixed(2)
+                .replace('.', ',');
         }
 
 
@@ -549,8 +551,9 @@
 
             if (totalElement) {
 
+                // Вкупно — цел број (ставките остануваат со 2 децимали)
                 totalElement.innerText =
-                    formatDisplayNumber(total);
+                    String(Math.round(total));
 
             }
         }
@@ -740,7 +743,7 @@
                            name="Books[${bookIndex}].Quantity"
                            class="form-control small-input quantity-input"
                            value="1"
-                           step="1"
+                           step="0.01"
                            min="0" />
 
                 </td>
@@ -751,7 +754,7 @@
                     <input type="number"
                            name="Books[${bookIndex}].Price"
                            class="form-control money-input price-input"
-                           step="1"
+                           step="0.01"
                            min="0" />
 
                 </td>
@@ -763,7 +766,7 @@
                            name="Books[${bookIndex}].Tax"
                            class="form-control money-input tax-input"
                            value="0"
-                           step="1"
+                           step="0.01"
                            min="0" />
 
                 </td>
@@ -774,7 +777,7 @@
                     <input type="number"
                            name="Books[${bookIndex}].Total"
                            class="form-control money-input total-input"
-                           step="1"
+                           step="0.01"
                            min="0"
                            readonly />
 

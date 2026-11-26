@@ -943,9 +943,6 @@ namespace CleanHub.Controllers
             return docEntity;
         }
 
-        private static float RoundWhole(float value) => MathF.Round(value, MidpointRounding.AwayFromZero);
-        private static float? RoundWhole(float? value) => value.HasValue ? MathF.Round(value.Value, MidpointRounding.AwayFromZero) : null;
-
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
         {
             var bookEntity = new BookViewModel
@@ -955,14 +952,13 @@ namespace CleanHub.Controllers
                 Input = 0,
                 Quantity = book.Quantity,
 
-                // Цели броеви (без децимали)
-                PriceWithTax = RoundWhole(book.PriceWithTaxTotal),
+                PriceWithTax = book.PriceWithTaxTotal,
 
-                Price = RoundWhole(book.Price),
+                Price = book.Price,
 
                 Tax = book.Tax,
 
-                Total = RoundWhole(book.PriceWithTaxTotal),
+                Total = book.PriceWithTaxTotal,
 
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
@@ -1236,10 +1232,11 @@ namespace CleanHub.Controllers
                     (1.0 + tax / 100.0);
 
 
-                // Цел број (без децимали): 76,6 → 77, 73,43 → 73
+                // Ставката: 2 децимали (само вкупното на фактурата е цел број)
                 float bookTotal =
                     (float)Math.Round(
                         calculatedTotal,
+                        2,
                         MidpointRounding.AwayFromZero
                     );
 

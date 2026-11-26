@@ -86,7 +86,7 @@ dotnet user-secrets set "OnlinePayments:Password" "xxxx xxxx xxxx xxxx"         
 
 ## Демо база (гранка `demo`)
 
-- Една миграција `Initial` (Migrations/20261126183000_Initial) — целата шема од нула.
+- Една миграција `Initial` (Migrations/20261126184500_Initial) — целата шема од нула.
 - Објектот е само во `Buildings` (нема „партнер-зграда“ во Customers, нема `CustomerRefId`).
   Трошоците и резервниот фонд на самата зграда се книжат со `BookFinancials.BuildingId`.
 - `Customer.OrderNumber` е отстранет — станарите се подредуваат по број на стан.
