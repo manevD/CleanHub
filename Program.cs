@@ -34,10 +34,6 @@ namespace CleanHub
                 builder.Configuration.GetConnectionString("DefaultConnection")
                 ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
-            var connectionStringMarti =
-                builder.Configuration.GetConnectionString("DefaultConnectionMarti")
-                ?? throw new InvalidOperationException("Connection string 'DefaultConnectionMarti' not found.");
-
             // ----------------------------------------------------
             // DbContexts
             // ----------------------------------------------------
@@ -52,20 +48,6 @@ namespace CleanHub
                 ));
 
 
-            builder.Services.AddDbContext<ApplicationDbMartiContext>(options =>
-                options.UseMySql(
-                    connectionStringMarti,
-                    new MySqlServerVersion(new Version(8, 0, 32)),
-                    mysql =>
-                    {
-                        mysql.UseQuerySplittingBehavior(QuerySplittingBehavior.SplitQuery);
-                        mysql.EnableRetryOnFailure(
-                            maxRetryCount: 3,
-                            maxRetryDelay: TimeSpan.FromSeconds(5),
-                            errorNumbersToAdd: null
-                        );
-                    }
-                ));
 
             builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 

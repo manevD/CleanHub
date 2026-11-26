@@ -11,7 +11,7 @@ namespace CleanHub.Controllers
 {
     [RequireLogin]
 
-    public class CustomersController(IUnitOfWork _unitOfWork, ApplicationDbMartiContext _context) : Controller
+    public class CustomersController(IUnitOfWork _unitOfWork) : Controller
     {
         private static DateOnly DateFrom = DateOnly.FromDateTime(DateTime.Now);
         private static DateOnly DateTo = DateOnly.FromDateTime(DateTime.Now);
@@ -178,16 +178,6 @@ namespace CleanHub.Controllers
                 _unitOfWork.Customers.Add(customerEntity);
                 await _unitOfWork.SaveChangesAsync();
 
-                var partner = new PartneriTest
-                {
-                    PartnerID = customerEntity.Id,
-                    parAdresa = customerEntity.Adress,
-                    Partner = customerEntity.CustomerInfo
-                };
-
-                _context.PartneriTest.Add(partner);
-                await _context.SaveChangesAsync();
-
                 return RedirectToAction(nameof(Index));
             }
 
@@ -288,17 +278,6 @@ namespace CleanHub.Controllers
 
                 await _unitOfWork.SaveChangesAsync();
 
-                var partner = await _context.PartneriTest
-                    .FirstOrDefaultAsync(x => x.PartnerID == existingCustomer.Id);
-
-                if (partner != null)
-                {
-                    partner.Partner = existingCustomer.CustomerInfo;
-                    partner.parAdresa = existingCustomer.Adress;
-
-                    await _context.SaveChangesAsync();
-                }
-
                 if (navigateToCreate)
                 {
                     return RedirectToAction(
@@ -353,12 +332,6 @@ namespace CleanHub.Controllers
 
                 _unitOfWork.Customers.Delete(customer);
                 await _unitOfWork.SaveChangesAsync();
-                var partnerToDelete = _context.PartneriTest.FirstOrDefault(x => x.PartnerID == id);
-                if (partnerToDelete != null)
-                {
-                    _context.PartneriTest.Remove(partnerToDelete);
-                    _context.SaveChanges();
-                }
             }
             catch (Exception ex)
             {

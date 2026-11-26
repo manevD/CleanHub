@@ -25,7 +25,7 @@ using SpecialInvoice = CleanHub.Entities.SpecialInvoice;
 namespace CleanHub.Controllers
 {
     [RequireLogin]
-    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor, ApplicationDbMartiContext _context) : Controller
+    public class DocumentsController(IOptions<CompanyConfig> _config, IUnitOfWork _unitOfWork, ICompositeViewEngine _viewEngine, IOptions<SMTPConfig> _smtpConfig, IHttpContextAccessor _httpContextAccessor) : Controller
     {
         public List<Building> Buildings { get; set; } = _unitOfWork.Buildings.GetAll().ToList();
 
@@ -738,22 +738,6 @@ namespace CleanHub.Controllers
 
             await _unitOfWork.SaveChangesAsync();
 
-            if (docEntity != null)
-            {
-                DokumentiTest mappedDocuments = new DokumentiTest()
-                {
-                    Dokid = docEntity.Id.ToString(),
-                    Datum = docEntity.Date.Value.ToString("yyyy-MM-dd"),
-                    Broj = docEntity.Number.ToString(),
-                    PartnerID = docEntity.CustomerId.ToString(),
-                    Godina = docEntity.Date.Value.Year.ToString(),
-                    VkupnoIz = docEntity.TotalOutput.ToString()
-                };
-
-                _context.DokumentiTest.AddRange(mappedDocuments);
-                _context.SaveChanges();
-            }
-
             HttpContext.Session.Remove("Documents");
             bool send = actionType == "send";
             return await PrintDocuments(new List<Document> { docEntity }, building, send);
@@ -1332,20 +1316,6 @@ namespace CleanHub.Controllers
             // =========================================================
 
             await _unitOfWork.SaveChangesAsync();
-
-            var docToUpdate = _context.DokumentiTest.FirstOrDefault(x => x.Dokid == document.Id.ToString());
-            if (docToUpdate != null)
-            {
-                docToUpdate.Dokid = document.Id.ToString();
-                docToUpdate.Datum = document.Date.Value.ToString("yyyy-MM-dd");
-                docToUpdate.Broj = document.Number.ToString();
-                docToUpdate.PartnerID = document.CustomerId.ToString();
-                docToUpdate.Godina = document.Date.Value.Year.ToString();
-                docToUpdate.VkupnoIz = document.TotalOutput.ToString();
-
-                _context.DokumentiTest.Update(docToUpdate);
-                await _context.SaveChangesAsync();
-            }
 
             // =========================================================
             // REDIRECT
@@ -2309,14 +2279,6 @@ namespace CleanHub.Controllers
                 }
                 _unitOfWork.Documents.DeleteRange(documentsToDelete);
                 await _unitOfWork.SaveChangesAsync();
-                var idsDoc = documentsToDelete.Select(d => d.Id.ToString()).ToList();
-
-                var documents = _context.DokumentiTest.Where(x => idsDoc.Contains(x.Dokid));
-                if (documents != null && documents.Any())
-                {
-                    _context.DokumentiTest.RemoveRange(documents);
-                    _context.SaveChanges();
-                }
                 var customerId = documentsToDelete?.FirstOrDefault()?.CustomerId;
                 var customerFirst = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == customerId, inc => inc.Include(bu => bu.Building));
 
