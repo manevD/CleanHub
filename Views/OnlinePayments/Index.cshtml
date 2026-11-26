@@ -210,6 +210,7 @@
             // Модалот се креира при клик — работи и ако bootstrap се вчита подоцна
             const modal = {
                 show() {
+                    if (modalEl.parentNode !== document.body) document.body.appendChild(modalEl);
                     if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
                     else if (window.jQuery && jQuery.fn.modal) jQuery(modalEl).modal('show');
                     else { modalEl.classList.add('show'); modalEl.style.display = 'block'; }

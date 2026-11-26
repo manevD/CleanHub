@@ -154,6 +154,13 @@
         setTimeout(initTables, 0);
     }
 
+    // Модалите секогаш директно под <body>: инаку позадината (backdrop) ги покрива
+    // и полињата не можат да се менуваат. Модал внатре во <form> не се мести.
+    doc.addEventListener('show.bs.modal', function (e) {
+        var m = e.target;
+        if (m && m.parentNode !== doc.body && !m.closest('form')) doc.body.appendChild(m);
+    }, true);
+
     if (doc.readyState === 'loading') doc.addEventListener('DOMContentLoaded', ready);
     else ready();
 })();
