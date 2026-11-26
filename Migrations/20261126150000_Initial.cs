@@ -313,7 +313,17 @@ namespace CleanHub.Migrations
                     ActivityId = table.Column<int>(type: "int", nullable: true),
                     PhysicalPerson = table.Column<bool>(type: "bit", nullable: true),
                     Subscription = table.Column<int>(type: "int", nullable: true),
-                    SetCost = table.Column<bool>(type: "bit", nullable: false)
+                    SetCost = table.Column<bool>(type: "bit", nullable: false),
+                    OrderNumber = table.Column<int>(type: "int", nullable: false),
+                    SubscriptionDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    PresmetajAdministrativniTrosoci = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajKomunalnaTaksaJavnoOsvetluvanje = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajOdrzuvanjeLift = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajOdrzuvanjeSmetki = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajPotrosenaElektricnaEnergija = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajRezervenFond = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajUpravitel = table.Column<bool>(type: "bit", nullable: false),
+                    PresmetajCistenjeVlez = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -378,7 +388,7 @@ namespace CleanHub.Migrations
                     CreatedTime = table.Column<DateTime>(type: "datetime2", nullable: true),
                     DateTimeChanged = table.Column<DateTime>(type: "datetime2", nullable: true),
                     PaymentStatus = table.Column<int>(type: "int", nullable: false),
-                    PaymentType = table.Column<int>(type: "int", nullable: false),
+                    PaymentType = table.Column<int>(type: "int", nullable: true),
                     PaymentDate = table.Column<DateOnly>(type: "date", nullable: true)
                 },
                 constraints: table =>

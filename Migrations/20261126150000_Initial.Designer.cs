@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260503123833_NewTest")]
-    partial class NewTest
+    [Migration("20261126150000_Initial")]
+    partial class Initial
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -314,6 +314,9 @@ namespace CleanHub.Migrations
                     b.Property<DateOnly?>("InactiveDatum")
                         .HasColumnType("date");
 
+                    b.Property<int>("OrderNumber")
+                        .HasColumnType("int");
+
                     b.Property<string>("PartnerOpis")
                         .HasColumnType("nvarchar(max)");
 
@@ -323,11 +326,29 @@ namespace CleanHub.Migrations
                     b.Property<bool?>("PhysicalPerson")
                         .HasColumnType("bit");
 
-                    b.Property<int?>("Saldo")
-                        .HasColumnType("int");
+                    b.Property<bool>("PresmetajAdministrativniTrosoci")
+                        .HasColumnType("bit");
 
-                    b.Property<int?>("Saldo1201")
-                        .HasColumnType("int");
+                    b.Property<bool>("PresmetajCistenjeVlez")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajKomunalnaTaksaJavnoOsvetluvanje")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajOdrzuvanjeLift")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajOdrzuvanjeSmetki")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajPotrosenaElektricnaEnergija")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajRezervenFond")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("PresmetajUpravitel")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("SetCost")
                         .HasColumnType("bit");

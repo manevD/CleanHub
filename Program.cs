@@ -1,4 +1,4 @@
-using AutoMapper;
+﻿using AutoMapper;
 using CleanHub.Config;
 using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
@@ -244,6 +244,11 @@ namespace CleanHub
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;
+
+                // ДЕМО: миграција + тест податоци (само ако Demo:Seed = true и базата е празна)
+                DemoSeeder.SeedAsync(services, app.Configuration,
+                    services.GetRequiredService<ILoggerFactory>().CreateLogger("Demo")).Wait();
+
                 CreateStaticData.CreateUsers(services).Wait();
             }
 

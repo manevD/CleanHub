@@ -311,6 +311,9 @@ namespace CleanHub.Migrations
                     b.Property<DateOnly?>("InactiveDatum")
                         .HasColumnType("date");
 
+                    b.Property<int>("OrderNumber")
+                        .HasColumnType("int");
+
                     b.Property<string>("PartnerOpis")
                         .HasColumnType("nvarchar(max)");
 
