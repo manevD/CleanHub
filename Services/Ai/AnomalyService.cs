@@ -89,26 +89,37 @@ namespace CleanHub.Services.Ai
             // 2. Згради без фактура за минатиот месец — само партнери со дејност 2 (згради)
             var monthStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-1);
             var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-            var invoicedCustomers = (await _db.Documents.AsNoTracking()
-                    .Where(d => d.CustomerId != null && d.Date >= monthStart && d.Date <= monthEnd)
-                    .Select(d => d.CustomerId!.Value)
-                    .Distinct()
-                    .ToListAsync(ct))
-                .ToHashSet();
+            // Фактурите се издаваат на станарите (Customer.BuildingId), а зградата е посебен партнер
+            // (ActivityId 2, Building.CustomerRefId). Зградата има фактура ако ја има таа или кој било станар.
+            var invoiced = await _db.Documents.AsNoTracking()
+                .Where(d => d.CustomerId != null && d.Date >= monthStart && d.Date <= monthEnd)
+                .Select(d => new { CustomerId = d.CustomerId!.Value, d.Customer!.BuildingId })
+                .Distinct()
+                .ToListAsync(ct);
+            var invoicedCustomers = invoiced.Select(x => x.CustomerId).ToHashSet();
+            var invoicedBuildings = invoiced.Where(x => x.BuildingId.HasValue).Select(x => x.BuildingId!.Value).ToHashSet();
+            var buildingsByRef = buildings.Where(b => b.CustomerRefId.HasValue)
+                .GroupBy(b => b.CustomerRefId!.Value)
+                .ToDictionary(g => g.Key, g => g.Select(b => b.Id).ToList());
 
             var buildingCustomers = await _db.Customers.AsNoTracking()
                 .Where(c => c.ActivityId == 2 && c.Inactive != true)
                 .Select(c => new { c.Id, c.CustomerInfo, c.BuildingId })
                 .ToListAsync(ct);
 
+            bool HasInvoice(int customerId, int? buildingId) =>
+                invoicedCustomers.Contains(customerId)
+                || (buildingId.HasValue && invoicedBuildings.Contains(buildingId.Value))
+                || (buildingsByRef.TryGetValue(customerId, out var ids) && ids.Any(invoicedBuildings.Contains));
+
             var monthName = monthStart.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", FinanceDataService.Mk);
-            foreach (var bc in buildingCustomers.Where(c => !invoicedCustomers.Contains(c.Id)).OrderBy(c => c.CustomerInfo))
+            foreach (var bc in buildingCustomers.Where(c => !HasInvoice(c.Id, c.BuildingId)).OrderBy(c => c.CustomerInfo))
             {
                 report.Items.Add(new AnomalyItem
                 {
                     Category = CatMissingInvoice,
                     Severity = "high",
-                    BuildingId = bc.BuildingId,
+                    BuildingId = bc.BuildingId ?? (buildingsByRef.TryGetValue(bc.Id, out var bids) ? bids.FirstOrDefault() : null),
                     Title = bc.CustomerInfo,
                     Detail = $"Нема фактура за {monthName}."
                 });
