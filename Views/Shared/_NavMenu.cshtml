@@ -51,8 +51,17 @@
             </summary>
             <div class="nav-sub">
                 <a asp-action="Index" asp-controller="BookFinancial" asp-route-id="0" class="@On("bookfinancial", "index", "costs")">Книжења увид</a>
+                @* ДЕМО: исклучено — за вклучување тргни го коментарот
+                <a asp-action="LastInvoice" asp-controller="BookFinancial" class="@On("bookfinancial", "lastinvoice")">Залепи завршна</a>
+                *@
             </div>
         </details>
+
+        <a asp-action="Index" asp-controller="OnlinePayments" class="nav-item @On("onlinepayments")">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="5" width="20" height="14" rx="2" /><line x1="2" y1="10" x2="22" y2="10" /><path d="M16 15h2" /><path d="M6 15h4" /></svg>
+            <span>Онлајн уплати</span>
+            <span class="nav-badge" title="Треба да се постават">поставување</span>
+        </a>
 
         <details class="nav-group" open="@(openCreate ? "open" : null)">
             <summary class="nav-item">

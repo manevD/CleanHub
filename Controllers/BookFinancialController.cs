@@ -50,6 +50,94 @@ namespace CleanHub.Controllers
             }).ToList();
         }
 
+        [Route("Завршна")]
+        [HttpGet]
+        public async Task<IActionResult> LastInvoice()
+        {
+            ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+            ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name");
+
+            return View();
+        }
+
+        [Route("Завршна")]
+        [HttpPost]
+        public async Task<IActionResult> LastInvoice(int? buildingId, int? paymentStatusId, int year)
+        {
+            try
+            {
+                // Jahresanfang
+                DateTime startDate = new DateTime(year, 1, 1);
+
+                // Jahresende
+                DateTime endDate = new DateTime(year, 12, 31, 23, 59, 59);
+                string dateFromStr = startDate.ToString("dd.MM.yyyy");
+                string dateToStr = endDate.ToString("dd.MM.yyyy");
+                List<BookFinancialInfoViewModel> results = new List<BookFinancialInfoViewModel>();
+                var building = new Building();
+                if (!buildingId.HasValue)
+                {
+                    ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                    return RedirectToAction(nameof(LastInvoice));
+                }
+
+                building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
+                if (building != null)
+                {
+                    results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
+
+                    ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
+                    ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
+                    //if (paymentStatusId == (int)PaymentStatus.Неплатено || paymentStatusId == (int)PaymentStatus.Сите)
+                    //{
+                    //    CalculateOverdueStatus(results);
+                    //}
+                }
+                else
+                {
+                    return RedirectToAction(nameof(LastInvoice));
+                }
+                ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
+                ViewBag.Buildings = new SelectList(GetBuildings(), "Id", "Name", building.Id);
+                ViewBag.SelectedBuildingName = building.Name;
+
+                ViewBag.BuildingId = building.Id;
+                return View(results.Where(x => x.DatumF.Year == year).OrderBy(x => x.DatumF));
+            }
+            catch (Exception e)
+            {
+                throw;
+            }
+        }
+
+        private double GetOwesLastInvoice(string? dateTo, List<BookFinancialInfoViewModel> results)
+        {
+            DateOnly? DateTo = null;
+            if (!string.IsNullOrEmpty(dateTo))
+            {
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                return results
+                    .Where(x =>
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
+                        x.DocumentTypId != 11 && !string.IsNullOrEmpty(x.Description)).Sum(su => su.Owes);
+            }
+            return 0;
+        }
+
+        private double GetDemandsLastInvoice(string? dateTo, List<BookFinancialInfoViewModel> results)
+        {
+            DateOnly? DateTo = null;
+            if (!string.IsNullOrEmpty(dateTo))
+            {
+                DateTo = DateOnly.ParseExact(dateTo, "dd.MM.yyyy", null);
+                return results
+                    .Where(x =>
+                        (!DateTo.HasValue || x.DatumF <= DateTo.Value) && x.Description != "салдо" &&
+                        x.DocumentTypId != 11).Sum(su => su.Demands);
+            }
+            return 0;
+        }
+
         public IActionResult Index()
         {
             ViewBag.PaymentStatusList = GetEnumSelectList<PaymentStatus>();
