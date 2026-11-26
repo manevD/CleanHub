@@ -118,6 +118,8 @@
                                     {
                                         <button type="button" class="btn btn-sm @(r.Match == OnlinePaymentMatch.Match ? "btn-success" : "btn-secondary") btn-create"
                                                 data-key="@p.Key"
+                                                data-document-id="@r.DocumentId"
+                                                data-paid="@(r.InvoicePaid ? "1" : "0")"
                                                 data-customer-id="@r.CustomerId"
                                                 data-customer="@r.CustomerInfo"
                                                 data-total="@Math.Round(p.Amount, 0, MidpointRounding.AwayFromZero)"
@@ -144,23 +146,26 @@
     </div>
 </div>
 
-<!-- Ист модал и иста логика како „Креирај ново плаќање“ во Сметки (/Documents/CreateBookFinancial) -->
+<!-- Истата логика како „Плати“ во Сметки (/Documents/SetMultiplePayments): фактурата директно се книжи -->
 <div class="modal fade" id="onlinePayModal" tabindex="-1" aria-labelledby="onlinePayTitle" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <form id="onlinePayForm" method="post" autocomplete="off">
                 <div class="modal-header">
-                    <h5 class="modal-title" id="onlinePayTitle">Креирај ново плаќање</h5>
+                    <h5 class="modal-title" id="onlinePayTitle">Плати фактура</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
                 </div>
                 <div class="modal-body">
                     <div id="onlinePayWarning" class="alert alert-warning" hidden></div>
 
                     <div class="form-group mb-3">
-                        <label for="opCustomer" class="form-label">Станар</label>
-                        <input id="opCustomer" class="form-control" list="opCustomerOptions" placeholder="Пребарај станар..." required />
-                        <datalist id="opCustomerOptions"></datalist>
-                        <input type="hidden" id="opCustomerId" name="customerId" />
+                        <label for="opInvoiceNumber" class="form-label">Број на фактура</label>
+                        <div class="d-flex gap-2">
+                            <input type="number" id="opInvoiceNumber" class="form-control" placeholder="пр. 12345" />
+                            <button type="button" class="btn btn-secondary" id="opFind">Најди</button>
+                        </div>
+                        <input type="hidden" id="opInvoiceIds" name="SelectedInvoiceIds" />
+                        <div id="opInvoiceInfo" class="form-text mt-2"></div>
                     </div>
 
                     <div class="form-group mb-3">
@@ -171,11 +176,6 @@
                                 <option value="@((int)t)" selected="@(t == PaymentType.Web ? "selected" : null)">@t.GetEnumDescription()</option>
                             }
                         </select>
-                    </div>
-
-                    <div class="form-group mb-3">
-                        <label for="opTotal" class="form-label">Тотал</label>
-                        <input type="number" id="opTotal" name="Total" min="0" step="1" class="form-control" required />
                     </div>
 
                     <div class="form-group mb-3">
@@ -195,7 +195,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
-                    <button type="submit" class="btn btn-success" id="opSubmit">Креирај плаќање</button>
+                    <button type="submit" class="btn btn-success" id="opSubmit">Плати</button>
                 </div>
             </form>
         </div>
@@ -223,35 +223,43 @@
             };
             const form = document.getElementById('onlinePayForm');
             const warning = document.getElementById('onlinePayWarning');
-            const customerInput = document.getElementById('opCustomer');
-            const customerId = document.getElementById('opCustomerId');
-            const options = document.getElementById('opCustomerOptions');
+            const invNumber = document.getElementById('opInvoiceNumber');
+            const invIds = document.getElementById('opInvoiceIds');
+            const invInfo = document.getElementById('opInvoiceInfo');
             const submit = document.getElementById('opSubmit');
             const token = () => (document.querySelector('input[name="__RequestVerificationToken"]') || {}).value || '';
+            const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
             let currentKey = null;
-            let customers = null;
             let saving = false;
 
-            function loadCustomers() {
-                if (customers) return Promise.resolve(customers);
-                return fetch('/Customers/GetAllCustomers').then(r => r.json()).then(d => (customers = d || []));
+            function showWarning(text) { warning.textContent = text || ''; warning.hidden = !text; }
+
+            function setInvoice(id, html, paid) {
+                invIds.value = id && !paid ? id : '';
+                invInfo.innerHTML = html || '';
+                submit.disabled = !invIds.value;
             }
 
-            customerInput.addEventListener('input', () => {
-                const text = customerInput.value.trim().toLowerCase();
-                customerId.value = '';
-                loadCustomers().then(list => {
-                    const exact = list.find(c => (c.customerInfo || '').trim().toLowerCase() === text);
-                    if (exact) { customerId.value = exact.id; return; }
-                    if (text.length < 2) return;
-                    options.innerHTML = '';
-                    list.filter(c => (c.customerInfo || '').toLowerCase().includes(text)).slice(0, 30).forEach(c => {
-                        const o = document.createElement('option');
-                        o.value = c.customerInfo;
-                        options.appendChild(o);
-                    });
-                });
-            });
+            // Рачно пребарување по број (кога cPay бројот не се совпаѓа)
+            async function findInvoice() {
+                const n = invNumber.value.trim();
+                if (!n) return;
+                setInvoice('', 'Се пребарува...');
+                try {
+                    const list = await fetch('/Documents/FindInvoiceByNumber?number=' + encodeURIComponent(n)).then(r => r.json());
+                    if (!list || !list.length) { setInvoice('', '<span class="text-danger">Нема фактура со број ' + esc(n) + '.</span>'); return; }
+                    // Најнова неплатена, ако има повеќе со ист број (различни години)
+                    const d = list.find(x => !x.paid) || list[0];
+                    const info = '<b>' + esc(d.customer || '') + '</b>' +
+                        (d.building ? ' · ' + esc(d.building) : '') +
+                        (d.date ? ' · ' + esc(d.date) : '') +
+                        (d.total ? ' · ' + esc(d.total) : '') +
+                        (d.paid ? ' <span class="text-danger">(веќе платена)</span>' : '');
+                    setInvoice(d.id, info, d.paid);
+                } catch { setInvoice('', '<span class="text-danger">Грешка при пребарување.</span>'); }
+            }
+            document.getElementById('opFind').addEventListener('click', findInvoice);
+            invNumber.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); findInvoice(); } });
 
             // Делегиран клик — работи за сите редови
             document.addEventListener('click', e => {
@@ -261,51 +269,44 @@
                 const d = btn.dataset;
                 currentKey = d.key;
                 form.reset();
-                customerInput.value = d.customer || '';
-                customerId.value = d.customerId || '';
                 document.getElementById('opType').value = '@((int)PaymentType.Web)';
-                document.getElementById('opTotal').value = d.total || '';
                 document.getElementById('opDate').value = d.date || '';
                 document.getElementById('opNumber').value = d.number || '';
                 document.getElementById('opDescription').value = d.description || '';
+                invNumber.value = d.number || '';
 
-                if (d.match === 'AmountMismatch') {
-                    warning.textContent = 'Сумата од cPay (' + d.total + ') е различна од износот на фактурата (' + d.invoiceTotal + '). Проверете пред да зачувате.';
-                    warning.hidden = false;
-                } else if (d.match === 'NoInvoice') {
-                    warning.textContent = 'Не е пронајдена фактура со број ' + d.number + '. Изберете станар рачно.';
-                    warning.hidden = false;
+                const paid = d.paid === '1';
+                if (d.documentId) {
+                    setInvoice(d.documentId,
+                        '<b>' + esc(d.customer) + '</b> · фактура ' + esc(d.invoiceTotal) + ' ден. · уплатено ' + esc(d.total) + ' ден.' +
+                        (paid ? ' <span class="text-danger">(веќе платена)</span>' : ''), paid);
                 } else {
-                    warning.hidden = true;
+                    setInvoice('', '');
                 }
+
+                if (paid) showWarning('Оваа фактура е веќе платена. Ако е грешка, пребарајте друг број.');
+                else if (d.match === 'AmountMismatch') showWarning('Сумата од cPay (' + d.total + ') е различна од износот на фактурата (' + d.invoiceTotal + '). Проверете пред да платите.');
+                else if (d.match === 'NoInvoice') showWarning('Не е пронајдена фактура со број ' + d.number + '. Внесете го точниот број и кликнете „Најди“.');
+                else showWarning('');
                 modal.show();
             });
 
             form.addEventListener('submit', async e => {
                 e.preventDefault();
                 if (saving) return;
-                if (!customerId.value) {
-                    alert('Изберете станар од листата.');
-                    customerInput.focus();
-                    return;
-                }
+                if (!invIds.value) { showWarning('Изберете фактура (внесете број и кликнете „Најди“).'); invNumber.focus(); return; }
                 if (!form.checkValidity()) { form.reportValidity(); return; }
 
                 saving = true;
                 submit.disabled = true;
-                submit.textContent = 'Се зачувува...';
+                submit.textContent = 'Се книжи...';
                 try {
                     const fd = new FormData(form);
                     fd.append('__RequestVerificationToken', token());
 
-                    // Истата акција како „Креирај плаќање“ во Сметки
-                    const res = await fetch('/Documents/CreateBookFinancial', { method: 'POST', body: fd });
-                    if (!res.ok) {
-                        let msg = 'Се појави грешка при зачувување на плаќањето.';
-                        try { msg = (await res.json()).message || msg; } catch { }
-                        alert(msg);
-                        return;
-                    }
+                    // Истата акција како „Плати“ за избрани фактури во Сметки
+                    const res = await fetch('/Documents/SetMultiplePayments', { method: 'POST', body: fd });
+                    if (!res.ok) { alert('Се појави грешка при плаќање на фактурата (' + res.status + ').'); return; }
 
                     // Означи ја уплатата како внесена
                     const st = new FormData();
@@ -319,7 +320,7 @@
                 } finally {
                     saving = false;
                     submit.disabled = false;
-                    submit.textContent = 'Креирај плаќање';
+                    submit.textContent = 'Плати';
                 }
             });
 
