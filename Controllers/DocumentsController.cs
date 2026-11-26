@@ -2998,82 +2998,85 @@ namespace CleanHub.Controllers
             return _unitOfWork.Documents.Query().Any(e => e.Id == id);
         }
 
-        public async Task<IActionResult> CombineAndDownloadPdfs(int? buildingId, int? paymentStatusId, int year)
+        /// <summary>
+        /// Фактури за еден објект и месец — за изборот во „Извади сметки“ (само читање).
+        /// </summary>
+        [HttpGet]
+        public async Task<IActionResult> InvoicesForPrint(int buildingId, int year, int month)
         {
-            var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(buildingId.Value);
+            if (buildingId <= 0 || month < 1 || month > 12 || year < 2000)
+                return Json(Array.Empty<object>());
 
-            var startDate = new DateOnly();
-            var endDate = new DateOnly();
+            var from = new DateOnly(year, month, 1);
+            var to = from.AddMonths(1);
 
-            var results = GetFilteredBookFinancials(1201, buildingId.Value).ToList();
-            var demands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
-            var owes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
-
-            PdfDocument endDoc = new PdfDocument();
-            MemoryStream pdfStream = new MemoryStream();
-
-            foreach (var item in customers.Where(x => x.Inactive == false))
-            {
-                var documentEntity = await _unitOfWork.Documents.GetByIdAsync(
-                    da => da.CustomerId.HasValue && da.CustomerId == item.Id &&
-                          da.Date.HasValue && da.Date.Value >= startDate &&
-                          da.Date.Value <= endDate,
-                    d => d.Include(x => x.Customer).Include(x => x.Books)
-                );
-
-                var document = App.FullMapper.Map<DocumentViewModel>(documentEntity);
-
-                if (document == null) continue;
-
-                document.TotalBuildingDemands = (int)demands;
-                document.TotalBuildingOwes = (int)owes;
-                var debtCustomerId = document.CustomerId;
-                var debt = _unitOfWork.Documents.GetAll(q => q.Where(x => x.CustomerId == debtCustomerId && x.PaymentStatus != 0)).ToList();
-
-                if (debt != null && debt.Any())
+            var docs = await _unitOfWork.Documents.Query()
+                .AsNoTracking()
+                .Where(d => d.Customer != null && d.Customer.BuildingId == buildingId
+                            && d.Date.HasValue && d.Date.Value >= from && d.Date.Value < to)
+                .OrderBy(d => d.Number)
+                .Select(d => new
                 {
-                    var allParts = debt.OrderBy(x => x.Id)
-                        .SelectMany(x => x.ToDocument.Split(',', StringSplitOptions.RemoveEmptyEntries))
-                        .ToList();
+                    d.Id,
+                    d.Number,
+                    Customer = d.Customer!.CustomerInfo,
+                    d.Date,
+                    d.ToDocument,
+                    d.TotalOutput,
+                    d.PaymentStatus
+                })
+                .ToListAsync();
 
-                    var distinctExceptLast = allParts
-                        .Reverse<string>()
-                        .Skip(1)
-                        .Reverse()
-                        .Distinct()
-                        .ToList();
-
-                    if (distinctExceptLast != null && distinctExceptLast.Any() && distinctExceptLast.Count() >= 8)
-                    {
-                        document.Debt = " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                    }
-                    else
-                    {
-                        document.Debt = string.Join(",", distinctExceptLast) + " : " + debt.Sum(x => x.TotalOutput ?? 0);
-                    }
-                }
-                document.Company = _config.Value;
-                document.IsForPdf = true;
-
-                string htmlContent = await RenderPartialViewToStringAsync("~/Views/Shared/_DocumentDetailPartialPrint.cshtml", document);
-
-                var request = _httpContextAccessor?.HttpContext?.Request;
-                string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
-
-                HtmlToPdf converter = new HtmlToPdf();
-                htmlContent = PdfSpeed.Prepare(converter, htmlContent);
-                PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
-                endDoc.Append(doc);
-            }
-
-            byte[] pdf = endDoc.Save();
-            endDoc.Close();
-
-            FileResult fileResult = new FileContentResult(pdf, "application/pdf")
+            var mk = new System.Globalization.CultureInfo("mk-MK");
+            return Json(docs.Select(d => new
             {
-                FileDownloadName = $"{Buildings.FirstOrDefault(x => x.Id == buildingId.Value)?.Name}_{startDate.Month}_{startDate.Year}.pdf"
-            };
-            return fileResult;
+                id = d.Id,
+                number = d.Number,
+                customer = d.Customer,
+                date = d.Date?.ToString("dd.MM.yyyy"),
+                period = d.ToDocument,
+                total = ((double)(d.TotalOutput ?? 0)).ToString("N2", mk),
+                paid = d.PaymentStatus == PaymentStatus.Платено
+            }));
+        }
+
+        /// <summary>
+        /// „Извади сметки“: ги спојува избраните фактури во еден PDF.
+        /// Ист изглед и иста пресметка на долг како „Креирај, Принтај“ (PrintDocuments).
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> CombineAndDownloadPdfs(int buildingId, string? documentIds)
+        {
+            var ids = (documentIds ?? "")
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+                .Select(x => int.TryParse(x, out var id) ? id : 0)
+                .Where(id => id > 0)
+                .Distinct()
+                .ToList();
+
+            if (ids.Count == 0)
+                return BadRequest("Изберете најмалку една сметка.");
+
+            var building = await _unitOfWork.Buildings.Query()
+                .Include(b => b.Customers)
+                .FirstOrDefaultAsync(b => b.Id == buildingId);
+            if (building == null)
+                return BadRequest("Објектот не е пронајден.");
+
+            var documents = _unitOfWork.Documents
+                .GetAll(q => q
+                    .Where(d => ids.Contains(d.Id))
+                    .Include(d => d.Customer)
+                    .Include(d => d.Books))
+                .OrderBy(d => d.Number)
+                .ToList();
+
+            if (documents.Count == 0)
+                return BadRequest("Сметките не се пронајдени.");
+
+            var result = await PrintDocuments(documents, building, false);
+            return result ?? BadRequest("Не може да се креира PDF.");
         }
 
         public async Task<IActionResult> PrintDocuments(List<Document> documents, Building building, bool send)
