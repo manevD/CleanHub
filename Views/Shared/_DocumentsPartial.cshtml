@@ -48,7 +48,7 @@
                         <tr>
                             <td><a href="./app-invoice-preview.html"><span class="inv-number">@document.Number</span></a></td>
                            
-                            <td><span class="inv-amount"> @document.TotalOutput!.Value.ToString("F2") MKD</span></td>
+                            <td><span class="inv-amount"> @document.TotalOutput!.Value.ToString("F0") MKD</span></td>
                             @if (@document.PaymentStatus == PaymentStatus.Платено)
                             {
                                 <td><span class="badge badge-light-success inv-status">@document.PaymentStatus</span></td>

@@ -1,4 +1,4 @@
-using CleanHub.Attribute;
+﻿using CleanHub.Attribute;
 using CleanHub.Config;
 using CleanHub.Entities.Enums;
 using CleanHub.Infrastructure.Data;
@@ -171,7 +171,7 @@ namespace CleanHub.Controllers
             row.CustomerId = doc.CustomerId;
             row.CustomerInfo = doc.CustomerInfo;
             row.BuildingName = doc.BuildingName;
-            row.InvoiceTotal = doc.TotalOutput.HasValue ? Math.Round((double)doc.TotalOutput.Value, 2) : null;
+            row.InvoiceTotal = doc.TotalOutput.HasValue ? Math.Round((double)doc.TotalOutput.Value, MidpointRounding.AwayFromZero) : null;
             row.InvoicePeriod = doc.ToDocument;
             row.InvoicePaid = doc.PaymentStatus == PaymentStatus.Платено;
             row.Match = row.InvoiceTotal.HasValue && Math.Abs(row.InvoiceTotal.Value - p.Amount) < 0.5

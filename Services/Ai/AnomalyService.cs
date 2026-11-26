@@ -71,7 +71,7 @@ namespace CleanHub.Services.Ai
                 .ToListAsync(ct);
 
             foreach (var g in payments
-                         .GroupBy(x => new { x.CustomerId, x.InvoiceId, x.DocumentId, Description = (x.Description ?? "").Trim(), Amount = Math.Round(x.Demands, 2), x.DatumF })
+                         .GroupBy(x => new { x.CustomerId, x.InvoiceId, x.DocumentId, Description = (x.Description ?? "").Trim(), Amount = Math.Round(x.Demands, MidpointRounding.AwayFromZero), x.DatumF })
                          .Where(g => g.Count() > 1)
                          .OrderByDescending(g => g.Key.Amount)
                          .Take(30))

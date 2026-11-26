@@ -121,17 +121,17 @@
                                 </td>
 
                                 <td>
-                                    @pobaruva.ToString("0.00") МКД
+                                    @pobaruva.ToString("0") МКД
                                 </td>
 
                                 <td>
-                                    @dolzi.ToString("0.00") МКД
+                                    @dolzi.ToString("0") МКД
                                 </td>
 
                                 <td style="color:@(saldo < 0 ? "red" : "green");
                                     font-weight:bold;">
 
-                                    @saldo.ToString("+0.00;-0.00;0.00")
+                                    @saldo.ToString("+0;-0;0")
 
                                 </td>
 
@@ -147,19 +147,19 @@
 
                             <td>
                                 Побарува :
-                                @sumPobaruva.ToString("0.00") МКД
+                                @sumPobaruva.ToString("0") МКД
                             </td>
 
                             <td>
                                 Должи :
-                                @sumDolzi.ToString("0.00") МКД
+                                @sumDolzi.ToString("0") МКД
                             </td>
 
                             <td style="color:@((sumPobaruva - sumDolzi) < 0 ? "red" : "green");
                                 font-weight:bold;">
 
                                 Разлика :
-                                @((sumPobaruva - sumDolzi).ToString("+0.00;-0.00;0.00"))
+                                @((sumPobaruva - sumDolzi).ToString("+0;-0;0"))
                             </td>
 
                         </tr>

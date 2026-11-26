@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 
@@ -72,11 +72,11 @@ namespace CleanHub.Services.OnlinePayments
             };
 
             if (double.TryParse(Val("OrderDetails", "Amount"), NumberStyles.Any, CultureInfo.InvariantCulture, out var cents))
-                payment.Charged = Math.Round(cents / 100d, 2);
+                payment.Charged = Math.Round(cents / 100d, MidpointRounding.AwayFromZero);
 
             // Ако „suma“ ја нема — износ = наплатено - провизија
             if (payment.Amount <= 0 && payment.Charged > 0)
-                payment.Amount = Math.Round(payment.Charged - payment.Fee, 2);
+                payment.Amount = Math.Round(payment.Charged - payment.Fee, MidpointRounding.AwayFromZero);
 
             payment.Key = !string.IsNullOrWhiteSpace(payment.PaymentRef)
                 ? "ref:" + payment.PaymentRef
@@ -131,7 +131,7 @@ namespace CleanHub.Services.OnlinePayments
                 PayerAddress = Group(AddressRx().Match(line.Trim())),
                 RawOrderId = line.Trim()
             };
-            payment.Charged = Math.Round(payment.Amount + payment.Fee, 2);
+            payment.Charged = Math.Round(payment.Amount + payment.Fee, MidpointRounding.AwayFromZero);
 
             payment.Key = !string.IsNullOrWhiteSpace(payment.PaymentRef)
                 ? "ref:" + payment.PaymentRef

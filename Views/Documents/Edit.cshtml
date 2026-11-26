@@ -280,7 +280,7 @@
                                             <input asp-for="Books[i].Quantity"
                                                    class="form-control small-input quantity-input"
                                                    type="number"
-                                                   step="0.01"
+                                                   step="1"
                                                    min="0" />
 
                                         </td>
@@ -293,7 +293,7 @@
                                             <input asp-for="Books[i].Price"
                                                    class="form-control money-input price-input"
                                                    type="number"
-                                                   step="0.01"
+                                                   step="1"
                                                    min="0" />
 
                                         </td>
@@ -306,7 +306,7 @@
                                             <input asp-for="Books[i].Tax"
                                                    class="form-control money-input tax-input"
                                                    type="number"
-                                                   step="0.01"
+                                                   step="1"
                                                    min="0" />
 
                                         </td>
@@ -319,7 +319,7 @@
                                             <input asp-for="Books[i].Total"
                                                    class="form-control money-input total-input"
                                                    type="number"
-                                                   step="0.01"
+                                                   step="1"
                                                    min="0"
                                                    readonly />
 
@@ -444,7 +444,7 @@
 
             const number = parseNumber(value);
 
-            return number.toFixed(2);
+            return String(Math.round(number));
         }
 
 
@@ -456,9 +456,7 @@
 
             const number = parseNumber(value);
 
-            return number
-                .toFixed(2)
-                .replace('.', ',');
+            return String(Math.round(number));
         }
 
 
@@ -742,7 +740,7 @@
                            name="Books[${bookIndex}].Quantity"
                            class="form-control small-input quantity-input"
                            value="1"
-                           step="0.01"
+                           step="1"
                            min="0" />
 
                 </td>
@@ -753,7 +751,7 @@
                     <input type="number"
                            name="Books[${bookIndex}].Price"
                            class="form-control money-input price-input"
-                           step="0.01"
+                           step="1"
                            min="0" />
 
                 </td>
@@ -765,7 +763,7 @@
                            name="Books[${bookIndex}].Tax"
                            class="form-control money-input tax-input"
                            value="0"
-                           step="0.01"
+                           step="1"
                            min="0" />
 
                 </td>
@@ -776,7 +774,7 @@
                     <input type="number"
                            name="Books[${bookIndex}].Total"
                            class="form-control money-input total-input"
-                           step="0.01"
+                           step="1"
                            min="0"
                            readonly />
 

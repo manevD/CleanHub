@@ -139,14 +139,14 @@ namespace CleanHub.Infrastructure.Data
                     var received = date.AddDays(10);
                     var monthText = DocumentService.GetMonthAsString(month) + " " + Year;
                     var mmYyyy = $"{month:00}/{Year}";
-                    var energy = (float)Math.Round(def.Energy * (0.85 + rnd.NextDouble() * 0.3), 2);
+                    var energy = (float)Math.Round(def.Energy * (0.85 + rnd.NextDouble() * 0.3), MidpointRounding.AwayFromZero);
                     var energyTotal = 0f;
 
                     foreach (var (tenant, profile) in tenants)
                     {
                         var books = BooksFor(def, mmYyyy, energy);
                         energyTotal += books.First(b => b.ArticleNotes!.StartsWith("Потрошена")).Total ?? 0;
-                        var total = (float)Math.Round(books.Sum(b => b.Total ?? 0), 2);
+                        var total = (float)Math.Round(books.Sum(b => b.Total ?? 0), MidpointRounding.AwayFromZero);
                         var reserve = books.First(b => b.ArticleNotes == "Резервен фонд").Total ?? 0;
 
                         var doc = new Document
@@ -244,7 +244,7 @@ namespace CleanHub.Infrastructure.Data
                         InvoiceId = Constants.Energy,
                         Building = building,
                         ForDate = date,
-                        Total = Math.Round((decimal)energyTotal, 2),
+                        Total = Math.Round((decimal)energyTotal, MidpointRounding.AwayFromZero),
                         Status = month < LastMonth ? PaymentStatus.Платено : PaymentStatus.Неплатено
                     });
                 }
@@ -343,13 +343,13 @@ namespace CleanHub.Infrastructure.Data
         // Месечни трошоци на зградата (сметки, материјали, поправки)
         private static IEnumerable<(string Description, double Amount)> BuildingCostsFor(BuildingDef def, int month, Random rnd)
         {
-            yield return ($"Средства за чистење {month:00}/{Year}", Math.Round(800 + rnd.NextDouble() * 700, 2));
+            yield return ($"Средства за чистење {month:00}/{Year}", Math.Round(800 + rnd.NextDouble() * 700, MidpointRounding.AwayFromZero));
             if (def.Lift)
                 yield return ($"Сервис на лифт {month:00}/{Year}", 2400);
             if (month % 3 == 0)
-                yield return ("Замена на сијалици во влез", Math.Round(600 + rnd.NextDouble() * 900, 2));
+                yield return ("Замена на сијалици во влез", Math.Round(600 + rnd.NextDouble() * 900, MidpointRounding.AwayFromZero));
             if (month == 7)
-                yield return ("Поправка на влезна врата", Math.Round(4500 + rnd.NextDouble() * 3000, 2));
+                yield return ("Поправка на влезна врата", Math.Round(4500 + rnd.NextDouble() * 3000, MidpointRounding.AwayFromZero));
         }
 
         // ------------------------------------------------------------------
@@ -389,7 +389,7 @@ namespace CleanHub.Infrastructure.Data
         {
             yield return new BuildingProduct { ArticleNotes = "Административни трошоци", UnitOfMeasurement = "бр.", Quantity = 1, Price = 30f, Tax = 18 };
             yield return new BuildingProduct { ArticleNotes = "Потрошена електр. енер. за", UnitOfMeasurement = "бр.", Quantity = 1, Price = def.Energy, Tax = 18 };
-            yield return new BuildingProduct { ArticleNotes = "Комунална такса за јавно осветлување", UnitOfMeasurement = "бр.", Quantity = 1, Price = 11.5f, Tax = 0 };
+            yield return new BuildingProduct { ArticleNotes = "Комунална такса за јавно осветлување", UnitOfMeasurement = "бр.", Quantity = 1, Price = 12f, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Одржување на сметки за", UnitOfMeasurement = "бр.", Quantity = 1, Price = 15f, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Резервен фонд за", UnitOfMeasurement = "бр.", Quantity = 1, Price = def.ReserveFund, Tax = 0 };
             yield return new BuildingProduct { ArticleNotes = "Управител за", UnitOfMeasurement = "бр.", Quantity = 1, Price = 100f, Tax = 18 };
@@ -405,7 +405,7 @@ namespace CleanHub.Infrastructure.Data
             {
                 Line("Административни трошоци", "бр.", 30f, 18),
                 Line($"Потрошена електрична енергија за месец {mmYyyy}", "бр.", energy, 18),
-                Line("Комунална такса за јавно осветлување", "бр.", 11.5f, 0),
+                Line("Комунална такса за јавно осветлување", "бр.", 12f, 0),
                 Line("Одржување на сметки", "бр.", 15f, 0),
                 Line("Резервен фонд", "бр.", def.ReserveFund, 0),
                 Line($"Управител за месец {mmYyyy}", "бр.", 100f, 18),
@@ -418,13 +418,14 @@ namespace CleanHub.Infrastructure.Data
 
         private static Book Line(string notes, string unit, float price, float tax)
         {
-            var withTax = (float)Math.Round(price * (1 + tax / 100f), 2);
+            // Цели броеви: 76,6 → 77, 73,43 → 73
+            var withTax = (float)Math.Round(price * (1 + tax / 100f), MidpointRounding.AwayFromZero);
             return new Book
             {
                 ArticleNotes = notes,
                 UnitOfMeasurement = unit,
                 Quantity = 1,
-                Price = (float)Math.Round(price, 2),
+                Price = (float)Math.Round(price, MidpointRounding.AwayFromZero),
                 Tax = tax,
                 PriceWithTax = withTax,
                 Total = withTax,

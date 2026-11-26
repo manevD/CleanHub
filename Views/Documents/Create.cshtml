@@ -426,7 +426,7 @@
         }
 
         function formatNumber(val) {
-            return (val || 0).toFixed(2).replace('.', ',');
+            return String(Math.round(val || 0));
         }
 
 
@@ -482,7 +482,7 @@
             });
 
             document.querySelector('#totalPriceWithTax').innerText =
-                totalSum.toFixed(2).replace('.', ',');
+                String(Math.round(totalSum));
         }
 
 

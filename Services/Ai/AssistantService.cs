@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace CleanHub.Services.Ai
 {
@@ -170,9 +170,9 @@ namespace CleanHub.Services.Ai
                         balance.CustomerId,
                         balance.CustomerInfo,
                         balance.BuildingName,
-                        owes = Math.Round(balance.Owes, 2),
-                        paid = Math.Round(balance.Demands, 2),
-                        saldo = Math.Round(balance.Saldo, 2),
+                        owes = Math.Round(balance.Owes, MidpointRounding.AwayFromZero),
+                        paid = Math.Round(balance.Demands, MidpointRounding.AwayFromZero),
+                        saldo = Math.Round(balance.Saldo, MidpointRounding.AwayFromZero),
                         balance.UnpaidInvoices,
                         balance.LastPayments
                     });
@@ -193,14 +193,14 @@ namespace CleanHub.Services.Ai
                     return ClaudeClient.ToJson(new
                     {
                         count = debtors.Count,
-                        total = Math.Round(debtors.Sum(d => d.UnpaidTotal), 2),
+                        total = Math.Round(debtors.Sum(d => d.UnpaidTotal), MidpointRounding.AwayFromZero),
                         debtors = debtors.Take(60).Select(d => new
                         {
                             id = d.CustomerId,
                             name = d.CustomerInfo,
                             building = d.BuildingName,
                             unpaidMonths = d.UnpaidCount,
-                            amount = Math.Round(d.UnpaidTotal, 2),
+                            amount = Math.Round(d.UnpaidTotal, MidpointRounding.AwayFromZero),
                             periods = d.Periods
                         }),
                         note = debtors.Count > 60 ? "Прикажани се првите 60." : null

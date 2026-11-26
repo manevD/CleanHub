@@ -73,7 +73,7 @@ namespace CleanHub.Services.Ai
     public class FinanceDataService
     {
         public static readonly CultureInfo Mk = new("mk-MK");
-        public static string Money(double value) => value.ToString("N2", Mk) + " МКД";
+        public static string Money(double value) => value.ToString("0", Mk) + " МКД";
 
         private static readonly PaymentStatus[] UnpaidStatuses =
             { PaymentStatus.Неплатено, PaymentStatus.Делумно, PaymentStatus.Задоцнето };
@@ -257,18 +257,18 @@ namespace CleanHub.Services.Ai
                 CustomerId = customer.Id,
                 CustomerInfo = customer.CustomerInfo,
                 BuildingName = customer.BuildingName,
-                Owes = Math.Round(owes, 2),
-                Demands = Math.Round(financials.Sum(f => f.Demands), 2),
+                Owes = Math.Round(owes, MidpointRounding.AwayFromZero),
+                Demands = Math.Round(financials.Sum(f => f.Demands), MidpointRounding.AwayFromZero),
                 UnpaidInvoices = docs
                     .Where(d => UnpaidStatuses.Contains(d.PaymentStatus))
                     .OrderBy(d => d.Date)
-                    .Select(d => (object)new { period = d.ToDocument, date = d.Date?.ToString("dd.MM.yyyy"), amount = Math.Round((double)(d.TotalOutput ?? 0), 2), status = d.PaymentStatus.ToString() })
+                    .Select(d => (object)new { period = d.ToDocument, date = d.Date?.ToString("dd.MM.yyyy"), amount = Math.Round((double)(d.TotalOutput ?? 0), MidpointRounding.AwayFromZero), status = d.PaymentStatus.ToString() })
                     .ToList(),
                 LastPayments = financials
                     .Where(f => f.Demands > 0)
                     .OrderByDescending(f => f.DatumF)
                     .Take(6)
-                    .Select(f => (object)new { date = f.DatumF?.ToString("dd.MM.yyyy"), description = f.Description, amount = Math.Round(f.Demands, 2) })
+                    .Select(f => (object)new { date = f.DatumF?.ToString("dd.MM.yyyy"), description = f.Description, amount = Math.Round(f.Demands, MidpointRounding.AwayFromZero) })
                     .ToList()
             };
         }
@@ -317,7 +317,7 @@ namespace CleanHub.Services.Ai
             var costs = reserveYear
                 .Where(x => x.BuildingId == buildingId && x.DocumentTypId == 5 && x.Owes > 0)
                 .OrderBy(x => x.DatumF)
-                .Select(x => new CostLine { Date = x.DatumF, Description = x.Description ?? "", Amount = Math.Round(x.Owes, 2) })
+                .Select(x => new CostLine { Date = x.DatumF, Description = x.Description ?? "", Amount = Math.Round(x.Owes, MidpointRounding.AwayFromZero) })
                 .ToList();
 
             var unpaidDocs = docs.Where(d => UnpaidStatuses.Contains(d.PaymentStatus)).ToList();
@@ -329,14 +329,14 @@ namespace CleanHub.Services.Ai
                 Year = year,
                 TenantsCount = allCustomerIds.Count(c => !c.Hide && c.Inactive != true),
                 InvoicesCount = docs.Count,
-                Invoiced = Math.Round(docs.Sum(d => (double)(d.TotalOutput ?? 0)), 2),
-                CollectedRegular = Math.Round(regular.Sum(), 2),
-                CollectedReserve = Math.Round(reserveYear.Sum(x => x.Demands), 2),
-                ReserveCosts = Math.Round(costs.Sum(c => c.Amount), 2),
-                UnpaidTotal = Math.Round(unpaidDocs.Sum(d => (double)(d.TotalOutput ?? 0)), 2),
+                Invoiced = Math.Round(docs.Sum(d => (double)(d.TotalOutput ?? 0)), MidpointRounding.AwayFromZero),
+                CollectedRegular = Math.Round(regular.Sum(), MidpointRounding.AwayFromZero),
+                CollectedReserve = Math.Round(reserveYear.Sum(x => x.Demands), MidpointRounding.AwayFromZero),
+                ReserveCosts = Math.Round(costs.Sum(c => c.Amount), MidpointRounding.AwayFromZero),
+                UnpaidTotal = Math.Round(unpaidDocs.Sum(d => (double)(d.TotalOutput ?? 0)), MidpointRounding.AwayFromZero),
                 TenantsWithDebt = unpaidDocs.Select(d => d.CustomerId).Distinct().Count(),
-                ReserveBalanceEndOfYear = Math.Round(reserve.Where(x => x.DatumF <= end).Sum(x => x.Demands - x.Owes), 2),
-                ReserveBalanceNow = Math.Round(reserve.Sum(x => x.Demands - x.Owes), 2),
+                ReserveBalanceEndOfYear = Math.Round(reserve.Where(x => x.DatumF <= end).Sum(x => x.Demands - x.Owes), MidpointRounding.AwayFromZero),
+                ReserveBalanceNow = Math.Round(reserve.Sum(x => x.Demands - x.Owes), MidpointRounding.AwayFromZero),
                 Costs = costs
             };
         }

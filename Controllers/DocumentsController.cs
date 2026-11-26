@@ -155,7 +155,7 @@ namespace CleanHub.Controllers
                 building = d.Building,
                 period = d.ToDocument,
                 date = d.Date?.ToString("dd.MM.yyyy"),
-                total = ((double)(d.TotalOutput ?? 0)).ToString("N2", mk) + " МКД",
+                total = ((double)(d.TotalOutput ?? 0)).ToString("0", mk) + " МКД",
                 status = d.PaymentStatus.ToString(),
                 paid = d.PaymentStatus == PaymentStatus.Платено,
                 paymentDate = d.PaymentDate?.ToString("dd.MM.yyyy"),
@@ -943,6 +943,9 @@ namespace CleanHub.Controllers
             return docEntity;
         }
 
+        private static float RoundWhole(float value) => MathF.Round(value, MidpointRounding.AwayFromZero);
+        private static float? RoundWhole(float? value) => value.HasValue ? MathF.Round(value.Value, MidpointRounding.AwayFromZero) : null;
+
         private void CreateBook(BuildingProductViewModel book, Document docEntity)
         {
             var bookEntity = new BookViewModel
@@ -952,13 +955,14 @@ namespace CleanHub.Controllers
                 Input = 0,
                 Quantity = book.Quantity,
 
-                PriceWithTax = book.PriceWithTaxTotal,
+                // Цели броеви (без децимали)
+                PriceWithTax = RoundWhole(book.PriceWithTaxTotal),
 
-                Price = book.Price,
+                Price = RoundWhole(book.Price),
 
                 Tax = book.Tax,
 
-                Total = book.PriceWithTaxTotal,
+                Total = RoundWhole(book.PriceWithTaxTotal),
 
                 ArticleNotes = book.ArticleNotes,
                 UnitOfMeasurement = book.UnitOfMeasurement,
@@ -1232,11 +1236,10 @@ namespace CleanHub.Controllers
                     (1.0 + tax / 100.0);
 
 
-                // Round Book.Total to 2 decimal places
+                // Цел број (без децимали): 76,6 → 77, 73,43 → 73
                 float bookTotal =
                     (float)Math.Round(
                         calculatedTotal,
-                        2,
                         MidpointRounding.AwayFromZero
                     );
 
@@ -2997,7 +3000,7 @@ namespace CleanHub.Controllers
                 customer = d.Customer,
                 date = d.Date?.ToString("dd.MM.yyyy"),
                 period = d.ToDocument,
-                total = ((double)(d.TotalOutput ?? 0)).ToString("N2", mk),
+                total = ((double)(d.TotalOutput ?? 0)).ToString("0", mk),
                 paid = d.PaymentStatus == PaymentStatus.Платено
             }));
         }

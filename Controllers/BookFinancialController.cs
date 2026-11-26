@@ -358,7 +358,7 @@ public async Task<IActionResult> EditCosts(BookFinancial model)
         return NotFound();
 
     cost.Description = model.Description;
-    cost.Owes = model.Owes;
+    cost.Owes = Math.Round(model.Owes, MidpointRounding.AwayFromZero); // цел број
 
     await _unitOfWork.SaveChangesAsync();
 

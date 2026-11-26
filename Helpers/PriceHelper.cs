@@ -8,7 +8,7 @@
             // If the taxRate is null, assume no tax (or some default value)
             if (!taxRate.HasValue)
             {
-                return price;  // No tax applied, just return the price as is
+                return Math.Round(price, MidpointRounding.AwayFromZero);
             }
 
             // Calculate the tax amount
@@ -16,15 +16,8 @@
             // Calculate the total price with tax
             double totalPrice = price + taxAmount;
 
-            // Round according to the condition
-            if (totalPrice % 1 <= 0.5)
-            {
-                return Math.Floor(totalPrice);  // Round down
-            }
-            else
-            {
-                return Math.Ceiling(totalPrice);  // Round up
-            }
+            // Цел број: 76,6 → 77, 73,43 → 73 (0,5 нагоре)
+            return Math.Round(totalPrice, MidpointRounding.AwayFromZero);
         }
     }
 }

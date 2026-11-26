@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CleanHub.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261126180000_Initial")]
+    [Migration("20261126183000_Initial")]
     partial class Initial
     {
         /// <inheritdoc />

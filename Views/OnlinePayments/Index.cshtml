@@ -6,7 +6,7 @@
 @{
     ViewData["Title"] = "Онлајн уплати";
     var mk = new System.Globalization.CultureInfo("mk-MK");
-    string Money(double? v) => v.HasValue ? v.Value.ToString("N2", mk) : "—";
+    string Money(double? v) => v.HasValue ? v.Value.ToString("0", mk) : "—";
     string LastRun()
     {
         if (!Model.LastRunUtc.HasValue) return "уште не е прочитано";
