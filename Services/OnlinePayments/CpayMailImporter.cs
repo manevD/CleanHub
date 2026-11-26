@@ -70,6 +70,7 @@ namespace CleanHub.Services.OnlinePayments
                     {
                         var message = await folder.GetMessageAsync(uid, ct);
                         read++;
+                        var foundInMessage = 0;
 
                         foreach (var part in message.BodyParts.OfType<MimePart>())
                         {
@@ -83,7 +84,15 @@ namespace CleanHub.Services.OnlinePayments
                             var xml = System.Text.Encoding.UTF8.GetString(ms.ToArray()).TrimStart('﻿');
 
                             var payment = CpayParser.Parse(xml, message.Date, message.MessageId);
-                            if (payment != null) found.Add(payment);
+                            if (payment != null) { found.Add(payment); foundInMessage++; }
+                        }
+
+                        // Нема orderInfo.xml (или не може да се прочита) → од текстот на пораката
+                        if (foundInMessage == 0)
+                        {
+                            var fromText = CpayParser.ParseText(message.TextBody ?? message.HtmlBody, message.Date, message.MessageId);
+                            if (fromText != null) found.Add(fromText);
+                            else _logger.LogWarning("Онлајн уплати: пораката {MessageId} не може да се прочита", message.MessageId);
                         }
                     }
 
