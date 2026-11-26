@@ -86,6 +86,8 @@ dotnet user-secrets set "OnlinePayments:Password" "xxxx xxxx xxxx xxxx"         
 
 ## Демо база (гранка `demo`)
 
+- Во демото се исклучени: Онлајн уплати (cPay/MailKit — отстранети), Telnyx SMS (конфигурацијата не се чита) и „Залепи завршна“ (отстранета). AI алатките остануваат.
+
 - Една миграција `Initial` (Migrations/20261126184500_Initial) — целата шема од нула.
 - Објектот е само во `Buildings` (нема „партнер-зграда“ во Customers, нема `CustomerRefId`).
   Трошоците и резервниот фонд на самата зграда се книжат со `BookFinancials.BuildingId`.

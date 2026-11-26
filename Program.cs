@@ -5,7 +5,6 @@ using CleanHub.Infrastructure.Data;
 using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.Services.Ai;
-using CleanHub.Services.OnlinePayments;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -72,7 +71,8 @@ namespace CleanHub
             // ----------------------------------------------------
             builder.Services.AddOptions<AiConfig>().Bind(builder.Configuration.GetSection("AI"));
             builder.Services.AddHttpClient<ClaudeClient>();
-            builder.Services.AddOptions<TelnyxConfig>().Bind(builder.Configuration.GetSection("Telnyx"));
+            // ДЕМО: Telnyx (SMS) е исклучен — конфигурацијата не се чита, па SMS никогаш не се праќа
+            builder.Services.AddOptions<TelnyxConfig>();
             builder.Services.AddHttpClient<SmsSender>();
             builder.Services.AddScoped<FinanceDataService>();
             builder.Services.AddScoped<EmailSender>();
@@ -81,12 +81,6 @@ namespace CleanHub
             builder.Services.AddScoped<AssistantService>();
             builder.Services.AddScoped<AnnualReportService>();
             builder.Services.AddHostedService<WeeklyReportHostedService>();
-
-            // Онлајн уплати (cPay) — е-пошта: user-secrets OnlinePayments:Username / Password
-            builder.Services.AddOptions<OnlinePaymentsConfig>().Bind(builder.Configuration.GetSection("OnlinePayments"));
-            builder.Services.AddSingleton<OnlinePaymentStore>();
-            builder.Services.AddSingleton<CpayMailImporter>();
-            builder.Services.AddHostedService<OnlinePaymentsHostedService>();
 
             // ДЕМО: секоја ноќ базата се враќа на почетните тест податоци
             builder.Services.AddHostedService<DemoResetHostedService>();
