@@ -504,6 +504,159 @@
         </div>
     </div>
 </div>
+<!-- „Извади сметки“: избор на месец и сметки -->
+<div class="modal fade" id="printPickerModal" tabindex="-1" aria-labelledby="printPickerTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="printPickerTitle">Извади сметки</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+            </div>
+            <div class="modal-body">
+                <div class="d-flex flex-wrap align-items-end gap-2 mb-3">
+                    <div>
+                        <label for="ppMonth" class="form-label">Месец</label>
+                        <input type="month" id="ppMonth" class="form-control" />
+                    </div>
+                    <div class="d-flex flex-wrap gap-2 ms-auto">
+                        <button type="button" class="btn btn-sm btn-secondary" id="ppUnpaid">Само неплатени</button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="ppAll">Сите</button>
+                        <button type="button" class="btn btn-sm btn-secondary" id="ppNone">Ниедна</button>
+                    </div>
+                </div>
+                <div id="ppStatus" class="text-muted small mb-2"></div>
+                <div class="table-responsive">
+                    <table class="table table-sm align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width:36px"><input type="checkbox" class="form-check-input" id="ppCheckAll" aria-label="Избери ги сите" /></th>
+                                <th>Бр.</th>
+                                <th>Станар</th>
+                                <th>Период</th>
+                                <th class="text-end">Износ</th>
+                                <th>Статус</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ppRows"></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <span id="ppCount" class="me-auto text-muted small"></span>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                <button type="button" class="btn btn-primary" id="ppDownload" disabled>Извади PDF</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    (function () {
+        function init() {
+            const modalEl = document.getElementById('printPickerModal');
+            const monthInput = document.getElementById('ppMonth');
+            const rowsEl = document.getElementById('ppRows');
+            const statusEl = document.getElementById('ppStatus');
+            const countEl = document.getElementById('ppCount');
+            const checkAll = document.getElementById('ppCheckAll');
+            const downloadBtn = document.getElementById('ppDownload');
+            const esc = t => String(t ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+            const token = () => (document.querySelector('input[name="__RequestVerificationToken"]') || {}).value || '';
+            let list = [];
+
+            function show() {
+                if (modalEl.parentNode !== document.body) document.body.appendChild(modalEl);
+                if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                else if (window.jQuery && jQuery.fn.modal) jQuery(modalEl).modal('show');
+            }
+
+            const boxes = () => [...rowsEl.querySelectorAll('input[type=checkbox]')];
+            function updateCount() {
+                const n = boxes().filter(b => b.checked).length;
+                countEl.textContent = n ? 'Избрани: ' + n + ' од ' + list.length : '';
+                downloadBtn.disabled = n === 0;
+                checkAll.checked = n > 0 && n === list.length;
+                checkAll.indeterminate = n > 0 && n < list.length;
+            }
+            function select(fn) { boxes().forEach(b => { b.checked = fn(list.find(x => String(x.id) === b.value)); }); updateCount(); }
+
+            async function load() {
+                const buildingId = (document.getElementById('buildingId') || {}).value;
+                const [y, m] = (monthInput.value || '').split('-');
+                rowsEl.innerHTML = '';
+                list = [];
+                updateCount();
+                if (!buildingId || !y || !m) { statusEl.textContent = 'Изберете објект и месец.'; return; }
+                statusEl.textContent = 'Се вчитува...';
+                try {
+                    list = await fetch('/Documents/InvoicesForPrint?buildingId=' + encodeURIComponent(buildingId) + '&year=' + y + '&month=' + parseInt(m, 10)).then(r => r.json());
+                } catch { statusEl.textContent = 'Грешка при вчитување.'; return; }
+                if (!list.length) { statusEl.textContent = 'Нема сметки за овој месец.'; return; }
+                const unpaid = list.filter(x => !x.paid).length;
+                statusEl.textContent = list.length + ' сметки · ' + unpaid + ' неплатени. Неплатените се веќе избрани.';
+                rowsEl.innerHTML = list.map(x =>
+                    '<tr>' +
+                    '<td><input type="checkbox" class="form-check-input" value="' + x.id + '"' + (x.paid ? '' : ' checked') + ' /></td>' +
+                    '<td class="text-nowrap">' + esc(x.number) + '</td>' +
+                    '<td>' + esc(x.customer) + '</td>' +
+                    '<td class="text-nowrap">' + esc(x.period || x.date) + '</td>' +
+                    '<td class="text-end text-nowrap">' + esc(x.total) + '</td>' +
+                    '<td>' + (x.paid ? '<span class="badge bg-success">Платено</span>' : '<span class="badge bg-danger">Неплатено</span>') + '</td>' +
+                    '</tr>').join('');
+                updateCount();
+            }
+
+            window.openPrintPicker = function () {
+                const buildingId = (document.getElementById('buildingId') || {}).value;
+                if (!buildingId || buildingId === '0') { alert('Прво изберете објект.'); return; }
+                if (!monthInput.value) {
+                    const yearSel = document.querySelector('#filterForm select[name="year"]');
+                    const now = new Date();
+                    const y = yearSel ? parseInt(yearSel.value, 10) : now.getFullYear();
+                    const m = y === now.getFullYear() ? now.getMonth() + 1 : 12;
+                    monthInput.value = y + '-' + String(m).padStart(2, '0');
+                }
+                show();
+                load();
+            };
+
+            monthInput.addEventListener('change', load);
+            rowsEl.addEventListener('change', updateCount);
+            checkAll.addEventListener('change', () => select(() => checkAll.checked));
+            document.getElementById('ppUnpaid').addEventListener('click', () => select(x => x && !x.paid));
+            document.getElementById('ppAll').addEventListener('click', () => select(() => true));
+            document.getElementById('ppNone').addEventListener('click', () => select(() => false));
+
+            downloadBtn.addEventListener('click', async () => {
+                const ids = boxes().filter(b => b.checked).map(b => b.value);
+                if (!ids.length) return;
+                const fd = new FormData();
+                fd.set('buildingId', document.getElementById('buildingId').value);
+                fd.set('documentIds', ids.join(','));
+                fd.set('__RequestVerificationToken', token());
+                const label = downloadBtn.textContent;
+                downloadBtn.disabled = true;
+                downloadBtn.textContent = 'Се креира PDF (' + ids.length + ')...';
+                try {
+                    const res = await fetch('/Documents/CombineAndDownloadPdfs', { method: 'POST', body: fd });
+                    if (!res.ok) { alert((await res.text()) || ('Грешка ' + res.status)); return; }
+                    const blob = await res.blob();
+                    const cd = res.headers.get('Content-Disposition') || '';
+                    const m = /filename\*=UTF-8''([^;]+)/i.exec(cd) || /filename="?([^";]+)"?/i.exec(cd);
+                    const a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = m ? decodeURIComponent(m[1]) : 'smetki.pdf';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+                } catch { alert('Грешка при креирање на PDF.'); }
+                finally { downloadBtn.textContent = label; updateCount(); }
+            });
+        }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init); else init();
+    })();
+</script>
+
 @section Scripts {
     <script>
         window.addEventListener("load", function () {
@@ -518,9 +671,9 @@
                 const searchButton = form.querySelector('button[type="submit"]');
                 const originalAction = form.action;
 
+                // „Извади сметки“ — избор на месец и сметки во модал
                 navigateButton.addEventListener("click", function () {
-                    form.action = "/Documents/CombineAndDownloadPdfs"; // ❗ kein Razor mehr
-                    form.submit();
+                    if (window.openPrintPicker) window.openPrintPicker();
                 });
 
                 if (searchButton) {
