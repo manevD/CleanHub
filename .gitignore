@@ -362,3 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Dokumentacija Database.docx
+
+# Онлајн уплати (cPay) — локални податоци, не во git
+App_Data/

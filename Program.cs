@@ -5,6 +5,7 @@ using CleanHub.Infrastructure.Data;
 using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
 using CleanHub.Services.Ai;
+using CleanHub.Services.OnlinePayments;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -98,6 +99,12 @@ namespace CleanHub
             builder.Services.AddScoped<AssistantService>();
             builder.Services.AddScoped<AnnualReportService>();
             builder.Services.AddHostedService<WeeklyReportHostedService>();
+
+            // Онлајн уплати (cPay) — е-пошта: user-secrets OnlinePayments:Username / Password
+            builder.Services.AddOptions<OnlinePaymentsConfig>().Bind(builder.Configuration.GetSection("OnlinePayments"));
+            builder.Services.AddSingleton<OnlinePaymentStore>();
+            builder.Services.AddSingleton<CpayMailImporter>();
+            builder.Services.AddHostedService<OnlinePaymentsHostedService>();
 
             // ----------------------------------------------------
             // Session
