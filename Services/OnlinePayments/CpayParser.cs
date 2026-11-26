@@ -85,6 +85,61 @@ namespace CleanHub.Services.OnlinePayments
             return payment;
         }
 
+        [GeneratedRegex(@"Payment\s*order\s*:\s*(\d+)", RegexOptions.IgnoreCase)]
+        private static partial Regex PaymentOrderRx();
+
+        [GeneratedRegex(@"Status\s*:\s*([A-Za-z]+)", RegexOptions.IgnoreCase)]
+        private static partial Regex StatusRx();
+
+        [GeneratedRegex(@"<[^>]+>")]
+        private static partial Regex HtmlTagRx();
+
+        /// <summary>
+        /// Кога пораката нема orderInfo.xml — се чита од текстот на е-пораката:
+        ///   Payment order : 70091780
+        ///   Details 2 : Faktura: 15976-2026, suma: 964, imePrezime: ..., adresa: ..., usluga: 50
+        ///   Status : Successful
+        /// </summary>
+        public static OnlinePayment? ParseText(string? text, DateTimeOffset receivedAt, string? messageId)
+        {
+            if (string.IsNullOrWhiteSpace(text)) return null;
+
+            // HTML → обичен текст
+            text = System.Net.WebUtility.HtmlDecode(HtmlTagRx().Replace(text, " "));
+
+            var status = StatusRx().Match(text);
+            if (status.Success && !status.Groups[1].Value.StartsWith("Success", StringComparison.OrdinalIgnoreCase))
+                return null;
+
+            // Ред „Details 2“ (со suma) има предност; инаку целиот текст
+            var line = text.Split('\n').FirstOrDefault(l => l.Contains("suma", StringComparison.OrdinalIgnoreCase)) ?? text;
+
+            var inv = InvoiceRx().Match(line);
+            if (!inv.Success) inv = InvoiceRx().Match(text);
+            if (!inv.Success) return null;
+
+            var payment = new OnlinePayment
+            {
+                PaymentRef = Group(PaymentOrderRx().Match(text)),
+                MessageId = messageId,
+                ReceivedAt = receivedAt,
+                InvoiceNumber = int.Parse(inv.Groups[1].Value, CultureInfo.InvariantCulture),
+                InvoiceYear = int.Parse(inv.Groups[2].Value, CultureInfo.InvariantCulture),
+                Amount = Num(SumaRx().Match(line)),
+                Fee = Num(FeeRx().Match(line)),
+                PayerName = Group(NameRx().Match(line)),
+                PayerAddress = Group(AddressRx().Match(line.Trim())),
+                RawOrderId = line.Trim()
+            };
+            payment.Charged = Math.Round(payment.Amount + payment.Fee, 2);
+
+            payment.Key = !string.IsNullOrWhiteSpace(payment.PaymentRef)
+                ? "ref:" + payment.PaymentRef
+                : "msg:" + (messageId ?? Guid.NewGuid().ToString("N"));
+
+            return payment;
+        }
+
         private static double Num(Match m) =>
             m.Success && double.TryParse(m.Groups[1].Value, NumberStyles.Any, CultureInfo.InvariantCulture, out var v) ? v : 0;
 
