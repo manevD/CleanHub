@@ -61,6 +61,24 @@ dotnet user-secrets set "Telnyx:MessagingProfileId" "4001..."        # ID на M
 За Македонија не треба купен број — се праќа со името (Alphanumeric Sender ID). Станарите не можат да одговорат на SMS.
 Без `Telnyx:ApiKey` копчето отвора SMS апликација на уредот.
 
+## Онлајн уплати (cPay)
+
+Мени **„Онлајн уплати“**: ги чита е-пораките од `cpay@casys.com.mk` (прилог `orderInfo.xml`),
+ја наоѓа фактурата по број (`Faktura: 15995-2026` → `Documents.Number` = 15995, година 2026) и ја споредува
+сумата (`suma`, без провизија) со `TotalOutput`. Со **„Креирај плаќање“** се отвора истиот модал како во Сметки,
+веќе пополнет: станар, тип **Веб**, сума, датум = кога е примена е-пораката, број на плаќање = број на фактура,
+опис `за MM/YYYY по веб` (месецот на фактурата). Зачувува преку `/Documents/CreateBookFinancial` — иста логика.
+
+Читање: веднаш при стартување и секоја вечер во полноќ (време во Скопје). Копче „Прочитај сега“ за рачно.
+Сандачето се отвора само за читање — пораките не се бришат ниту менуваат.
+Прочитаните уплати се чуваат во `App_Data/online-payments.json` (без промени во базата, не е во git).
+
+```bash
+dotnet user-secrets set "OnlinePayments:Username" "violetastojanov@gmail.com"   # сандачето што ги прима пораките од cPay
+dotnet user-secrets set "OnlinePayments:Password" "xxxx xxxx xxxx xxxx"         # Google App Password (не обичната лозинка)
+# опционално: OnlinePayments:ImapHost (imap.gmail.com), ImapPort (993), Folder (INBOX), InitialDays (60), DailyHour (0)
+```
+
 ### Ограничувања
 
 - Viber не се праќа автоматски — копчето ја копира пораката и го отвора разговорот.

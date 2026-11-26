@@ -1,0 +1,318 @@
+@model CleanHub.Controllers.OnlinePaymentsViewModel
+@using CleanHub.Controllers
+@using CleanHub.Services.OnlinePayments
+@using CleanHub.Entities.Enums
+@using CleanHub.Extensions
+@{
+    ViewData["Title"] = "Онлајн уплати";
+    var mk = new System.Globalization.CultureInfo("mk-MK");
+    string Money(double? v) => v.HasValue ? v.Value.ToString("N2", mk) : "—";
+    string LastRun()
+    {
+        if (!Model.LastRunUtc.HasValue) return "уште не е прочитано";
+        var local = Model.LastRunUtc.Value.ToLocalTime();
+        return local.ToString("dd.MM.yyyy HH:mm");
+    }
+}
+@Html.AntiForgeryToken()
+
+<div class="section-head">
+    <p class="page-lead m-0">
+        Уплати преку cPay, прочитани од е-пораките од <strong>cpay@@casys.com.mk</strong>.
+        Се читаат автоматски секоја вечер во полноќ и при стартување на апликацијата.
+        <br /><span class="text-muted">Последно читање: @LastRun()</span>
+    </p>
+    <form asp-action="Refresh" method="post" class="m-0">
+        <button type="submit" class="btn btn-primary" disabled="@(Model.Configured ? null : "disabled")">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="23 4 23 10 17 10" /><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" /></svg>
+            Прочитај сега
+        </button>
+    </form>
+</div>
+
+@if (!Model.Configured)
+{
+    <div class="alert alert-warning">
+        Е-поштата за онлајн уплати не е поставена. Во User Secrets додадете
+        <code>OnlinePayments:Username</code> и <code>OnlinePayments:Password</code> (App Password). Види README.
+    </div>
+}
+@if (!string.IsNullOrWhiteSpace(Model.LastError))
+{
+    <div class="alert alert-danger">@Model.LastError</div>
+}
+
+<div class="stat-grid">
+    <a class="stat-card @(Model.Show == "new" ? "has-issues" : "")" asp-action="Index" asp-route-show="new">
+        <span class="stat-label">Чекаат внесување</span><span class="stat-value">@Model.CountNew</span>
+    </a>
+    @if (Model.CountMatchNew >= 0)
+    {
+        <div class="stat-card is-clean"><span class="stat-label">Се совпаѓаат</span><span class="stat-value">@Model.CountMatchNew</span></div>
+    }
+    <a class="stat-card" asp-action="Index" asp-route-show="done"><span class="stat-label">Внесени / игнорирани</span><span class="stat-value">@(Model.CountAll - Model.CountNew)</span></a>
+    <a class="stat-card" asp-action="Index" asp-route-show="all"><span class="stat-label">Вкупно</span><span class="stat-value">@Model.CountAll</span></a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        @if (Model.Rows.Count == 0)
+        {
+            <div class="empty-state">@(Model.Show == "new" ? "Нема нови онлајн уплати. ✓" : "Нема уплати.")</div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table" id="onlineTable">
+                    <thead>
+                        <tr>
+                            <th>Примено</th>
+                            <th>Фактура</th>
+                            <th>Платил (cPay)</th>
+                            <th class="text-end">Сума</th>
+                            <th>Станар (фактура)</th>
+                            <th class="text-end">Износ фактура</th>
+                            <th>Статус</th>
+                            <th class="no-sort"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var r in Model.Rows)
+                        {
+                            var p = r.Payment;
+                            <tr data-key="@p.Key">
+                                <td class="text-nowrap">@r.PaymentDate.ToString("dd.MM.yyyy")<br /><span class="text-muted small">@p.ReceivedAt.ToLocalTime().ToString("HH:mm")</span></td>
+                                <td class="text-nowrap fw-semibold">@(p.InvoiceNumber + (p.InvoiceYear.HasValue ? "-" + p.InvoiceYear : ""))<br /><span class="text-muted small">@r.InvoicePeriod</span></td>
+                                <td>@p.PayerName<br /><span class="text-muted small">@p.PayerAddress</span></td>
+                                <td class="text-end text-nowrap fw-semibold">@Money(p.Amount)<br /><span class="text-muted small">+ провизија @Money(p.Fee)</span></td>
+                                <td>@(r.CustomerInfo ?? "—")<br /><span class="text-muted small">@r.BuildingName</span></td>
+                                <td class="text-end text-nowrap">@Money(r.InvoiceTotal)</td>
+                                <td class="text-nowrap">
+                                    @if (p.Status == OnlinePaymentStatus.Created)
+                                    {
+                                        <span class="sev sev-low">Внесено</span>
+                                    }
+                                    else if (p.Status == OnlinePaymentStatus.Ignored)
+                                    {
+                                        <span class="sev">Игнорирано</span>
+                                    }
+                                    else if (r.Match == OnlinePaymentMatch.Match)
+                                    {
+                                        <span class="lvl lvl-1">Се совпаѓа</span>
+                                    }
+                                    else if (r.Match == OnlinePaymentMatch.AmountMismatch)
+                                    {
+                                        <span class="lvl lvl-2">Различна сума</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="lvl lvl-3">Нема фактура</span>
+                                    }
+                                    @if (r.InvoicePaid)
+                                    {
+                                        <br /><span class="text-muted small">фактурата е платена</span>
+                                    }
+                                </td>
+                                <td class="text-nowrap text-end">
+                                    @if (p.Status == OnlinePaymentStatus.New)
+                                    {
+                                        <button type="button" class="btn btn-sm @(r.Match == OnlinePaymentMatch.Match ? "btn-success" : "btn-secondary") btn-create"
+                                                data-key="@p.Key"
+                                                data-customer-id="@r.CustomerId"
+                                                data-customer="@r.CustomerInfo"
+                                                data-total="@Math.Round(p.Amount, 0, MidpointRounding.AwayFromZero)"
+                                                data-date="@r.PaymentDate.ToString("yyyy-MM-dd")"
+                                                data-number="@p.InvoiceNumber"
+                                                data-description="@r.SuggestedDescription"
+                                                data-match="@r.Match"
+                                                data-invoice-total="@Money(r.InvoiceTotal)">
+                                            Креирај плаќање
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-ghost btn-status" data-key="@p.Key" data-status="@((int)OnlinePaymentStatus.Ignored)">Игнорирај</button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-ghost btn-status" data-key="@p.Key" data-status="@((int)OnlinePaymentStatus.New)">Врати</button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Ист модал и иста логика како „Креирај ново плаќање“ во Сметки (/Documents/CreateBookFinancial) -->
+<div class="modal fade" id="onlinePayModal" tabindex="-1" aria-labelledby="onlinePayTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form id="onlinePayForm" method="post" autocomplete="off">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="onlinePayTitle">Креирај ново плаќање</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Затвори"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="onlinePayWarning" class="alert alert-warning" hidden></div>
+
+                    <div class="form-group mb-3">
+                        <label for="opCustomer" class="form-label">Станар</label>
+                        <input id="opCustomer" class="form-control" list="opCustomerOptions" placeholder="Пребарај станар..." required />
+                        <datalist id="opCustomerOptions"></datalist>
+                        <input type="hidden" id="opCustomerId" name="customerId" />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="opType" class="form-label">Тип на плаќање</label>
+                        <select id="opType" name="PaymentType" class="form-select">
+                            @foreach (var t in Enum.GetValues(typeof(PaymentType)).Cast<PaymentType>())
+                            {
+                                <option value="@((int)t)" selected="@(t == PaymentType.Web ? "selected" : null)">@t.GetEnumDescription()</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="opTotal" class="form-label">Тотал</label>
+                        <input type="number" id="opTotal" name="Total" min="0" step="1" class="form-control" required />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="opDate" class="form-label">Дата на плаќање</label>
+                        <input type="date" id="opDate" name="PaymentDate" class="form-control" required />
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label for="opNumber" class="form-label">Број на плаќање</label>
+                        <input type="text" id="opNumber" name="PaymentNumber" class="form-control" />
+                    </div>
+
+                    <div class="form-group mb-0">
+                        <label for="opDescription" class="form-label">Опис</label>
+                        <input type="text" id="opDescription" name="PaymentDescription" class="form-control" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Откажи</button>
+                    <button type="submit" class="btn btn-success" id="opSubmit">Креирај плаќање</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const modalEl = document.getElementById('onlinePayModal');
+            const modal = new bootstrap.Modal(modalEl);
+            const form = document.getElementById('onlinePayForm');
+            const warning = document.getElementById('onlinePayWarning');
+            const customerInput = document.getElementById('opCustomer');
+            const customerId = document.getElementById('opCustomerId');
+            const options = document.getElementById('opCustomerOptions');
+            const submit = document.getElementById('opSubmit');
+            const token = () => (document.querySelector('input[name="__RequestVerificationToken"]') || {}).value || '';
+            let currentKey = null;
+            let customers = null;
+            let saving = false;
+
+            function loadCustomers() {
+                if (customers) return Promise.resolve(customers);
+                return fetch('/Customers/GetAllCustomers').then(r => r.json()).then(d => (customers = d || []));
+            }
+
+            customerInput.addEventListener('input', () => {
+                const text = customerInput.value.trim().toLowerCase();
+                customerId.value = '';
+                loadCustomers().then(list => {
+                    const exact = list.find(c => (c.customerInfo || '').trim().toLowerCase() === text);
+                    if (exact) { customerId.value = exact.id; return; }
+                    if (text.length < 2) return;
+                    options.innerHTML = '';
+                    list.filter(c => (c.customerInfo || '').toLowerCase().includes(text)).slice(0, 30).forEach(c => {
+                        const o = document.createElement('option');
+                        o.value = c.customerInfo;
+                        options.appendChild(o);
+                    });
+                });
+            });
+
+            document.querySelectorAll('.btn-create').forEach(btn => btn.addEventListener('click', () => {
+                const d = btn.dataset;
+                currentKey = d.key;
+                form.reset();
+                customerInput.value = d.customer || '';
+                customerId.value = d.customerId || '';
+                document.getElementById('opType').value = '@((int)PaymentType.Web)';
+                document.getElementById('opTotal').value = d.total || '';
+                document.getElementById('opDate').value = d.date || '';
+                document.getElementById('opNumber').value = d.number || '';
+                document.getElementById('opDescription').value = d.description || '';
+
+                if (d.match === 'AmountMismatch') {
+                    warning.textContent = 'Сумата од cPay (' + d.total + ') е различна од износот на фактурата (' + d.invoiceTotal + '). Проверете пред да зачувате.';
+                    warning.hidden = false;
+                } else if (d.match === 'NoInvoice') {
+                    warning.textContent = 'Не е пронајдена фактура со број ' + d.number + '. Изберете станар рачно.';
+                    warning.hidden = false;
+                } else {
+                    warning.hidden = true;
+                }
+                modal.show();
+            }));
+
+            form.addEventListener('submit', async e => {
+                e.preventDefault();
+                if (saving) return;
+                if (!customerId.value) {
+                    alert('Изберете станар од листата.');
+                    customerInput.focus();
+                    return;
+                }
+                if (!form.checkValidity()) { form.reportValidity(); return; }
+
+                saving = true;
+                submit.disabled = true;
+                submit.textContent = 'Се зачувува...';
+                try {
+                    const fd = new FormData(form);
+                    fd.append('__RequestVerificationToken', token());
+
+                    // Истата акција како „Креирај плаќање“ во Сметки
+                    const res = await fetch('/Documents/CreateBookFinancial', { method: 'POST', body: fd });
+                    if (!res.ok) {
+                        let msg = 'Се појави грешка при зачувување на плаќањето.';
+                        try { msg = (await res.json()).message || msg; } catch { }
+                        alert(msg);
+                        return;
+                    }
+
+                    // Означи ја уплатата како внесена
+                    const st = new FormData();
+                    st.append('key', currentKey);
+                    st.append('status', '@((int)OnlinePaymentStatus.Created)');
+                    st.append('__RequestVerificationToken', token());
+                    await fetch('/OnlinePayments/SetStatus', { method: 'POST', body: st });
+
+                    modal.hide();
+                    window.location.reload();
+                } finally {
+                    saving = false;
+                    submit.disabled = false;
+                    submit.textContent = 'Креирај плаќање';
+                }
+            });
+
+            document.querySelectorAll('.btn-status').forEach(btn => btn.addEventListener('click', async () => {
+                const st = new FormData();
+                st.append('key', btn.dataset.key);
+                st.append('status', btn.dataset.status);
+                st.append('__RequestVerificationToken', token());
+                const res = await fetch('/OnlinePayments/SetStatus', { method: 'POST', body: st });
+                if (res.ok) window.location.reload(); else alert('Грешка.');
+            }));
+        })();
+    </script>
+}
