@@ -3144,6 +3144,7 @@ namespace CleanHub.Controllers
                         string baseUrl = $"{request?.Scheme}://{request?.Host.Value}/";
 
                         HtmlToPdf converter = new HtmlToPdf();
+                        PdfSpeed.UseA4(converter);
                         htmlContent = PdfSpeed.Prepare(converter, htmlContent);
                         PdfDocument doc = converter.ConvertHtmlString(htmlContent, baseUrl);
 
