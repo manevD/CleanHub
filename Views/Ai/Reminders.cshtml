@@ -64,6 +64,12 @@
         }
         else
         {
+            <div class="list-toolbar">
+                <div class="search-field list-search">
+                    <input type="search" id="debtorSearch" class="form-control" placeholder="Пребарај станар, објект, телефон..." autocomplete="off" aria-label="Пребарај станар" />
+                </div>
+                <span class="text-muted small" id="debtorInfo"></span>
+            </div>
             <div class="table-responsive">
                 <table class="table" id="debtorsTable">
                     <thead>
@@ -81,7 +87,7 @@
                     <tbody>
                         @foreach (var d in debtors)
                         {
-                            <tr data-level="@((int)d.Level)">
+                            <tr data-level="@((int)d.Level)" data-search="@($"{d.CustomerInfo} {d.BuildingName} {d.PhoneNumber} {d.Email}".ToLowerInvariant())">
                                 <td><input type="checkbox" class="form-check-input row-check" value="@d.CustomerId" aria-label="Избери @d.CustomerInfo" /></td>
                                 <td><a href="/КартицаСтанари?customerId=@d.CustomerId" class="fw-semibold">@d.CustomerInfo</a></td>
                                 <td>@d.BuildingName</td>
@@ -98,6 +104,7 @@
                     </tbody>
                 </table>
             </div>
+            <nav class="pager" id="debtorPager" aria-label="Страници"></nav>
         }
     </div>
 </div>
@@ -131,6 +138,7 @@
         }
     </p>
     <div id="messagesList" class="message-grid"></div>
+    <nav class="pager" id="messagesPager" aria-label="Страници со пораки"></nav>
 </section>
 
 @section Scripts {
@@ -165,6 +173,48 @@
             });
         })();
 
+        // Едноставна пагинација: редовите остануваат во страната (изборот и праќањето работат за сите),
+        // само се кријат оние што не се на тековната страна или не одговараат на пребарувањето.
+        function mhPager(items, pagerEl, pageSize, onChange) {
+            let page = 1, filtered = items();
+            function pages() { return Math.max(1, Math.ceil(filtered.length / pageSize)); }
+            function draw() {
+                const all = items();
+                if (page > pages()) page = pages();
+                const start = (page - 1) * pageSize, end = start + pageSize;
+                all.forEach(el => { el.hidden = true; });
+                filtered.forEach((el, i) => { el.hidden = i < start || i >= end; });
+                const n = pages();
+                let html = '';
+                if (n > 1) {
+                    const btn = (p, label, dis, act) => '<button type="button" class="pager-btn' + (act ? ' is-active' : '') + '" data-page="' + p + '"' + (dis ? ' disabled' : '') + '>' + label + '</button>';
+                    html += btn(page - 1, '‹', page === 1);
+                    const show = new Set([1, n, page - 1, page, page + 1].filter(p => p >= 1 && p <= n));
+                    let last = 0;
+                    [...show].sort((a, b) => a - b).forEach(p => {
+                        if (p - last > 1) html += '<span class="pager-gap">…</span>';
+                        html += btn(p, p, false, p === page);
+                        last = p;
+                    });
+                    html += btn(page + 1, '›', page === n);
+                }
+                pagerEl.innerHTML = html;
+                if (onChange) onChange({ total: all.length, shown: filtered.length, from: filtered.length ? start + 1 : 0, to: Math.min(end, filtered.length) });
+            }
+            pagerEl.addEventListener('click', e => {
+                const b = e.target.closest('[data-page]');
+                if (!b || b.disabled) return;
+                page = parseInt(b.dataset.page, 10);
+                draw();
+            });
+            return {
+                filter(fn) { filtered = items().filter(fn); page = 1; draw(); },
+                refresh() { filtered = items(); page = 1; draw(); },
+                redraw() { draw(); },
+                visible() { return filtered; }
+            };
+        }
+
         (function () {
             const table = document.getElementById('debtorsTable');
             const checks = () => Array.from(document.querySelectorAll('.row-check'));
@@ -178,10 +228,37 @@
             const info = document.getElementById('messagesInfo');
             const esc = window.mhEscape;
 
-            if (checkAll) checkAll.addEventListener('change', () => checks().forEach(c => c.checked = checkAll.checked));
+            // Пребарување + страници за станарите (15 по страна)
+            const debtorSearch = document.getElementById('debtorSearch');
+            const debtorInfo = document.getElementById('debtorInfo');
+            const rows = () => table ? Array.from(table.tBodies[0].rows) : [];
+            const pager = table ? mhPager(rows, document.getElementById('debtorPager'), 15, s => {
+                const sel = checks().filter(c => c.checked).length;
+                debtorInfo.textContent = (s.shown ? s.from + '–' + s.to + ' од ' + s.shown : 'Нема резултати') +
+                    (s.shown !== s.total ? ' (пребарано од ' + s.total + ')' : '') +
+                    (sel ? ' · избрани: ' + sel : '');
+            }) : null;
+            const filteredChecks = () => pager ? pager.visible().map(r => r.querySelector('.row-check')).filter(Boolean) : checks();
+            function updateInfo() { if (pager) pager.redraw(); }
+            if (debtorSearch && pager) {
+                let t;
+                debtorSearch.addEventListener('input', () => {
+                    clearTimeout(t);
+                    t = setTimeout(() => {
+                        const words = debtorSearch.value.trim().toLowerCase().split(/\s+/).filter(Boolean);
+                        pager.filter(r => words.every(w => (r.dataset.search || '').includes(w)));
+                    }, 120);
+                });
+                pager.refresh();
+            }
+            if (table) table.addEventListener('change', e => { if (e.target.classList.contains('row-check')) updateInfo(); });
+
+            // „Избери ги сите“ / „Само опомени“ важат за пребараните станари (сите страници)
+            if (checkAll) checkAll.addEventListener('change', () => { filteredChecks().forEach(c => c.checked = checkAll.checked); updateInfo(); });
             document.querySelectorAll('[data-select]').forEach(btn => btn.addEventListener('click', () => {
                 const mode = btn.getAttribute('data-select');
-                checks().forEach(c => c.checked = mode === 'all' ? true : c.closest('tr').dataset.level === mode);
+                filteredChecks().forEach(c => c.checked = mode === 'all' ? true : c.closest('tr').dataset.level === mode);
+                updateInfo();
             }));
 
             function setBusy(btn, busy, text) {
@@ -391,6 +468,9 @@
 
                 const ai = messages.filter(m => m.aiGenerated).length;
                 info.textContent = messages.length + ' пораки' + (ai ? ' · ' + ai + ' напишани со AI' : '');
+                // Пораките по 6 на страна
+                if (!list._pager) list._pager = mhPager(() => Array.from(list.querySelectorAll('.message-card')), document.getElementById('messagesPager'), 6);
+                list._pager.refresh();
                 section.hidden = false;
                 section.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }

@@ -892,6 +892,23 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
 }
 
 /* Печатење */
+/* Пребарување и страници во листи (Потсетници за долг) */
+.list-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin: 4px 0 12px; }
+.list-search { flex: 1 1 280px; max-width: 420px; }
+.pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 4px; margin-top: 14px; }
+.pager:empty { display: none; }
+.pager-btn {
+    min-width: 34px; height: 34px; padding: 0 10px;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--text); font-weight: 600; font-size: .86rem;
+    transition: border-color .15s, color .15s, background-color .15s;
+}
+.pager-btn:hover:not(:disabled) { border-color: var(--brand); color: var(--brand-600); }
+.pager-btn.is-active { background: var(--brand); border-color: var(--brand); color: #fff; }
+.pager-btn:disabled { opacity: .4; cursor: default; }
+.pager-gap { padding: 0 4px; color: var(--text-3); }
+.message-card[hidden], #debtorsTable tr[hidden] { display: none !important; }
+
 @media print {
     :root { --bg: #fff; --surface: #fff; }
     body { background: #fff !important; }
