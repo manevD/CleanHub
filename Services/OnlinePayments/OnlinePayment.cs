@@ -4,7 +4,8 @@ namespace CleanHub.Services.OnlinePayments
     {
         New = 0,      // Ново — чека внесување
         Created = 1,  // Внесено плаќање
-        Ignored = 2   // Игнорирано
+        Ignored = 2,  // Игнорирано
+        AlreadyPaid = 3 // Фактурата веќе била платена (рачно во Сметки) — автоматски затворено
     }
 
     /// <summary>Една онлајн уплата прочитана од cPay е-порака (orderInfo.xml).</summary>

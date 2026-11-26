@@ -92,6 +92,10 @@
                                     {
                                         <span class="sev sev-low">Внесено</span>
                                     }
+                                    else if (p.Status == OnlinePaymentStatus.AlreadyPaid)
+                                    {
+                                        <span class="sev sev-low">Веќе платена</span>
+                                    }
                                     else if (p.Status == OnlinePaymentStatus.Ignored)
                                     {
                                         <span class="sev">Игнорирано</span>
@@ -132,7 +136,7 @@
                                         </button>
                                         <button type="button" class="btn btn-sm btn-ghost btn-status" data-key="@p.Key" data-status="@((int)OnlinePaymentStatus.Ignored)">Игнорирај</button>
                                     }
-                                    else
+                                    else if (p.Status != OnlinePaymentStatus.AlreadyPaid)
                                     {
                                         <button type="button" class="btn btn-sm btn-ghost btn-status" data-key="@p.Key" data-status="@((int)OnlinePaymentStatus.New)">Врати</button>
                                     }
@@ -302,7 +306,7 @@
                 submit.textContent = 'Се книжи...';
                 try {
                     const fd = new FormData(form);
-                    fd.append('__RequestVerificationToken', token());
+                    fd.set('__RequestVerificationToken', token()); // set, не append: формата веќе има токен, два токени = 400
 
                     // Истата акција како „Плати“ за избрани фактури во Сметки
                     const res = await fetch('/Documents/SetMultiplePayments', { method: 'POST', body: fd });
