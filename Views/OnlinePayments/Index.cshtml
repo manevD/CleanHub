@@ -306,7 +306,7 @@
                 submit.textContent = 'Се книжи...';
                 try {
                     const fd = new FormData(form);
-                    fd.append('__RequestVerificationToken', token());
+                    fd.set('__RequestVerificationToken', token()); // set, не append: формата веќе има токен, два токени = 400
 
                     // Истата акција како „Плати“ за избрани фактури во Сметки
                     const res = await fetch('/Documents/SetMultiplePayments', { method: 'POST', body: fd });
