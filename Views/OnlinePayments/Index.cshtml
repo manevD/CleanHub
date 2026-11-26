@@ -204,9 +204,22 @@
 
 @section Scripts {
     <script>
-        (function () {
+        // Се извршува откако ќе се вчитаат сите скрипти (и ако bootstrap е вчитан со defer)
+        function initOnlinePayments() {
             const modalEl = document.getElementById('onlinePayModal');
-            const modal = new bootstrap.Modal(modalEl);
+            // Модалот се креира при клик — работи и ако bootstrap се вчита подоцна
+            const modal = {
+                show() {
+                    if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).show();
+                    else if (window.jQuery && jQuery.fn.modal) jQuery(modalEl).modal('show');
+                    else { modalEl.classList.add('show'); modalEl.style.display = 'block'; }
+                },
+                hide() {
+                    if (window.bootstrap && bootstrap.Modal) bootstrap.Modal.getOrCreateInstance(modalEl).hide();
+                    else if (window.jQuery && jQuery.fn.modal) jQuery(modalEl).modal('hide');
+                    else { modalEl.classList.remove('show'); modalEl.style.display = 'none'; }
+                }
+            };
             const form = document.getElementById('onlinePayForm');
             const warning = document.getElementById('onlinePayWarning');
             const customerInput = document.getElementById('opCustomer');
@@ -239,7 +252,11 @@
                 });
             });
 
-            document.querySelectorAll('.btn-create').forEach(btn => btn.addEventListener('click', () => {
+            // Делегиран клик — работи за сите редови
+            document.addEventListener('click', e => {
+                const btn = e.target.closest('.btn-create');
+                if (!btn) return;
+                e.preventDefault();
                 const d = btn.dataset;
                 currentKey = d.key;
                 form.reset();
@@ -261,7 +278,7 @@
                     warning.hidden = true;
                 }
                 modal.show();
-            }));
+            });
 
             form.addEventListener('submit', async e => {
                 e.preventDefault();
@@ -313,6 +330,9 @@
                 const res = await fetch('/OnlinePayments/SetStatus', { method: 'POST', body: st });
                 if (res.ok) window.location.reload(); else alert('Грешка.');
             }));
-        })();
+        }
+
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', initOnlinePayments);
+        else initOnlinePayments();
     </script>
 }
