@@ -702,7 +702,7 @@ namespace CleanHub.Controllers
                             DocumentTypId = 5,
                             Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
                             DatumF = DateOnly.FromDateTime(documentViewModel.Date.Value.ToDateTime(TimeOnly.MinValue).AddDays(10)),
-                            CustomerId = documentViewModel.Building.CustomerRefId,
+                            BuildingId = documentViewModel.Building.Id,
                             Status = PaymentStatus.Неплатено,
                             Time = DateTime.Now,
                             Description = product.ArticleNotes,
@@ -772,8 +772,7 @@ namespace CleanHub.Controllers
                 query => query.Select(b => new Building()
                 {
                     Id = b.Id,
-                    Name = b.Name,
-                    CustomerRefId = b.CustomerRefId
+                    Name = b.Name
                 }));
 
             documentViewModel.Buildings = App.FullMapper.Map<List<BuildingViewModel>>(buildings);
@@ -829,7 +828,7 @@ namespace CleanHub.Controllers
                     return NotFound("Зградата не е пронајдена.");
 
                 var toDocument = DocumentService.GetMonthAsString(document.Date.Value.Month) + " " + document.Date.Value.Year;
-                var activeCustomers = building.Customers.Where(x => x.Inactive != true && x.Hide != true).OrderBy(x => x.OrderNumber).ToList();
+                var activeCustomers = building.Customers.Where(x => x.Inactive != true && x.Hide != true).OrderBy(x => x.ApartmentUnit).ThenBy(x => x.CustomerInfo).ToList();
                 var activeCustomerIds = activeCustomers.Select(x => x.Id).ToList();
 
                 var exists = await _unitOfWork.Documents.AnyAsync(
@@ -1390,14 +1389,15 @@ namespace CleanHub.Controllers
 
                 try
                 {
-                    if (building.CustomerRefId != null &&
-                        building.Customers != null &&
-                        building.Customers.Any() &&
-                        building.Customers.Count() <= 1)
+                    // Објект со само еден клиент (на пр. фирма): долгот е неговите неплатени фактури
+                    var singleCustomerId = building.Customers != null && building.Customers.Count() == 1
+                        ? building.Customers.First().Id
+                        : (int?)null;
+                    if (singleCustomerId != null)
                     {
                         total = (double)await _unitOfWork.Documents.Query()
                             .Where(x =>
-                                x.CustomerId == building.CustomerRefId &&
+                                x.CustomerId == singleCustomerId &&
                                 x.PaymentStatus == PaymentStatus.Неплатено)
                             .SumAsync(x => x.TotalOutput);
                     }
@@ -2012,7 +2012,7 @@ namespace CleanHub.Controllers
                         InvoiceId = 1201, // Заменет Constants.Reserve
                         Demands = 0,
                         Owes = PriceHelper.CalculatePriceWithTax(product.Price, product.Tax),
-                        CustomerId = building.CustomerRefId ?? building.Id,
+                        BuildingId = building.Id,
                         DocumentTypId = 5,
                         Description = product.ArticleNotes,
                         Status = PaymentStatus.Неплатено
@@ -3049,9 +3049,13 @@ namespace CleanHub.Controllers
                 double owes = 0;
                 double demands = 0;
 
-                if (building.CustomerRefId != null && building.Customers != null && building.Customers.Any() && building.Customers.Count() <= 1)
+                // Објект со само еден клиент (на пр. фирма): долгот е неговите неплатени фактури
+                var singleCustomerId = building.Customers != null && building.Customers.Count() == 1
+                    ? building.Customers.First().Id
+                    : (int?)null;
+                if (singleCustomerId != null)
                 {
-                    total = (double)await _unitOfWork.Documents.Query().Where(x => x.CustomerId == building.CustomerRefId && x.PaymentStatus == PaymentStatus.Неплатено).SumAsync(x => x.TotalOutput);
+                    total = (double)await _unitOfWork.Documents.Query().Where(x => x.CustomerId == singleCustomerId && x.PaymentStatus == PaymentStatus.Неплатено).SumAsync(x => x.TotalOutput);
                 }
                 else
                 {

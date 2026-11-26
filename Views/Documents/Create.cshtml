@@ -1,4 +1,4 @@
-@using System.Text.RegularExpressions
+﻿@using System.Text.RegularExpressions
 @model CleanHub.ViewModels.DocumentViewModel
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
@@ -263,7 +263,7 @@
                                                 <div class="form-group mb-0">
                                                     @if (@Model?.Building != null && @Model.Building.Customers != null && @Model.Building.Customers.Any())
                                                     {
-                                                        var orderedCustomers = Model.Building.Customers.OrderBy(c => c.OrderNumber).ToList();
+                                                        var orderedCustomers = Model.Building.Customers.OrderBy(c => c.ApartmentUnit).ThenBy(c => c.CustomerInfo).ToList();
                                                         @foreach (var customer in orderedCustomers)
                                                         {
                                                             <h6>@customer.CustomerInfo</h6>

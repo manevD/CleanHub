@@ -142,23 +142,8 @@ namespace CleanHub.Controllers
 
                 var buildingEntity = App.FullMapper.Map<Building>(building);
 
-                var customer = new Customer
-                {
-                    CustomerInfo = building.Name,
-                    ActivityId = 2,
-                    Adress = building.Name,
-                    Inactive = false,
-                    Building = buildingEntity,
-                    Hide = true
-                };
-
-                _unitOfWork.Customers.Add(customer);
+                // Објектот е само зграда — не се креира посебен „партнер-зграда“ во Customers
                 _unitOfWork.Buildings.Add(buildingEntity);
-
-                await _unitOfWork.SaveChangesAsync();
-
-                buildingEntity.CustomerRefId = customer.Id;
-
                 await _unitOfWork.SaveChangesAsync();
 
                 HttpContext.Session.Remove("Buildings");
@@ -183,31 +168,6 @@ namespace CleanHub.Controllers
                 ArticleNotes = string.Empty,
                 UnitOfMeasurement = "бр."
             }, 4).ToList();
-        }
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> UpdateOrderNumbers(int id, Dictionary<int, int> orderNumbers)
-        {
-            if (orderNumbers == null || orderNumbers.Count == 0)
-                return RedirectToAction(nameof(Edit), new { id });
-
-            // Само станари од ОВАА зграда
-            var customers = await _unitOfWork.Customers.GetCustomersByBuildingIdAsync(id);
-
-            foreach (var customer in customers)
-            {
-                if (orderNumbers.TryGetValue(customer.Id, out var newNumber) && customer.OrderNumber != newNumber)
-                {
-                    customer.OrderNumber = newNumber;
-                    _unitOfWork.Customers.Update(customer);
-                }
-            }
-
-            await _unitOfWork.SaveChangesAsync();
-            HttpContext.Session.Remove("Buildings");
-            TempData["Success"] = "Броевите за сортирање се зачувани.";
-
-            return RedirectToAction(nameof(Edit), new { id });
         }
         // GET: Buildings/Edit/5
         public async Task<IActionResult> Edit(int? id)

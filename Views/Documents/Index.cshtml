@@ -1,4 +1,4 @@
-@using System.Text.RegularExpressions
+﻿@using System.Text.RegularExpressions
 @using CleanHub.Entities.Enums
 @using CleanHub.Extensions
 @using CleanHub.ViewModels
@@ -129,7 +129,7 @@
                                 {
                                     var customers = (IEnumerable<dynamic>)ViewBag.Customers;
                                     var balances = (IEnumerable<dynamic>)ViewBag.CustomerBalances;
-                                    var orderedCustomers = customers.OrderBy(c => c.OrderNumber).ToList();
+                                    var orderedCustomers = customers.OrderBy(c => c.ApartmentUnit).ToList();
                                     @foreach (var c in orderedCustomers)
                                     {
                                         var cusBalance = balances.FirstOrDefault(b => b.Customer.Id == c.Id);

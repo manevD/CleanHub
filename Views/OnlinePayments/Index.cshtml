@@ -1,4 +1,4 @@
-@model CleanHub.Controllers.OnlinePaymentsViewModel
+﻿@model CleanHub.Controllers.OnlinePaymentsViewModel
 @using CleanHub.Controllers
 @using CleanHub.Services.OnlinePayments
 @using CleanHub.Entities.Enums
@@ -32,9 +32,12 @@
 
 @if (!Model.Configured)
 {
-    <div class="alert alert-warning">
-        Е-поштата за онлајн уплати не е поставена. Во User Secrets додадете
-        <code>OnlinePayments:Username</code> и <code>OnlinePayments:Password</code> (App Password). Види README.
+    <div class="alert alert-info">
+        <strong>Онлајн уплатите треба да се конфигурираат.</strong>
+        Кога ќе се поврзе е-поштата на која стигаат потврдите од cPay (cpay@@casys.com.mk),
+        тука автоматски ќе се читаат сите онлајн уплати — секоја вечер и при стартување.
+        Секоја уплата се спојува со фактурата по број и сума, а со едно кликање „Плати“ фактурата се книжи.
+        <br /><span class="text-muted">Поставување: <code>OnlinePayments:Username</code> и <code>OnlinePayments:Password</code> (Google App Password) во User Secrets.</span>
     </div>
 }
 @if (!string.IsNullOrWhiteSpace(Model.LastError))

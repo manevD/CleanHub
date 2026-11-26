@@ -52,6 +52,9 @@ namespace CleanHub.Infrastructure.Data
 
             var db = services.GetRequiredService<ApplicationDbContext>();
 
+            // Стара шема (претходна миграција) во демо базата → избриши сè и креирај одново
+            await DropOldSchemaIfNeededAsync(db, logger);
+
             // Нова празна база → креирај ја шемата (миграција Initial)
             await db.Database.MigrateAsync();
 
@@ -84,7 +87,7 @@ namespace CleanHub.Infrastructure.Data
 
             foreach (var def in Buildings)
             {
-                // ---------- Зграда + партнер-зграда (како BuildingsController.Create) ----------
+                // ---------- Зграда (само во Buildings — без посебен партнер во Customers) ----------
                 var building = new Building
                 {
                     Name = def.Name,
@@ -92,17 +95,7 @@ namespace CleanHub.Infrastructure.Data
                     ReserveFund = def.ReserveFund,
                     Customers = new List<Customer>()
                 };
-                var buildingCustomer = new Customer
-                {
-                    CustomerInfo = def.Name,
-                    ActivityId = 2,
-                    Adress = def.Name,
-                    Inactive = false,
-                    Hide = true,
-                    Building = building
-                };
                 db.Buildings.Add(building);
-                db.Customers.Add(buildingCustomer);
 
                 // Продукти на зградата (за креирање нови фактури од апликацијата)
                 building.BuildingProducts = BuildingProductsFor(def).ToList();
@@ -119,7 +112,6 @@ namespace CleanHub.Infrastructure.Data
                     {
                         CustomerInfo = $"{first} {last} ст.{unit}",
                         ApartmentUnit = unit,
-                        OrderNumber = unit,
                         Adress = def.Name,
                         Email = unit % 7 == 0 ? null : $"{Latin(first)}.{Latin(last)}{unit}@example.com",
                         PhoneNumber = unit % 5 == 0 ? null : $"+389 00 {rnd.Next(100, 999)} {rnd.Next(100, 999)}",
@@ -229,6 +221,23 @@ namespace CleanHub.Infrastructure.Data
                             tenant.Subscription = Math.Max(0, tenant.Subscription.Value - (int)Math.Round(total));
                     }
 
+                    // Трошоци на зградата (резервен фонд 1201, книжени на самата зграда)
+                    foreach (var (desc, amount) in BuildingCostsFor(def, month, rnd))
+                    {
+                        db.BookFinancials.Add(new BookFinancial
+                        {
+                            InvoiceId = Constants.Reserve,
+                            Building = building,
+                            DocumentTypId = 5,
+                            Owes = amount,
+                            Demands = 0,
+                            DatumF = date,
+                            Time = date.ToDateTime(new TimeOnly(12, 0)),
+                            Status = PaymentStatus.Платено,
+                            Description = desc
+                        });
+                    }
+
                     // Струја за зградата (SpecialInvoice 4001)
                     db.SpecialInvoices.Add(new SpecialInvoice
                     {
@@ -261,14 +270,6 @@ namespace CleanHub.Infrastructure.Data
             db.ChangeTracker.DetectChanges();
             await db.SaveChangesAsync();
 
-            // CustomerRefId = Id на партнерот-зграда (потребни се ID-ата од базата)
-            var refs = await db.Customers.Where(c => c.ActivityId == 2)
-                .Select(c => new { c.Id, c.BuildingId }).ToListAsync();
-            foreach (var b in await db.Buildings.ToListAsync())
-                b.CustomerRefId = refs.FirstOrDefault(r => r.BuildingId == b.Id)?.Id;
-            db.ChangeTracker.DetectChanges();
-            await db.SaveChangesAsync();
-
             logger.LogInformation("Demo: готово — {Buildings} згради, {Tenants} станари, {Docs} фактури.",
                 Buildings.Length, Buildings.Length * TenantsPerBuilding, await db.Documents.CountAsync());
         }
@@ -294,7 +295,6 @@ namespace CleanHub.Infrastructure.Data
                     DELETE FROM [BookFinancials];
                     DELETE FROM [SpecialInvoices];
                     DELETE FROM [Documents];
-                    UPDATE [Buildings] SET [CustomerRefId] = NULL;
                     DELETE FROM [BuildingProducts];
                     DELETE FROM [Customers];
                     DELETE FROM [Buildings];
@@ -305,6 +305,51 @@ namespace CleanHub.Infrastructure.Data
             db.ChangeTracker.Clear();
             logger.LogInformation("Demo reset: податоците се избришани, се внесуваат повторно.");
             await SeedAsync(services, config, logger);
+        }
+
+        /// <summary>
+        /// Ако демо базата е креирана со постара миграција (друга шема), сите табели се бришат
+        /// за новата миграција да ја креира шемата од нула. Само за база чие име содржи „demo“.
+        /// </summary>
+        private static async Task DropOldSchemaIfNeededAsync(ApplicationDbContext db, ILogger logger)
+        {
+            var known = db.Database.GetMigrations().ToHashSet();
+            var applied = (await db.Database.GetAppliedMigrationsAsync()).ToList();
+            if (applied.Count == 0 || applied.All(known.Contains)) return;
+
+            var dbName = db.Database.GetDbConnection().Database ?? "";
+            if (!dbName.Contains("demo", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogWarning("Demo: базата „{Db}“ има стари миграции, но не е демо база — ништо не е избришано.", dbName);
+                return;
+            }
+
+            logger.LogWarning("Demo: стара шема ({Old}) — сите табели се бришат и се креираат одново.", string.Join(", ", applied));
+            await db.Database.ExecuteSqlRawAsync(@"
+                DECLARE @sql nvarchar(max) = N'';
+                SELECT @sql += N'ALTER TABLE ' + QUOTENAME(s.name) + N'.' + QUOTENAME(t.name) + N' DROP CONSTRAINT ' + QUOTENAME(f.name) + N';'
+                FROM sys.foreign_keys f
+                JOIN sys.tables t ON f.parent_object_id = t.object_id
+                JOIN sys.schemas s ON t.schema_id = s.schema_id;
+                EXEC sp_executesql @sql;
+
+                SET @sql = N'';
+                SELECT @sql += N'DROP TABLE ' + QUOTENAME(s.name) + N'.' + QUOTENAME(t.name) + N';'
+                FROM sys.tables t
+                JOIN sys.schemas s ON t.schema_id = s.schema_id;
+                EXEC sp_executesql @sql;");
+        }
+
+        // Месечни трошоци на зградата (сметки, материјали, поправки)
+        private static IEnumerable<(string Description, double Amount)> BuildingCostsFor(BuildingDef def, int month, Random rnd)
+        {
+            yield return ($"Средства за чистење {month:00}/{Year}", Math.Round(800 + rnd.NextDouble() * 700, 2));
+            if (def.Lift)
+                yield return ($"Сервис на лифт {month:00}/{Year}", 2400);
+            if (month % 3 == 0)
+                yield return ("Замена на сијалици во влез", Math.Round(600 + rnd.NextDouble() * 900, 2));
+            if (month == 7)
+                yield return ("Поправка на влезна врата", Math.Round(4500 + rnd.NextDouble() * 3000, 2));
         }
 
         // ------------------------------------------------------------------

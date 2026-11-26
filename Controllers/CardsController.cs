@@ -51,28 +51,27 @@ namespace CleanHub.Controllers
             // а сумирањето останува исто како порано — во меморија.
             var financialsByBuilding = _unitOfWork.BookFinancials.GetAllNoTrakcing(
                     inc => inc.Include(x => x.Customer).Where(d =>
-                        d.Customer.BuildingId != null &&
+                        (d.BuildingId != null || d.Customer.BuildingId != null) &&
                         (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || d.DatumF <= DateTo.Value)
                     ))
-                .ToLookup(d => d.Customer.BuildingId!.Value);
+                .ToLookup(d => d.BuildingId ?? d.Customer.BuildingId!.Value);
 
-            var costsByCustomer = _unitOfWork.BookFinancials.GetAllNoTrakcing(
+            // Трошоци на зградата (книжења на самата зграда, не на станар)
+            var costsByBuilding = _unitOfWork.BookFinancials.GetAllNoTrakcing(
                     inc => inc.Where(d =>
-                        d.CustomerId != null &&
+                        d.BuildingId != null &&
                         (!DateFrom.HasValue || d.DatumF >= DateFrom.Value) &&
                         (!DateTo.HasValue || d.DatumF <= DateTo.Value) &&
                         d.DocumentTypId == 5 &&
                         d.InvoiceId == (int)InvoiceTyp.Reserve
                     ))
-                .ToLookup(d => d.CustomerId!.Value);
+                .ToLookup(d => d.BuildingId!.Value);
 
             foreach (var building in BuildingsList)
             {
-                building.CustomerRefId = building.CustomerRefId ?? building.Id;
-
                 var bookFinancial = financialsByBuilding[building.Id].ToList();
-                var cost = costsByCustomer[building.CustomerRefId.Value].Sum(bf => bf.Owes);
+                var cost = costsByBuilding[building.Id].Sum(bf => bf.Owes);
 
                 var buildingsCard = new BuildingsCardViewModel()
                 {
@@ -130,8 +129,7 @@ namespace CleanHub.Controllers
             {
                 var bookFinancials = new List<BookFinancialViewModel>();
                 var building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
-                var customerId = building.CustomerRefId ?? building.Id;
-                if (customerId != null)
+                if (building != null)
                 {
                     ViewBag.Buildings = new SelectList(BuildingsList, "Id", "Name", building.Id);
                     ViewBag.SelectedBuildingName = building.Name;
@@ -153,7 +151,7 @@ namespace CleanHub.Controllers
 
                     var rawFinancials = _unitOfWork.BookFinancials.GetAllNoTrakcing(q => q
                         .Where(x =>
-                            x.CustomerId == customerId &&
+                            x.BuildingId == building.Id &&
                             x.InvoiceId == (int)InvoiceTyp.Reserve  &&
                             (!DateFrom.HasValue || x.DatumF >= DateFrom.Value) &&
                             (!DateTo.HasValue || x.DatumF <= DateTo.Value)))
@@ -247,7 +245,7 @@ namespace CleanHub.Controllers
                 var customers = _unitOfWork.Customers.GetAllNoTrakcing(inc =>
                     inc.Include(c => c.BookFinancials.Where(d => d.InvoiceId == (int)InvoiceTyp.Recieve))
                        .Include(c => c.Documents)
-                       .Where(x => building.CustomerRefId == x.Id || x.BuildingId == buildingId.Value));
+                       .Where(x => x.BuildingId == buildingId.Value));
 
                 foreach (var customer in customers.Where(x => !x.Hide))
                 {
@@ -434,16 +432,12 @@ namespace CleanHub.Controllers
             }
             else if(returnPage == "BuildingsReserve")
             {
-                if (bookFinancial.CustomerId.HasValue)
+                if (bookFinancial.BuildingId.HasValue)
                 {
-                    var building = _unitOfWork.Buildings.GetBuildingByCustomerRefId(bookFinancial.CustomerId.Value);
-                    if (building != null)
+                    return RedirectToAction(nameof(BuildingsReserve), new
                     {
-                        return RedirectToAction(nameof(BuildingsReserve), new
-                        {
-                            buildingId = building.Id
-                        });
-                    }
+                        buildingId = bookFinancial.BuildingId.Value
+                    });
                 }
                 return RedirectToAction(nameof(BuildingsReserve));
             }

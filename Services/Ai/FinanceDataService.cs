@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using CleanHub.Entities;
 using CleanHub.Entities.Enums;
 using CleanHub.Infrastructure.Data;
@@ -281,7 +281,6 @@ namespace CleanHub.Services.Ai
 
             var start = new DateOnly(year, 1, 1);
             var end = new DateOnly(year, 12, 31);
-            var refId = building.CustomerRefId ?? building.Id;
 
             var allCustomerIds = await _db.Customers.AsNoTracking()
                 .Where(c => c.BuildingId == buildingId)
@@ -289,7 +288,7 @@ namespace CleanHub.Services.Ai
                 .ToListAsync(ct);
 
             var tenantIds = allCustomerIds.Where(c => !c.Hide).Select(c => c.Id).ToList();
-            var reserveIds = allCustomerIds.Select(c => c.Id).Append(refId).Distinct().ToList();
+            var reserveIds = allCustomerIds.Select(c => c.Id).ToList();
 
             // Фактури за годината
             var docs = await _db.Documents.AsNoTracking()
@@ -307,16 +306,16 @@ namespace CleanHub.Services.Ai
 
             // Резервен фонд 1201 — исто како „Завршна“ (објект + станари, без DontSum)
             var reserve = await _db.BookFinancials.AsNoTracking()
-                .Where(x => x.CustomerId != null && reserveIds.Contains(x.CustomerId.Value)
+                .Where(x => (x.BuildingId == buildingId || (x.CustomerId != null && reserveIds.Contains(x.CustomerId.Value)))
                             && x.InvoiceId == (int)InvoiceTyp.Reserve
                             && !x.DontSum)
-                .Select(x => new { x.CustomerId, x.DatumF, x.Description, x.Owes, x.Demands, x.DocumentTypId })
+                .Select(x => new { x.CustomerId, x.BuildingId, x.DatumF, x.Description, x.Owes, x.Demands, x.DocumentTypId })
                 .ToListAsync(ct);
 
             var reserveYear = reserve.Where(x => x.DatumF >= start && x.DatumF <= end).ToList();
 
             var costs = reserveYear
-                .Where(x => x.CustomerId == refId && x.DocumentTypId == 5 && x.Owes > 0)
+                .Where(x => x.BuildingId == buildingId && x.DocumentTypId == 5 && x.Owes > 0)
                 .OrderBy(x => x.DatumF)
                 .Select(x => new CostLine { Date = x.DatumF, Description = x.Description ?? "", Amount = Math.Round(x.Owes, 2) })
                 .ToList();

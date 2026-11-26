@@ -138,6 +138,9 @@ namespace CleanHub.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<long>("Id"));
 
+                    b.Property<int?>("BuildingId")
+                        .HasColumnType("int");
+
                     b.Property<int?>("CustomerId")
                         .HasColumnType("int");
 
@@ -188,6 +191,8 @@ namespace CleanHub.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BuildingId");
+
                     b.HasIndex("CustomerId");
 
                     b.HasIndex("DocumentId");
@@ -209,9 +214,6 @@ namespace CleanHub.Migrations
 
                     b.Property<string>("BankAccount")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("CustomerRefId")
-                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .HasColumnType("nvarchar(max)");
@@ -310,9 +312,6 @@ namespace CleanHub.Migrations
 
                     b.Property<DateOnly?>("InactiveDatum")
                         .HasColumnType("date");
-
-                    b.Property<int>("OrderNumber")
-                        .HasColumnType("int");
 
                     b.Property<string>("PartnerOpis")
                         .HasColumnType("nvarchar(max)");
@@ -758,6 +757,10 @@ namespace CleanHub.Migrations
 
             modelBuilder.Entity("CleanHub.Entities.BookFinancial", b =>
                 {
+                    b.HasOne("CleanHub.Entities.Building", "Building")
+                        .WithMany()
+                        .HasForeignKey("BuildingId");
+
                     b.HasOne("CleanHub.Entities.Customer", "Customer")
                         .WithMany("BookFinancials")
                         .HasForeignKey("CustomerId");
@@ -773,6 +776,8 @@ namespace CleanHub.Migrations
                     b.HasOne("CleanHub.Entities.Invoice", "Invoice")
                         .WithMany()
                         .HasForeignKey("InvoiceId");
+
+                    b.Navigation("Building");
 
                     b.Navigation("Customer");
 

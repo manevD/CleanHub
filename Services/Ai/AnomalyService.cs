@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using CleanHub.Entities;
 using CleanHub.Infrastructure.Data;
@@ -54,7 +54,7 @@ namespace CleanHub.Services.Ai
                 .ToDictionaryAsync(c => c.Id, ct);
 
             var buildings = await _db.Buildings.AsNoTracking()
-                .Select(b => new { b.Id, b.Name, b.CustomerRefId })
+                .Select(b => new { b.Id, b.Name })
                 .ToListAsync(ct);
 
             string CustomerName(int? id) => id.HasValue && customerNames.TryGetValue(id.Value, out var c) ? c.CustomerInfo : $"#{id}";
@@ -86,59 +86,46 @@ namespace CleanHub.Services.Ai
                 });
             }
 
-            // 2. Згради без фактура за минатиот месец — само партнери со дејност 2 (згради)
+            // 2. Објекти без фактура за минатиот месец: објект со станари, а ниту еден станар нема фактура
             var monthStart = new DateOnly(today.Year, today.Month, 1).AddMonths(-1);
             var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-            // Фактурите се издаваат на станарите (Customer.BuildingId), а зградата е посебен партнер
-            // (ActivityId 2, Building.CustomerRefId). Зградата има фактура ако ја има таа или кој било станар.
-            var invoiced = await _db.Documents.AsNoTracking()
-                .Where(d => d.CustomerId != null && d.Date >= monthStart && d.Date <= monthEnd)
-                .Select(d => new { CustomerId = d.CustomerId!.Value, d.Customer!.BuildingId })
-                .Distinct()
-                .ToListAsync(ct);
-            var invoicedCustomers = invoiced.Select(x => x.CustomerId).ToHashSet();
-            var invoicedBuildings = invoiced.Where(x => x.BuildingId.HasValue).Select(x => x.BuildingId!.Value).ToHashSet();
-            var buildingsByRef = buildings.Where(b => b.CustomerRefId.HasValue)
-                .GroupBy(b => b.CustomerRefId!.Value)
-                .ToDictionary(g => g.Key, g => g.Select(b => b.Id).ToList());
-
-            var buildingCustomers = await _db.Customers.AsNoTracking()
-                .Where(c => c.ActivityId == 2 && c.Inactive != true)
-                .Select(c => new { c.Id, c.CustomerInfo, c.BuildingId })
-                .ToListAsync(ct);
-
-            bool HasInvoice(int customerId, int? buildingId) =>
-                invoicedCustomers.Contains(customerId)
-                || (buildingId.HasValue && invoicedBuildings.Contains(buildingId.Value))
-                || (buildingsByRef.TryGetValue(customerId, out var ids) && ids.Any(invoicedBuildings.Contains));
+            var invoicedBuildings = (await _db.Documents.AsNoTracking()
+                    .Where(d => d.Customer != null && d.Customer.BuildingId != null && d.Date >= monthStart && d.Date <= monthEnd)
+                    .Select(d => d.Customer!.BuildingId!.Value)
+                    .Distinct()
+                    .ToListAsync(ct))
+                .ToHashSet();
+            var buildingsWithTenants = customerNames.Values
+                .Where(c => c.BuildingId.HasValue && c.Inactive != true && !c.Hide)
+                .Select(c => c.BuildingId!.Value)
+                .ToHashSet();
 
             var monthName = monthStart.ToDateTime(TimeOnly.MinValue).ToString("MMMM yyyy", FinanceDataService.Mk);
-            foreach (var bc in buildingCustomers.Where(c => !HasInvoice(c.Id, c.BuildingId)).OrderBy(c => c.CustomerInfo))
+            foreach (var b in buildings.Where(b => buildingsWithTenants.Contains(b.Id) && !invoicedBuildings.Contains(b.Id)).OrderBy(b => b.Name))
             {
                 report.Items.Add(new AnomalyItem
                 {
                     Category = CatMissingInvoice,
                     Severity = "high",
-                    BuildingId = bc.BuildingId ?? (buildingsByRef.TryGetValue(bc.Id, out var bids) ? bids.FirstOrDefault() : null),
-                    Title = bc.CustomerInfo,
+                    BuildingId = b.Id,
+                    Title = b.Name ?? $"Објект {b.Id}",
                     Detail = $"Нема фактура за {monthName}."
                 });
             }
 
             // 3. Необично големи трошоци (резервен фонд) во последните 60 дена
             var costSince = today.AddDays(-425);
-            var refToBuilding = buildings.GroupBy(b => b.CustomerRefId ?? b.Id).ToDictionary(g => g.Key, g => g.First().Id);
             var costs = await _db.BookFinancials.AsNoTracking()
-                .Where(x => x.CustomerId != null && x.InvoiceId == (int)InvoiceTyp.Reserve && x.DocumentTypId == 5
+                .Where(x => x.BuildingId != null && x.InvoiceId == (int)InvoiceTyp.Reserve && x.DocumentTypId == 5
                             && x.Owes > 0 && x.DatumF >= costSince)
-                .Select(x => new { CustomerId = x.CustomerId!.Value, x.Description, x.Owes, x.DatumF })
+                .Select(x => new { BuildingId = x.BuildingId!.Value, x.Description, x.Owes, x.DatumF })
                 .ToListAsync(ct);
 
             var recentFrom = today.AddDays(-60);
             foreach (var cost in costs.Where(c => c.DatumF >= recentFrom).OrderByDescending(c => c.Owes))
             {
                 var history = costs
-                    .Where(h => h.CustomerId == cost.CustomerId && h.DatumF < cost.DatumF && h.DatumF >= cost.DatumF!.Value.AddDays(-365))
+                    .Where(h => h.BuildingId == cost.BuildingId && h.DatumF < cost.DatumF && h.DatumF >= cost.DatumF!.Value.AddDays(-365))
                     .ToList();
                 var sameKind = history.Where(h => string.Equals((h.Description ?? "").Trim(), (cost.Description ?? "").Trim(), StringComparison.OrdinalIgnoreCase)).ToList();
                 var baseline = sameKind.Count >= 3 ? sameKind : history;
@@ -147,13 +134,12 @@ namespace CleanHub.Services.Ai
                 var median = Median(baseline.Select(h => h.Owes));
                 if (median <= 0 || cost.Owes < median * 2.5 || cost.Owes - median < 1000) continue;
 
-                var buildingId = refToBuilding.TryGetValue(cost.CustomerId, out var bId) ? bId : (int?)null;
                 report.Items.Add(new AnomalyItem
                 {
                     Category = CatUnusualCost,
                     Severity = "medium",
-                    BuildingId = buildingId,
-                    Title = buildingId.HasValue ? BuildingName(buildingId) : CustomerName(cost.CustomerId),
+                    BuildingId = cost.BuildingId,
+                    Title = BuildingName(cost.BuildingId),
                     Detail = $"{cost.DatumF:dd.MM.yyyy}: {cost.Description} — {FinanceDataService.Money(cost.Owes)} (вообичаено ≈ {FinanceDataService.Money(median)})"
                 });
                 if (report.Items.Count(i => i.Category == CatUnusualCost) >= 20) break;

@@ -19,6 +19,11 @@ public class BookFinancial
     public int? CustomerId { get; set; }
     public Customer Customer { get; set; } = null!;
 
+    /// <summary>Книжење на самата зграда (трошоци, резервен фонд) — тогаш CustomerId е празно.</summary>
+    [ForeignKey(nameof(Building))]
+    public int? BuildingId { get; set; }
+    public Building? Building { get; set; }
+
     [ForeignKey(nameof(DocumentTyp))]
     public int? DocumentTypId { get; set; }
     public DocumentTyp DocumentTyp { get; set; } = null!;

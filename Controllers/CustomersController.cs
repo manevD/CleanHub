@@ -274,7 +274,6 @@ namespace CleanHub.Controllers
                 existingCustomer.PresmetajRezervenFond = customer.PresmetajRezervenFond;
                 existingCustomer.PresmetajUpravitel = customer.PresmetajUpravitel;
                 existingCustomer.PresmetajCistenjeVlez = customer.PresmetajCistenjeVlez;
-                existingCustomer.OrderNumber = customer.OrderNumber;
 
                 await _unitOfWork.SaveChangesAsync();
 

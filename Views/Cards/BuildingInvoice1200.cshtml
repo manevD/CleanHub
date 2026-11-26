@@ -89,7 +89,7 @@
                         var counter = 0;
                         double sumPobaruva = 0;
                         float sumDolzi = 0;
-                        var orderedCustomers = Model.OrderBy(c=>c.OrderNumber).ToList();
+                        var orderedCustomers = Model.OrderBy(c => c.ApartmentUnit).ThenBy(c => c.CustomerInfo).ToList();
                         @foreach (var customer in orderedCustomers)
                         {
                             var docs = customer.Documents

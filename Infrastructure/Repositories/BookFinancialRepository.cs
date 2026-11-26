@@ -25,17 +25,13 @@ namespace CleanHub.Infrastructure.Repositories
         .Select(c => c.Id)
         .ToList();
 
+            // Книжења на самата зграда + книжења на нејзините станари
             var query = context.BookFinancials
                 .Include(x => x.Customer)
                 .Where(bf =>
-                    bf.CustomerId != null &&
                     bf.InvoiceId == invoiceId.Value &&
-                    (
-                           (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
-                        || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
-                        || customerIds.Contains(bf.CustomerId.Value)
-                    )
-                );
+                    (bf.BuildingId == buildingId
+                     || (bf.CustomerId != null && customerIds.Contains(bf.CustomerId.Value))));
 
             return query.ToList();
         }
@@ -46,7 +42,7 @@ namespace CleanHub.Infrastructure.Repositories
             var demands = 0;
 
             var building = context.Buildings.FirstOrDefault(x => x.Id == buildingId);
-            if (building == null || building.CustomerRefId == null || !invoiceId.HasValue || invoiceId.Value != (int)InvoiceTyp.Reserve)
+            if (building == null || !invoiceId.HasValue || invoiceId.Value != (int)InvoiceTyp.Reserve)
             {
                 return (owes, demands);
             }
@@ -57,13 +53,9 @@ namespace CleanHub.Infrastructure.Repositories
                 .ToList();
 
             var query = context.BookFinancials
-                .Where(bf => bf.CustomerId != null
-                             && bf.InvoiceId == invoiceId.Value
-                             && (
-                                 (building.CustomerRefId.HasValue && bf.CustomerId == building.CustomerRefId.Value)
-                                 || (!building.CustomerRefId.HasValue && bf.CustomerId == building.Id)
-                                 || customerIdsInBuilding.Contains(bf.CustomerId.Value)
-                             ))
+                .Where(bf => bf.InvoiceId == invoiceId.Value
+                             && (bf.BuildingId == buildingId
+                                 || (bf.CustomerId != null && customerIdsInBuilding.Contains(bf.CustomerId.Value))))
                 .ToList();
 
             owes = (int)query.Sum(bf => bf.Owes);
@@ -96,16 +88,13 @@ namespace CleanHub.Infrastructure.Repositories
 
         public double GetOwes(int buildingId)
         {
-            var customerRefId = context.Buildings.FirstOrDefault(x => x.Id == buildingId).CustomerRefId;
-            if (customerRefId.HasValue)
-            {
-                return context.BookFinancials
-                    .Where(x =>
-                        x.CustomerId == customerRefId.Value &&
-                        (x.Description == null || !x.Description.Contains("салдо"))
-                    )
-                    .Sum(su => su.Owes);
-            }
+            // Трошоци на зградата = книжења на самата зграда
+            return context.BookFinancials
+                .Where(x =>
+                    x.BuildingId == buildingId &&
+                    (x.Description == null || !x.Description.Contains("салдо"))
+                )
+                .Sum(su => su.Owes);
             return 0;
         }
     }

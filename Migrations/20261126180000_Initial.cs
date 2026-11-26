@@ -99,8 +99,7 @@ namespace CleanHub.Migrations
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Name = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     BankAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
-                    ReserveFund = table.Column<int>(type: "int", nullable: true),
-                    CustomerRefId = table.Column<int>(type: "int", nullable: true)
+                    ReserveFund = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -314,7 +313,6 @@ namespace CleanHub.Migrations
                     PhysicalPerson = table.Column<bool>(type: "bit", nullable: true),
                     Subscription = table.Column<int>(type: "int", nullable: true),
                     SetCost = table.Column<bool>(type: "bit", nullable: false),
-                    OrderNumber = table.Column<int>(type: "int", nullable: false),
                     SubscriptionDescription = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     PresmetajAdministrativniTrosoci = table.Column<bool>(type: "bit", nullable: false),
                     PresmetajKomunalnaTaksaJavnoOsvetluvanje = table.Column<bool>(type: "bit", nullable: false),
@@ -411,6 +409,7 @@ namespace CleanHub.Migrations
                     InvoiceId = table.Column<int>(type: "int", nullable: true),
                     DocumentId = table.Column<int>(type: "int", nullable: true),
                     CustomerId = table.Column<int>(type: "int", nullable: true),
+                    BuildingId = table.Column<int>(type: "int", nullable: true),
                     DocumentTypId = table.Column<int>(type: "int", nullable: true),
                     Description = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     DatumF = table.Column<DateOnly>(type: "date", nullable: true),
@@ -427,6 +426,11 @@ namespace CleanHub.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_BookFinancials", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_BookFinancials_Buildings_BuildingId",
+                        column: x => x.BuildingId,
+                        principalTable: "Buildings",
+                        principalColumn: "Id");
                     table.ForeignKey(
                         name: "FK_BookFinancials_Customers_CustomerId",
                         column: x => x.CustomerId,
@@ -517,6 +521,11 @@ namespace CleanHub.Migrations
                 column: "NormalizedUserName",
                 unique: true,
                 filter: "[NormalizedUserName] IS NOT NULL");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_BookFinancials_BuildingId",
+                table: "BookFinancials",
+                column: "BuildingId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_BookFinancials_CustomerId",

@@ -167,7 +167,6 @@ namespace CleanHub.Controllers
 
                     results = GetFilteredBookFinancials(invoiceId, buildingId.Value).ToList();
                     var resultToAdd = new BookFinancialInfoViewModel();
-                    var customer = await _unitOfWork.Customers.GetByIdAsync(x => x.Id == building.CustomerRefId);
                     
                     ViewBag.TotalDemands = results.Where(x => !x.DontSum).Sum(su => su.Demands);
                     ViewBag.TotalOwes = results.Where(x => !x.DontSum).Sum(su => su.Owes);
@@ -286,7 +285,22 @@ public async Task<IActionResult> Costs(int? buildingId, int? paymentStatusId, st
     building = await _unitOfWork.Buildings.GetByIdAsync(x => x.Id == buildingId.Value);
     if (building != null)
     {
-        results = GetFilteredBookFinancials((int)InvoiceTyp.Reserve, building.CustomerRefId.Value).ToList();
+        // Трошоци = книжења на самата зграда (не на станарите)
+        var buildingIdValue = building.Id;
+        results = _unitOfWork.BookFinancials
+            .GetAllNoTrakcing(q => q.Where(bf => bf.BuildingId == buildingIdValue && bf.InvoiceId == (int)InvoiceTyp.Reserve))
+            .Select(bf => new BookFinancialInfoViewModel
+            {
+                Id = bf.Id,
+                Status = bf.Status,
+                InvoiceId = bf.InvoiceId ?? 0,
+                Description = bf.Description ?? "",
+                DocumentTypId = bf.DocumentTypId ?? 0,
+                DatumF = bf.DatumF ?? DateOnly.MinValue,
+                Owes = bf.Owes,
+                Demands = bf.Demands,
+                DontSum = bf.DontSum
+            }).ToList();
         FilterResultsByDate(ref results, dateFrom ?? "", dateTo ?? "", (int)InvoiceTyp.Reserve, paymentStatusId);
         results = results.Where(x => x.Owes != 0).ToList();
     }

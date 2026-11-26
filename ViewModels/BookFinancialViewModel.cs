@@ -17,6 +17,8 @@ namespace CleanHub.ViewModels
         public DocumentViewModel Document { get; set; }
         public int? CustomerId { get; set; }
         public CustomerViewModel Customer { get; set; }
+        /// <summary>Книжење на самата зграда (трошоци, резервен фонд) — без станар.</summary>
+        public int? BuildingId { get; set; }
 
         [ForeignKey(nameof(DocumentTyp))]
         public int? DocumentTypId { get; set; }
