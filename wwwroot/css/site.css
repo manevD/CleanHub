@@ -1,4 +1,4 @@
-/* ==========================================================================
+﻿/* ==========================================================================
    Марти Хигиена — единствена CSS датотека за целата апликација
    Модерен изглед (2027): мирни површини, меки сенки, јасна типографија.
    Содржина:
@@ -908,6 +908,13 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
 .pager-btn:disabled { opacity: .4; cursor: default; }
 .pager-gap { padding: 0 4px; color: var(--text-3); }
 .message-card[hidden], #debtorsTable tr[hidden] { display: none !important; }
+
+/* ДЕМО ознака во горната лента */
+.demo-pill {
+    display: inline-flex; align-items: center; height: 28px; padding: 0 12px; margin-left: 12px;
+    border-radius: 999px; background: #f59e0b; color: #1f1300;
+    font-size: .74rem; font-weight: 800; letter-spacing: .08em; cursor: help;
+}
 
 @media print {
     :root { --bg: #fff; --surface: #fff; }

@@ -106,6 +106,9 @@ namespace CleanHub
             builder.Services.AddSingleton<CpayMailImporter>();
             builder.Services.AddHostedService<OnlinePaymentsHostedService>();
 
+            // ДЕМО: секоја ноќ базата се враќа на почетните тест податоци
+            builder.Services.AddHostedService<DemoResetHostedService>();
+
             // ----------------------------------------------------
             // Session
             // ----------------------------------------------------

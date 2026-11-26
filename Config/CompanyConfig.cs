@@ -9,5 +9,6 @@
         public string? VATID { get; set; }
         public string? Email { get; set; }
         public string? InvoiceNotice { get; set; }
+        public string? Signatory { get; set; }
     }
 }

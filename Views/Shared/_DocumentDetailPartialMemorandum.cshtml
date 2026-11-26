@@ -1,4 +1,4 @@
-@using CleanHub.Entities.Enums
+﻿@using CleanHub.Entities.Enums
 
 @model CleanHub.ViewModels.DocumentViewModel
 
@@ -505,7 +505,7 @@
                                             </div>
 
                                             <p>@Model?.Company?.Address</p>
-                                            <p>martihigiena@gmail.com</p>
+                                            <p>@Model?.Company?.Email</p>
                                             <p>@Model?.Company?.PhoneNumber</p>
                                             <p>ЕДБ: @Model?.Company?.VATID</p>
                                             <p>@Model?.Customer?.Building?.BankAccount</p>
@@ -616,7 +616,7 @@
 
                                             <div class="signature-line">
                                                 <p class="signature-name">
-                                                    Виолета Стојанова
+                                                    @Model?.Company?.Signatory
                                                 </p>
                                             </div>
                                         </div>

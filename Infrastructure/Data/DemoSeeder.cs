@@ -1,4 +1,4 @@
-using CleanHub.Entities;
+﻿using CleanHub.Entities;
 using CleanHub.Entities.Enums;
 using CleanHub.Helpers;
 using CleanHub.Services;
@@ -271,6 +271,40 @@ namespace CleanHub.Infrastructure.Data
 
             logger.LogInformation("Demo: готово — {Buildings} згради, {Tenants} станари, {Docs} фактури.",
                 Buildings.Length, Buildings.Length * TenantsPerBuilding, await db.Documents.CountAsync());
+        }
+
+        /// <summary>
+        /// Ги брише сите тест податоци и ги внесува од почеток (шифрарниците и корисниците остануваат).
+        /// Заштита: работи само ако името на базата содржи „demo“.
+        /// </summary>
+        public static async Task ResetAsync(IServiceProvider services, IConfiguration config, ILogger logger)
+        {
+            var db = services.GetRequiredService<ApplicationDbContext>();
+            var dbName = db.Database.GetDbConnection().Database ?? "";
+            if (!dbName.Contains("demo", StringComparison.OrdinalIgnoreCase))
+            {
+                logger.LogWarning("Demo reset: базата „{Db}“ не е демо база — ништо не е избришано.", dbName);
+                return;
+            }
+
+            await using (var tx = await db.Database.BeginTransactionAsync())
+            {
+                await db.Database.ExecuteSqlRawAsync(@"
+                    DELETE FROM [Books];
+                    DELETE FROM [BookFinancials];
+                    DELETE FROM [SpecialInvoices];
+                    DELETE FROM [Documents];
+                    UPDATE [Buildings] SET [CustomerRefId] = NULL;
+                    DELETE FROM [BuildingProducts];
+                    DELETE FROM [Customers];
+                    DELETE FROM [Buildings];
+                    DELETE FROM [Products];");
+                await tx.CommitAsync();
+            }
+
+            db.ChangeTracker.Clear();
+            logger.LogInformation("Demo reset: податоците се избришани, се внесуваат повторно.");
+            await SeedAsync(services, config, logger);
         }
 
         // ------------------------------------------------------------------

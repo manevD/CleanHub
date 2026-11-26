@@ -50,48 +50,37 @@ namespace CleanHub
             }
         }
 
+        /// <summary>
+        /// ДЕМО: 5 тест корисници (demo1…demo5@example.com, лозинка Demo2027!).
+        /// Вистинските корисници (dimitar/marti) не постојат во демото — ако ги има, се бришат.
+        /// </summary>
         public static async Task CreateUsers(IServiceProvider serviceProvider)
         {
             _userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-            IdentityUser dimitarUser = await _userManager.FindByEmailAsync("dimitar@email.com");
-
-            if (dimitarUser == null)
+            foreach (var oldEmail in new[] { "dimitar@email.com", "marti@email.com" })
             {
-                var user = new IdentityUser
-                {
-                    Id= "1",
-                    UserName = "dimitar@email.com",
-                    Email = "dimitar@email.com",
-                    NormalizedUserName = "dimitar@email.com",
-                    NormalizedEmail= "dimitar@email.com",
-                    EmailConfirmed = true,
-                    TwoFactorEnabled = false,
-                    LockoutEnabled = true,
-                    PhoneNumberConfirmed=true,
-                    AccessFailedCount=1
-                };
-                const string userPassword = "Hallo123!";
-                await _userManager.CreateAsync(user, userPassword);
+                var old = await _userManager.FindByEmailAsync(oldEmail);
+                if (old != null) await _userManager.DeleteAsync(old);
             }
-            IdentityUser martiUser = await _userManager.FindByEmailAsync("marti@email.com");
-            if (martiUser == null)
+
+            const string demoPassword = "Demo2027!";
+            for (var i = 1; i <= 5; i++)
             {
+                var email = $"demo{i}@example.com";
+                if (await _userManager.FindByEmailAsync(email) != null) continue;
+
                 var user = new IdentityUser
                 {
-                    Id = "2",
-                    UserName = "marti@email.com",
-                    Email = "marti@email.com",
-                    NormalizedUserName = "MARTI@EMAIL.COM",
-                    NormalizedEmail = "MARTI@EMAIL.COM",
+                    Id = $"demo-{i}",
+                    UserName = email,
+                    Email = email,
                     EmailConfirmed = true,
                     TwoFactorEnabled = false,
-                    LockoutEnabled = true,
-                    PhoneNumberConfirmed = true,
-                    AccessFailedCount = 1
+                    LockoutEnabled = false,
+                    PhoneNumberConfirmed = true
                 };
-                const string userPassword = "Marti123!";
-                await _userManager.CreateAsync(user, userPassword);
+                await _userManager.CreateAsync(user, demoPassword);
             }
         }
 
