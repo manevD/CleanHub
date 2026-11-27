@@ -1,0 +1,85 @@
+@using CleanHub.Models
+@using Microsoft.AspNetCore.Identity
+@inject SignInManager<IdentityUser> SignInManager
+@{
+    var signedIn = SignInManager.IsSignedIn(User);
+    var phone = LandingServices.Phone;
+    var phoneHref = LandingServices.PhoneHref;
+}
+<!DOCTYPE html>
+<html lang="mk">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@(ViewData["Title"] is string t ? t + " · " : "")Але Сауба – Ѓоргиеви · Професионално чистење</title>
+    <meta name="description" content="@(ViewData["Description"] ?? "Професионално чистење на влезови, канцеларии, локали и излози. Миење на високи стакла со корпа до 21 метар.")" />
+    <link rel="icon" href="~/img/landing/logo.png" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+</head>
+<body class="lp">
+    <header class="lp-header">
+        <div class="lp-wrap lp-header-in">
+            <a href="/" class="lp-brand">
+                <img src="~/img/landing/logo.png" alt="" width="44" height="44" />
+                <span><strong>Але Сауба</strong><small>Ѓоргиеви</small></span>
+            </a>
+            <nav class="lp-nav" aria-label="Главно мени">
+                <div class="lp-dd">
+                    <a href="/#uslugi" class="lp-dd-toggle">Услуги</a>
+                    <div class="lp-dd-menu">
+                        @foreach (var s in LandingServices.All)
+                        {
+                            <a href="/uslugi/@s.Slug">@s.Title</a>
+                        }
+                    </div>
+                </div>
+                <a href="/#pred-potoa">Пред / потоа</a>
+                <a href="#kontakt">Контакт</a>
+            </nav>
+            @if (signedIn)
+            {
+                <a class="lp-btn lp-btn-primary" asp-controller="Buildings" asp-action="Index">Отвори апликација</a>
+            }
+            else
+            {
+                <a class="lp-btn lp-btn-primary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="/Buildings">
+                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+                    Најава
+                </a>
+            }
+        </div>
+    </header>
+
+    <main id="top">
+        @RenderBody()
+    </main>
+
+    <section class="lp-contact" id="kontakt">
+        <div class="lp-wrap lp-contact-in">
+            <div>
+                <h2>Закажете чистење</h2>
+                <p>Јавете се или пишете ни — бесплатна проценка и понуда.</p>
+            </div>
+            <div class="lp-contact-actions">
+                <a class="lp-btn lp-btn-light lp-btn-lg" href="@LandingServices.PhoneHref">@LandingServices.Phone</a>
+                <a class="lp-btn lp-btn-outline-light lp-btn-lg" href="@LandingServices.Facebook" target="_blank" rel="noopener">Facebook</a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="lp-footer">
+        <div class="lp-wrap lp-footer-in">
+            <span>© @DateTime.Now.Year Але Сауба – Ѓоргиеви</span>
+            <nav class="lp-footer-links" aria-label="Услуги">
+                @foreach (var s in LandingServices.All)
+                {
+                    <a href="/uslugi/@s.Slug">@s.Title</a>
+                }
+            </nav>
+            <a asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="/Buildings">Најава за вработени</a>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

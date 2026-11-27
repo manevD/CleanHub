@@ -1,48 +1,7 @@
-@using Microsoft.AspNetCore.Identity
-@inject SignInManager<IdentityUser> SignInManager
+@using CleanHub.Models
 @{
-    Layout = null;
-    var signedIn = SignInManager.IsSignedIn(User);
-    const string phone = "070-202-002";
-    const string phoneHref = "tel:+38970202002";
+    Layout = "_LandingLayout";
 }
-<!DOCTYPE html>
-<html lang="mk">
-<head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Але Сауба – Ѓоргиеви · Професионално чистење</title>
-    <meta name="description" content="Професионално чистење на влезови, канцеларии, локали и излози. Миење на високи стакла со корпа до 21 метар. Струмица и околина." />
-    <link rel="icon" href="~/img/landing/logo.png" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-</head>
-<body class="lp">
-    <header class="lp-header">
-        <div class="lp-wrap lp-header-in">
-            <a href="#top" class="lp-brand">
-                <img src="~/img/landing/logo.png" alt="" width="44" height="44" />
-                <span><strong>Але Сауба</strong><small>Ѓоргиеви</small></span>
-            </a>
-            <nav class="lp-nav" aria-label="Главно мени">
-                <a href="#uslugi">Услуги</a>
-                <a href="#pred-potoa">Пред / потоа</a>
-                <a href="#kontakt">Контакт</a>
-            </nav>
-            @if (signedIn)
-            {
-                <a class="lp-btn lp-btn-primary" asp-controller="Buildings" asp-action="Index">Отвори апликација</a>
-            }
-            else
-            {
-                <a class="lp-btn lp-btn-primary" asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="/Buildings">
-                    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
-                    Најава
-                </a>
-            }
-        </div>
-    </header>
-
-    <main id="top">
         <!-- Херо -->
         <section class="lp-hero">
             <div class="lp-wrap lp-hero-in">
@@ -51,9 +10,9 @@
                     <h1>Професионално чистење за вашата зграда и бизнис</h1>
                     <p class="lp-lead">Влезови во згради, канцеларии, локали и излози — и миење на високи и тешко достапни стакла со корпа до <strong>21 метар</strong>.</p>
                     <div class="lp-cta">
-                        <a class="lp-btn lp-btn-primary lp-btn-lg" href="@phoneHref">
+                        <a class="lp-btn lp-btn-primary lp-btn-lg" href="@LandingServices.PhoneHref">
                             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1.9.4 1.8.7 2.7a2 2 0 0 1-.5 2.1L8 9.8a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.7.7a2 2 0 0 1 1.7 2z" /></svg>
-                            @phone
+                            @LandingServices.Phone
                         </a>
                         <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#pred-potoa">Види пред / потоа</a>
                     </div>
@@ -79,26 +38,15 @@
                 <h2 class="lp-h2">Со што се занимаваме</h2>
                 <p class="lp-sub">Од влезот во зградата до излогот на вашиот локал.</p>
                 <div class="lp-services">
-                    <article class="lp-service">
-                        <span class="lp-ico lp-ico-green"><svg viewBox="0 0 24 24"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-6h6v6" /></svg></span>
-                        <h3>Влезови во згради</h3>
-                        <p>Редовно чистење на скалишта, ходници и лифтови, со месечна фактура по стан.</p>
-                    </article>
-                    <article class="lp-service">
-                        <span class="lp-ico lp-ico-orange"><svg viewBox="0 0 24 24"><rect x="3" y="7" width="18" height="13" rx="2" /><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></svg></span>
-                        <h3>Канцеларии</h3>
-                        <p>Уреден работен простор — подови, површини, кујни и санитарни јазли.</p>
-                    </article>
-                    <article class="lp-service">
-                        <span class="lp-ico lp-ico-blue"><svg viewBox="0 0 24 24"><path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8zM6 1v3M10 1v3M14 1v3" /></svg></span>
-                        <h3>Кафулиња и ресторани</h3>
-                        <p>Чисти излози, тераси и сали — пред отворање или по затворање.</p>
-                    </article>
-                    <article class="lp-service">
-                        <span class="lp-ico lp-ico-red"><svg viewBox="0 0 24 24"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4zM3 6h18M16 10a4 4 0 0 1-8 0" /></svg></span>
-                        <h3>Продавници и бутици</h3>
-                        <p>Излозите се првиот впечаток — миење од двете страни, без траги.</p>
-                    </article>
+                    @foreach (var s in LandingServices.All)
+                    {
+                        <a class="lp-service" href="/uslugi/@s.Slug">
+                            <span class="lp-ico lp-ico-@s.Icon"><partial name="_LandingIcon" model="s.Slug" /></span>
+                            <h3>@s.Title</h3>
+                            <p>@s.Short</p>
+                            <span class="lp-more">Повеќе за услугата →</span>
+                        </a>
+                    }
                 </div>
             </div>
         </section>
@@ -140,33 +88,14 @@
                 <div>
                     <h2 class="lp-h2">Високи и тешко достапни стакла</h2>
                     <p class="lp-sub">Со корпа на висина <strong>до 21 метар</strong> — фасади, деловни објекти и згради, безбедно и без скелиња.</p>
-                    <a class="lp-btn lp-btn-primary" href="@phoneHref">Побарај понуда</a>
+                    <a class="lp-btn lp-btn-primary" href="/uslugi/visoki-stakla">Повеќе за високи стакла</a>
+                    <a class="lp-btn lp-btn-ghost" href="@LandingServices.PhoneHref">Побарај понуда</a>
                 </div>
             </div>
         </section>
 
-        <!-- Контакт -->
-        <section class="lp-contact" id="kontakt">
-            <div class="lp-wrap lp-contact-in">
-                <div>
-                    <h2>Закажете чистење</h2>
-                    <p>Јавете се или пишете ни — ќе ви одговориме истиот ден.</p>
-                </div>
-                <div class="lp-contact-actions">
-                    <a class="lp-btn lp-btn-light lp-btn-lg" href="@phoneHref">@phone</a>
-                    <a class="lp-btn lp-btn-outline-light lp-btn-lg" href="https://www.facebook.com/AllesSauber/" target="_blank" rel="noopener">Facebook</a>
-                </div>
-            </div>
-        </section>
-    </main>
 
-    <footer class="lp-footer">
-        <div class="lp-wrap lp-footer-in">
-            <span>© @DateTime.Now.Year Але Сауба – Ѓоргиеви</span>
-            <a asp-area="Identity" asp-page="/Account/Login" asp-route-returnUrl="/Buildings">Најава за вработени</a>
-        </div>
-    </footer>
-
+@section Scripts {
     <script>
         // Пред / потоа: влечење со глувче/прст, тастатура преку range-полето
         (function () {
@@ -194,5 +123,4 @@
             }
         })();
     </script>
-</body>
-</html>
+}

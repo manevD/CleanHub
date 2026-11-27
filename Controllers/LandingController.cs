@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using CleanHub.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CleanHub.Controllers
@@ -13,5 +14,13 @@ namespace CleanHub.Controllers
         [Route("")]
         [Route("Landing")]
         public IActionResult Index() => View();
+
+        /// <summary>Подстрана за една услуга, на пр. /uslugi/visoki-stakla</summary>
+        [Route("uslugi/{slug}")]
+        public IActionResult Service(string slug)
+        {
+            var service = LandingServices.Find(slug);
+            return service == null ? NotFound() : View(service);
+        }
     }
 }

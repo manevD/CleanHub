@@ -1,0 +1,109 @@
+@using CleanHub.Models
+@model LandingService
+@{
+    Layout = "_LandingLayout";
+    ViewData["Title"] = Model.Title;
+    ViewData["Description"] = Model.Short;
+    var others = LandingServices.All.Where(s => s.Slug != Model.Slug).ToList();
+}
+
+<section class="lp-svc-hero">
+    <div class="lp-wrap lp-svc-hero-in">
+        <div>
+            <nav class="lp-crumbs" aria-label="Патека"><a href="/">Почетна</a> <span>/</span> <a href="/#uslugi">Услуги</a> <span>/</span> <span aria-current="page">@Model.Title</span></nav>
+            <span class="lp-ico lp-ico-@Model.Icon lp-ico-lg"><partial name="_LandingIcon" model="Model.Slug" /></span>
+            <h1>@Model.Title</h1>
+            <p class="lp-lead">@Model.Lead</p>
+            <div class="lp-cta">
+                <a class="lp-btn lp-btn-primary lp-btn-lg" href="@LandingServices.PhoneHref">Бесплатна проценка · @LandingServices.Phone</a>
+                <a class="lp-btn lp-btn-ghost lp-btn-lg" href="#sto-e-vkluceno">Што е вклучено</a>
+            </div>
+        </div>
+        <div class="lp-svc-photo">
+            <img src="~/img/landing/@Model.Image" alt="@Model.Title" loading="eager" />
+        </div>
+    </div>
+</section>
+
+<section class="lp-section">
+    <div class="lp-wrap lp-svc-body">
+        <div class="lp-prose">
+            @foreach (var p in Model.Intro)
+            {
+                <p>@p</p>
+            }
+        </div>
+        <aside class="lp-svc-card" id="sto-e-vkluceno">
+            <h2>Што е вклучено</h2>
+            <ul class="lp-check">
+                @foreach (var i in Model.Includes)
+                {
+                    <li>@i</li>
+                }
+            </ul>
+        </aside>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt">
+    <div class="lp-wrap">
+        <h2 class="lp-h2">Како работиме</h2>
+        <p class="lp-sub">Јасен процес од првиот разговор до редовното одржување.</p>
+        <ol class="lp-steps">
+            @for (var i = 0; i < Model.Steps.Length; i++)
+            {
+                <li>
+                    <span class="lp-step-no">@(i + 1)</span>
+                    <h3>@Model.Steps[i].Title</h3>
+                    <p>@Model.Steps[i].Text</p>
+                </li>
+            }
+        </ol>
+    </div>
+</section>
+
+<section class="lp-section">
+    <div class="lp-wrap">
+        <h2 class="lp-h2">Зошто Але Сауба</h2>
+        <div class="lp-benefits">
+            @foreach (var b in Model.Benefits)
+            {
+                <div class="lp-benefit">
+                    <h3>@b.Title</h3>
+                    <p>@b.Text</p>
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="lp-section lp-section-alt">
+    <div class="lp-wrap lp-faq-wrap">
+        <h2 class="lp-h2">Чести прашања</h2>
+        <div class="lp-faq">
+            @foreach (var f in Model.Faq)
+            {
+                <details>
+                    <summary>@f.Q</summary>
+                    <p>@f.A</p>
+                </details>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="lp-section">
+    <div class="lp-wrap">
+        <h2 class="lp-h2">Други услуги</h2>
+        <div class="lp-services lp-services-sm">
+            @foreach (var s in others)
+            {
+                <a class="lp-service" href="/uslugi/@s.Slug">
+                    <span class="lp-ico lp-ico-@s.Icon"><partial name="_LandingIcon" model="s.Slug" /></span>
+                    <h3>@s.Title</h3>
+                    <span class="lp-more">Повеќе →</span>
+                </a>
+            }
+        </div>
+    </div>
+</section>
