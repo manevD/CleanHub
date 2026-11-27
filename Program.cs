@@ -235,8 +235,9 @@ namespace CleanHub
             app.MapRazorPages();
             app.Use(async (context, next) =>
             {
+                // cdn.jsdelivr.net: Tom Select (searchable паѓачки листи)
                 context.Response.Headers["Content-Security-Policy"] =
-                    "script-src 'self' 'unsafe-eval' 'unsafe-inline';";
+                    "script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdn.jsdelivr.net;";
                 await next();
             });
             // ----------------------------------------------------
