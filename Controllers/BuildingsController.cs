@@ -338,11 +338,11 @@ namespace CleanHub.Controllers
                     MailMessage message = new MailMessage();
                     message.From = new MailAddress(_smtpConfig.Value.Email);
                     message.To.Add(item.Email);
-                    message.Subject = string.Concat("Сметка Марти Хигиена ", item.CustomerInfo, " за ", month, "/",
+                    message.Subject = string.Concat("Сметка Free Clean ", item.CustomerInfo, " за ", month, "/",
                         year);
                     message.Body = emailBody;
                     message.Attachments.Add(new Attachment(pdfStream,
-                        string.Concat("МартиХигиена", month, "/", year, ".pdf")));
+                        string.Concat("FreeClean", month, "/", year, ".pdf")));
                     smtpClient.UseDefaultCredentials = false;
                     // send email
                     smtpClient.Send(message);

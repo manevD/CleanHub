@@ -73,7 +73,7 @@ namespace CleanHub.Controllers
                 MailMessage message = new MailMessage();
                 message.From = new MailAddress(_smtpConfig.Value.Email);
                 message.To.Add(customer.Email);
-                message.Subject = "Известување Марти Хигиена";
+                message.Subject = "Известување Free Clean";
                 message.Body = emailBody;
                 smtpClient.UseDefaultCredentials = false;
                 await smtpClient.SendMailAsync(message);
@@ -222,11 +222,11 @@ namespace CleanHub.Controllers
                 MailMessage message = new MailMessage();
                 message.From = new MailAddress(_smtpConfig.Value.Email);
                 message.To.Add(document?.Customer?.Email);
-                message.Subject = string.Concat("Сметка Марти Хигиена ", document.Customer?.CustomerInfo, " за ", document.Date.Value.Month, "/",
+                message.Subject = string.Concat("Сметка Free Clean ", document.Customer?.CustomerInfo, " за ", document.Date.Value.Month, "/",
                     document.Date.Value.Year);
                 message.Body = emailBody;
                 message.Attachments.Add(new Attachment(pdfStream,
-                    string.Concat("МартиХигиена", document.Date.Value.Month, "/", document.Date.Value.Year, ".pdf")));
+                    string.Concat("FreeClean", document.Date.Value.Month, "/", document.Date.Value.Year, ".pdf")));
                 smtpClient.UseDefaultCredentials = false;
                 await smtpClient.SendMailAsync(message);
                 doc.Close();
