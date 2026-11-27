@@ -918,3 +918,9 @@ a.stat-card:hover { border-color: var(--brand); color: var(--text); }
     .card, .statbox.widget, .widget.box, .doc-container .invoice-content { box-shadow: none !important; border: 0 !important; }
     .table thead th { position: static; }
 }
+
+/* Годишен извештај — уредување */
+.report-editor { font-size: .9rem; line-height: 1.6; resize: vertical; min-height: 360px; }
+.month-table td { vertical-align: top; }
+.month-table textarea { resize: vertical; min-height: 38px; }
+.month-table tfoot td { font-weight: 650; border-top: 2px solid var(--border-strong); }

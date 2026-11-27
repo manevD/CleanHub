@@ -98,6 +98,7 @@ namespace CleanHub
             builder.Services.AddScoped<AnomalyService>();
             builder.Services.AddScoped<AssistantService>();
             builder.Services.AddScoped<AnnualReportService>();
+            builder.Services.AddSingleton<AnnualReportStore>();
             builder.Services.AddHostedService<WeeklyReportHostedService>();
 
             // Онлајн уплати (cPay) — е-пошта: user-secrets OnlinePayments:Username / Password

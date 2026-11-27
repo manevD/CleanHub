@@ -20,12 +20,14 @@ namespace CleanHub.Controllers
         AssistantService _assistant,
         AnomalyService _anomalies,
         AnnualReportService _annual,
+        AnnualReportStore _annualStore,
         EmailSender _email,
         IMemoryCache _cache,
         ICompositeViewEngine _viewEngine,
         IOptions<AiConfig> _aiConfig,
         IOptions<TelnyxConfig> _telnyxConfig,
-        IOptions<SMTPConfig> _smtpConfig) : Controller
+        IOptions<SMTPConfig> _smtpConfig,
+        IOptions<CompanyConfig> _companyConfig) : Controller
     {
         private const string AnomalyCacheKey = "ai-anomaly-report";
 
@@ -166,46 +168,169 @@ namespace CleanHub.Controllers
                 BuildingId = buildingId,
                 Year = year ?? DateTime.Now.Year - (DateTime.Now.Month < 3 ? 1 : 0),
                 Buildings = await BuildingsSelectAsync(buildingId),
-                AiEnabled = _aiConfig.Value.IsConfigured
+                AiEnabled = _aiConfig.Value.IsConfigured,
+                Saved = _annualStore.List(buildingId)
             });
         }
 
+        /// <summary>Генерира нов извештај, го зачувува и го отвора за уредување.</summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> AnnualReport(int buildingId, int year, string? notes)
         {
-            var model = new AiAnnualReportViewModel
-            {
-                BuildingId = buildingId,
-                Year = year,
-                Notes = notes,
-                Buildings = await BuildingsSelectAsync(buildingId),
-                AiEnabled = _aiConfig.Value.IsConfigured
-            };
-
             var report = await _annual.BuildAsync(buildingId, year, notes, HttpContext.RequestAborted);
             if (report == null)
             {
                 TempData["Error"] = "Објектот не е пронајден.";
-                return View(model);
+                return RedirectToAction(nameof(AnnualReport), new { buildingId, year });
             }
 
-            model.Report = report;
-            model.ReportKey = Guid.NewGuid().ToString("N");
-            _cache.Set("ai-annual-" + model.ReportKey, report, TimeSpan.FromHours(2));
-            return View(model);
+            report.CreatedBy = User.Identity?.Name;
+            try
+            {
+                _annualStore.Upsert(report);
+            }
+            catch (IOException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(AnnualReport), new { buildingId, year });
+            }
+
+            TempData["Success"] = "Извештајот е генериран и зачуван. Можете да го уредите пред печатење.";
+            return RedirectToAction(nameof(AnnualReportEdit), new { id = report.Id });
         }
 
         [HttpGet]
-        public async Task<IActionResult> AnnualReportPdf(string key)
+        public IActionResult AnnualReportEdit(string id)
         {
-            if (string.IsNullOrWhiteSpace(key) || !_cache.TryGetValue("ai-annual-" + key, out AnnualReport? report) || report == null)
+            var report = _annualStore.Get(id);
+            if (report == null)
             {
-                TempData["Error"] = "Извештајот истече. Генерирајте го повторно.";
+                TempData["Error"] = "Извештајот не е пронајден (можеби е избришан).";
                 return RedirectToAction(nameof(AnnualReport));
             }
 
-            var html = await RenderViewToStringAsync("~/Views/Ai/_AnnualReportPdf.cshtml", report);
+            ViewBag.AiEnabled = _aiConfig.Value.IsConfigured;
+            return View(report);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AnnualReportEdit(string id, AiAnnualReportEditInput input)
+        {
+            var report = _annualStore.Get(id);
+            if (report == null)
+            {
+                TempData["Error"] = "Извештајот не е пронајден (можеби е избришан).";
+                return RedirectToAction(nameof(AnnualReport));
+            }
+
+            report.Title = string.IsNullOrWhiteSpace(input.Title) ? $"Годишен извештај за {report.Stats.Year} година" : input.Title.Trim();
+            report.Narrative = (input.Narrative ?? "").Replace("\r\n", "\n").Trim();
+
+            var months = new List<MonthCost>();
+            for (var i = 0; i < input.Month.Count; i++)
+            {
+                var desc = (i < input.Description.Count ? input.Description[i] : null)?.Trim() ?? "";
+                var amountText = i < input.Amount.Count ? input.Amount[i] : null;
+                if (desc.Length == 0 && string.IsNullOrWhiteSpace(amountText)) continue; // празен ред
+
+                if (!TryParseAmount(amountText, out var amount))
+                {
+                    TempData["Error"] = $"Неважечки износ во ред {i + 1}: „{amountText}“. Пр. 1.234,56";
+                    return RedirectToAction(nameof(AnnualReportEdit), new { id });
+                }
+
+                months.Add(new MonthCost
+                {
+                    Month = Math.Clamp(input.Month[i], 1, 12),
+                    Description = desc,
+                    Amount = Math.Round(amount, 2),
+                    Items = i < input.Items.Count ? Math.Max(0, input.Items[i]) : 0
+                });
+            }
+            report.Months = months.OrderBy(m => m.Month).ToList();
+            report.UpdatedAt = DateTime.Now;
+            report.UpdatedBy = User.Identity?.Name;
+
+            try
+            {
+                _annualStore.Upsert(report);
+            }
+            catch (IOException ex)
+            {
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(AnnualReportEdit), new { id });
+            }
+
+            if (input.After == "print") return RedirectToAction(nameof(AnnualReportPrint), new { id });
+            if (input.After == "pdf") return RedirectToAction(nameof(AnnualReportPdf), new { id });
+
+            TempData["Success"] = "Промените се зачувани.";
+            return RedirectToAction(nameof(AnnualReportEdit), new { id });
+        }
+
+        /// <summary>Ги враќа редовите по месеци од книжењата (ги брише рачните промени во табелата).</summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AnnualReportResetMonths(string id)
+        {
+            var report = _annualStore.Get(id);
+            if (report == null) return RedirectToAction(nameof(AnnualReport));
+
+            report.Months = AnnualReportService.GroupByMonth(report.Stats.Costs);
+            report.UpdatedAt = DateTime.Now;
+            report.UpdatedBy = User.Identity?.Name;
+            _annualStore.Upsert(report);
+            TempData["Success"] = "Табелата по месеци е вратена според книжењата.";
+            return RedirectToAction(nameof(AnnualReportEdit), new { id });
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public IActionResult AnnualReportDelete(string id)
+        {
+            var report = _annualStore.Get(id);
+            try
+            {
+                TempData[_annualStore.Delete(id) ? "Success" : "Error"] = report != null
+                    ? $"Извештајот „{report.Stats.BuildingName} — {report.Stats.Year}“ е избришан."
+                    : "Извештајот не е пронајден.";
+            }
+            catch (IOException ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+            return RedirectToAction(nameof(AnnualReport), new { buildingId = report?.Stats.BuildingId });
+        }
+
+        /// <summary>Чиста A4 страница за печатење (се отвора во нов таб и автоматски го отвора дијалогот за печатење).</summary>
+        [HttpGet]
+        public IActionResult AnnualReportPrint(string id)
+        {
+            var report = _annualStore.Get(id);
+            if (report == null)
+            {
+                TempData["Error"] = "Извештајот не е пронајден.";
+                return RedirectToAction(nameof(AnnualReport));
+            }
+
+            return View("~/Views/Ai/_AnnualReportPdf.cshtml",
+                new AnnualReportDocument { Report = report, Company = _companyConfig.Value, AutoPrint = true });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> AnnualReportPdf(string id)
+        {
+            var report = _annualStore.Get(id);
+            if (report == null)
+            {
+                TempData["Error"] = "Извештајот не е пронајден.";
+                return RedirectToAction(nameof(AnnualReport));
+            }
+
+            var html = await RenderViewToStringAsync("~/Views/Ai/_AnnualReportPdf.cshtml",
+                new AnnualReportDocument { Report = report, Company = _companyConfig.Value });
             var converter = new HtmlToPdf();
             converter.Options.PdfPageSize = PdfPageSize.A4;
             converter.Options.PdfPageOrientation = PdfPageOrientation.Portrait;
@@ -223,6 +348,19 @@ namespace CleanHub.Controllers
 
             var fileName = $"Godisen_izvestaj_{report.Stats.Year}_{report.Stats.BuildingId}.pdf";
             return File(ms.ToArray(), "application/pdf", fileName);
+        }
+
+        /// <summary>Прифаќа „1.234,56“, „1234,56“ и „1234.56“.</summary>
+        private static bool TryParseAmount(string? text, out double value)
+        {
+            value = 0;
+            if (string.IsNullOrWhiteSpace(text)) return true; // празно = 0
+            var t = text.Replace("МКД", "", StringComparison.OrdinalIgnoreCase).Replace("ден", "").Replace(" ", "").Replace("\u00A0", "").Trim();
+            if (t.Contains(','))
+                t = t.Replace(".", "").Replace(',', '.');        // мк формат: точка = илјади, запирка = децимали
+            else if (t.Count(ch => ch == '.') > 1 || System.Text.RegularExpressions.Regex.IsMatch(t, @"^-?\d{1,3}\.\d{3}$"))
+                t = t.Replace(".", "");                          // 1.234.567 или 1.500 = илјади
+            return double.TryParse(t, System.Globalization.NumberStyles.Number, System.Globalization.CultureInfo.InvariantCulture, out value);
         }
 
         private async Task<string> RenderViewToStringAsync(string viewPath, object model)

@@ -2,7 +2,6 @@
 @using CleanHub.Services.Ai
 @{
     ViewData["Title"] = "Годишен извештај за собрание";
-    var r = Model.Report;
     var thisYear = DateTime.Now.Year;
 }
 
@@ -40,69 +39,78 @@
         {
             <p class="text-warning-soft small mt-2 mb-0">AI не е вклучен — текстот ќе биде од готов шаблон, бројките се исти.</p>
         }
+        <p class="text-muted small mt-2 mb-0">Трошоците од резервниот фонд се прикажуваат групирани по месеци. По генерирањето извештајот се зачувува и може да се менува, печати или брише.</p>
     </div>
 </div>
 
-@if (r != null)
-{
-    var s = r.Stats;
-    <div class="section-head">
-        <h2 class="section-title m-0">@s.BuildingName — @s.Year</h2>
-        <div class="d-flex gap-2">
-            <button type="button" class="btn btn-secondary" onclick="window.print()">Печати</button>
-            <a class="btn btn-success" asp-action="AnnualReportPdf" asp-route-key="@Model.ReportKey">
-                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
-                Преземи PDF
-            </a>
-        </div>
-    </div>
+<div class="section-head">
+    <h2 class="section-title m-0">Зачувани извештаи @(Model.BuildingId != null ? "за избраниот објект" : "")</h2>
+    @if (Model.BuildingId != null)
+    {
+        <a class="btn btn-secondary btn-sm" asp-action="AnnualReport">Прикажи ги сите</a>
+    }
+</div>
 
-    <div class="stat-grid">
-        <div class="stat-card"><span class="stat-label">Фактурирано</span><span class="stat-value">@FinanceDataService.Money(s.Invoiced)</span></div>
-        <div class="stat-card"><span class="stat-label">Собрано (1200)</span><span class="stat-value">@FinanceDataService.Money(s.CollectedRegular)</span><span class="stat-sub">наплата @s.CollectionRate.ToString("0.#", FinanceDataService.Mk)%</span></div>
-        <div class="stat-card"><span class="stat-label">Резервен фонд — собрано</span><span class="stat-value">@FinanceDataService.Money(s.CollectedReserve)</span></div>
-        <div class="stat-card"><span class="stat-label">Резервен фонд — потрошено</span><span class="stat-value">@FinanceDataService.Money(s.ReserveCosts)</span></div>
-        <div class="stat-card"><span class="stat-label">Состојба 31.12.@s.Year</span><span class="stat-value">@FinanceDataService.Money(s.ReserveBalanceEndOfYear)</span></div>
-        <div class="stat-card"><span class="stat-label">Неплатено</span><span class="stat-value lvl-text-3">@FinanceDataService.Money(s.UnpaidTotal)</span><span class="stat-sub">@s.TenantsWithDebt станари</span></div>
-    </div>
-
-    <div class="row g-4">
-        <div class="col-xl-7">
-            <div class="card h-100">
-                <div class="card-header d-flex justify-content-between align-items-center">
-                    <span>Извештај</span>
-                    <span class="ai-chip @(r.AiGenerated ? "" : "is-template")">@(r.AiGenerated ? "напишано со AI" : "шаблон")</span>
-                </div>
-                <div class="card-body report-text">@r.Narrative</div>
-            </div>
-        </div>
-        <div class="col-xl-5">
-            <div class="card h-100">
-                <div class="card-header">Трошоци од резервен фонд (@s.Costs.Count)</div>
-                @if (s.Costs.Count == 0)
-                {
-                    <div class="card-body text-muted">Нема трошоци за оваа година.</div>
-                }
-                else
-                {
-                    <div class="table-responsive table-container" style="max-height:520px">
-                        <table class="table m-0">
-                            <thead><tr><th>Датум</th><th>Опис</th><th class="text-end">Износ</th></tr></thead>
-                            <tbody>
-                                @foreach (var c in s.Costs)
+<div class="card">
+    @if (Model.Saved.Count == 0)
+    {
+        <div class="empty-state">Сè уште нема зачувани извештаи. Изберете објект и година и кликнете „Генерирај извештај“.</div>
+    }
+    else
+    {
+        <div class="table-responsive table-container">
+            <table class="table m-0 align-middle">
+                <thead>
+                    <tr>
+                        <th>Објект</th>
+                        <th>Година</th>
+                        <th>Наслов</th>
+                        <th class="text-end">Трошоци (рез. фонд)</th>
+                        <th>Изготвено</th>
+                        <th>Последна измена</th>
+                        <th class="text-end">Акции</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Saved)
+                    {
+                        <tr>
+                            <td>@r.Stats.BuildingName</td>
+                            <td>@r.Stats.Year</td>
+                            <td>
+                                <a asp-action="AnnualReportEdit" asp-route-id="@r.Id">@r.Title</a>
+                                @if (r.AiGenerated) { <span class="ai-chip ms-1">AI</span> }
+                            </td>
+                            <td class="text-end text-nowrap">@FinanceDataService.Money(r.MonthsTotal)</td>
+                            <td class="text-nowrap">@r.GeneratedAt.ToString("dd.MM.yyyy HH:mm")<span class="text-muted small d-block">@r.CreatedBy</span></td>
+                            <td class="text-nowrap">
+                                @if (r.UpdatedAt != null)
                                 {
-                                    <tr><td class="text-nowrap">@c.Date?.ToString("dd.MM.yyyy")</td><td>@c.Description</td><td class="text-end text-nowrap">@FinanceDataService.Money(c.Amount)</td></tr>
+                                    @r.UpdatedAt.Value.ToString("dd.MM.yyyy HH:mm")<span class="text-muted small d-block">@r.UpdatedBy</span>
                                 }
-                            </tbody>
-                            <tfoot><tr><td colspan="2">Вкупно</td><td class="text-end text-nowrap">@FinanceDataService.Money(s.ReserveCosts)</td></tr></tfoot>
-                        </table>
-                    </div>
-                }
-            </div>
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="text-end">
+                                <div class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                    <a class="btn btn-sm btn-primary" asp-action="AnnualReportEdit" asp-route-id="@r.Id">Отвори / уреди</a>
+                                    <a class="btn btn-sm btn-secondary" asp-action="AnnualReportPrint" asp-route-id="@r.Id" target="_blank" rel="noopener">Печати</a>
+                                    <a class="btn btn-sm btn-success" asp-action="AnnualReportPdf" asp-route-id="@r.Id">PDF</a>
+                                    <form asp-action="AnnualReportDelete" asp-route-id="@r.Id" method="post" class="m-0 d-inline"
+                                          data-confirm="Да се избрише извештајот „@r.Stats.BuildingName — @r.Stats.Year“? Ова не може да се врати.">
+                                        <button type="submit" class="btn btn-sm btn-danger">Избриши</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
         </div>
-    </div>
-    <p class="text-muted small mt-3">Бројките се пресметани од книжењата во апликацијата (иста логика како „Завршна“ и картиците). Текстот проверете го пред да го поделите со станарите.</p>
-}
+    }
+</div>
 
 @section Scripts {
     <script>
@@ -110,6 +118,9 @@
             const b = document.getElementById('annualSubmit');
             b.disabled = true;
             b.innerHTML = '<span class="spinner"></span> Се подготвува…';
+        });
+        document.querySelectorAll('form[data-confirm]').forEach(function (f) {
+            f.addEventListener('submit', function (e) { if (!confirm(f.dataset.confirm)) e.preventDefault(); });
         });
     </script>
 }

@@ -1,0 +1,233 @@
+@model CleanHub.Services.Ai.AnnualReport
+@using CleanHub.Services.Ai
+@{
+    ViewData["Title"] = "Годишен извештај — уредување";
+    var s = Model.Stats;
+    string Amount(double v) => v.ToString("N2", FinanceDataService.Mk);
+}
+
+<div class="section-head">
+    <div>
+        <h2 class="section-title m-0">@s.BuildingName — @s.Year</h2>
+        <span class="text-muted small">
+            Изготвено @Model.GeneratedAt.ToString("dd.MM.yyyy HH:mm")@(Model.CreatedBy != null ? " · " + Model.CreatedBy : "")
+            @if (Model.UpdatedAt != null)
+            {
+                <text> · изменето @Model.UpdatedAt.Value.ToString("dd.MM.yyyy HH:mm")@(Model.UpdatedBy != null ? " · " + Model.UpdatedBy : "")</text>
+            }
+        </span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a class="btn btn-secondary" asp-action="AnnualReport" asp-route-buildingId="@s.BuildingId">← Назад кон листата</a>
+        <button type="submit" form="reportForm" class="btn btn-primary" name="after" value="">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" /><polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" /></svg>
+            Зачувај
+        </button>
+        <button type="submit" form="reportForm" class="btn btn-secondary" name="after" value="print">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><polyline points="6 9 6 2 18 2 18 9" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><rect x="6" y="14" width="12" height="8" /></svg>
+            Зачувај и печати
+        </button>
+        <button type="submit" form="reportForm" class="btn btn-success" name="after" value="pdf">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
+            Зачувај и PDF
+        </button>
+        <button type="submit" form="deleteForm" class="btn btn-danger">Избриши</button>
+    </div>
+</div>
+
+<form asp-action="AnnualReportDelete" asp-route-id="@Model.Id" method="post" id="deleteForm" class="d-none"
+      data-confirm="Да се избрише овој извештај? Ова не може да се врати."></form>
+<form asp-action="AnnualReportResetMonths" asp-route-id="@Model.Id" method="post" id="resetForm" class="d-none"
+      data-confirm="Табелата по месеци ќе се врати според книжењата. Рачните промени во табелата ќе се изгубат. Продолжи?"></form>
+
+<div class="stat-grid">
+    <div class="stat-card"><span class="stat-label">Фактурирано</span><span class="stat-value">@FinanceDataService.Money(s.Invoiced)</span></div>
+    <div class="stat-card"><span class="stat-label">Собрано (1200)</span><span class="stat-value">@FinanceDataService.Money(s.CollectedRegular)</span><span class="stat-sub">наплата @s.CollectionRate.ToString("0.#", FinanceDataService.Mk)%</span></div>
+    <div class="stat-card"><span class="stat-label">Резервен фонд — собрано</span><span class="stat-value">@FinanceDataService.Money(s.CollectedReserve)</span></div>
+    <div class="stat-card"><span class="stat-label">Резервен фонд — потрошено</span><span class="stat-value">@FinanceDataService.Money(s.ReserveCosts)</span></div>
+    <div class="stat-card"><span class="stat-label">Состојба 31.12.@s.Year</span><span class="stat-value">@FinanceDataService.Money(s.ReserveBalanceEndOfYear)</span></div>
+    <div class="stat-card"><span class="stat-label">Неплатено</span><span class="stat-value lvl-text-3">@FinanceDataService.Money(s.UnpaidTotal)</span><span class="stat-sub">@s.TenantsWithDebt станари</span></div>
+</div>
+
+<form asp-action="AnnualReportEdit" asp-route-id="@Model.Id" method="post" id="reportForm">
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Текст на извештајот</span>
+                    <span class="ai-chip @(Model.AiGenerated ? "" : "is-template")">@(Model.AiGenerated ? "напишано со AI" : "шаблон")</span>
+                </div>
+                <div class="card-body">
+                    <label class="form-label" for="Title">Наслов</label>
+                    <input id="Title" name="Title" class="form-control mb-3" value="@Model.Title" maxlength="200" />
+
+                    <label class="form-label" for="Narrative">Текст <span class="text-muted small">(празен ред = нов пасус)</span></label>
+                    <textarea id="Narrative" name="Narrative" class="form-control report-editor" rows="22">@Model.Narrative</textarea>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-5">
+            <div class="card h-100">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <span>Трошоци од резервен фонд по месеци</span>
+                    <button type="submit" form="resetForm" class="btn btn-sm btn-secondary" title="Врати ги редовите според книжењата">Врати од книжења</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table m-0 align-middle month-table">
+                        <thead>
+                            <tr>
+                                <th style="width:132px">Месец</th>
+                                <th>Опис</th>
+                                <th class="text-end" style="width:140px">Износ (МКД)</th>
+                                <th style="width:44px"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="monthRows">
+                            @foreach (var m in Model.Months)
+                            {
+                                <tr>
+                                    <td>
+                                        <select name="Month" class="form-select form-select-sm">
+                                            @for (var i = 1; i <= 12; i++)
+                                            {
+                                                <option value="@i" selected="@(i == m.Month ? "selected" : null)">@AnnualReportService.MonthName(i)</option>
+                                            }
+                                        </select>
+                                        <input type="hidden" name="Items" value="@m.Items" />
+                                        @if (m.Items > 0)
+                                        {
+                                            <span class="text-muted small">@m.Items @(m.Items == 1 ? "ставка" : "ставки")</span>
+                                        }
+                                    </td>
+                                    <td><textarea name="Description" class="form-control form-control-sm" rows="2" maxlength="500">@m.Description</textarea></td>
+                                    <td><input name="Amount" class="form-control form-control-sm text-end js-amount" inputmode="decimal" value="@Amount(m.Amount)" /></td>
+                                    <td><button type="button" class="btn btn-sm btn-danger js-del" title="Избриши ред" aria-label="Избриши ред">×</button></td>
+                                </tr>
+                            }
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td colspan="2">
+                                    <button type="button" class="btn btn-sm btn-secondary" id="addRow">+ Додај ред</button>
+                                    <span class="ms-2">Вкупно</span>
+                                </td>
+                                <td class="text-end text-nowrap fw-bold" id="monthTotal">@Amount(Model.MonthsTotal)</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                <div class="card-body pt-2">
+                    <p class="small mb-0 text-warning-soft" id="diffWarn" hidden>
+                        Вкупниот износ во табелата се разликува од книжењата (@FinanceDataService.Money(s.ReserveCosts)). Проверете пред печатење.
+                    </p>
+                    @if (Model.Months.Count == 0)
+                    {
+                        <p class="text-muted small mb-0" id="noCosts">Нема трошоци за оваа година. Можете рачно да додадете ред.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<p class="text-muted small mt-3">Бројките во картичките се пресметани од книжењата во моментот на генерирање. Текстот и табелата по месеци можете слободно да ги менувате — проверете ги пред да ги поделите со станарите.</p>
+
+<template id="rowTpl">
+    <tr>
+        <td>
+            <select name="Month" class="form-select form-select-sm">
+                @for (var i = 1; i <= 12; i++)
+                {
+                    <option value="@i">@AnnualReportService.MonthName(i)</option>
+                }
+            </select>
+            <input type="hidden" name="Items" value="0" />
+        </td>
+        <td><textarea name="Description" class="form-control form-control-sm" rows="2" maxlength="500"></textarea></td>
+        <td><input name="Amount" class="form-control form-control-sm text-end js-amount" inputmode="decimal" value="" placeholder="0,00" /></td>
+        <td><button type="button" class="btn btn-sm btn-danger js-del" title="Избриши ред" aria-label="Избриши ред">×</button></td>
+    </tr>
+</template>
+
+@section Scripts {
+    <script>
+        (function () {
+            const booked = @(s.ReserveCosts.ToString(System.Globalization.CultureInfo.InvariantCulture));
+            const form = document.getElementById('reportForm');
+            const rows = document.getElementById('monthRows');
+            const totalEl = document.getElementById('monthTotal');
+            const warn = document.getElementById('diffWarn');
+            const fmt = new Intl.NumberFormat('mk-MK', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            let dirty = false;
+
+            function parse(v) {
+                let t = (v || '').replace(/МКД|ден|\s| /gi, '');
+                if (!t) return 0;
+                if (t.includes(',')) t = t.replace(/\./g, '').replace(',', '.');
+                else if ((t.match(/\./g) || []).length > 1 || /^-?\d{1,3}\.\d{3}$/.test(t)) t = t.replace(/\./g, '');
+                const n = parseFloat(t);
+                return isNaN(n) ? NaN : n;
+            }
+
+            function recalc() {
+                let sum = 0, bad = false;
+                rows.querySelectorAll('.js-amount').forEach(function (i) {
+                    const n = parse(i.value);
+                    i.classList.toggle('is-invalid', isNaN(n));
+                    if (isNaN(n)) bad = true; else sum += n;
+                });
+                totalEl.textContent = bad ? '—' : fmt.format(sum);
+                warn.hidden = bad ? true : Math.abs(sum - booked) < 0.01;
+            }
+
+            rows.addEventListener('click', function (e) {
+                const btn = e.target.closest('.js-del');
+                if (!btn) return;
+                btn.closest('tr').remove();
+                dirty = true;
+                recalc();
+            });
+
+            document.getElementById('addRow').addEventListener('click', function () {
+                const tr = document.getElementById('rowTpl').content.firstElementChild.cloneNode(true);
+                const last = rows.querySelector('tr:last-child select[name="Month"]');
+                if (last) tr.querySelector('select').value = Math.min(12, parseInt(last.value, 10) + 1);
+                rows.appendChild(tr);
+                const nc = document.getElementById('noCosts'); if (nc) nc.remove();
+                tr.querySelector('textarea').focus();
+                dirty = true;
+            });
+
+            // Убав формат на износот при излегување од полето
+            rows.addEventListener('focusout', function (e) {
+                if (!e.target.classList.contains('js-amount')) return;
+                const n = parse(e.target.value);
+                if (!isNaN(n) && e.target.value.trim() !== '') e.target.value = fmt.format(n);
+            });
+
+            form.addEventListener('input', function () { dirty = true; recalc(); });
+            form.addEventListener('submit', function (e) {
+                recalc();
+                if (totalEl.textContent === '—') {
+                    e.preventDefault();
+                    alert('Има неважечки износ во табелата (означен со црвено). Пр. 1.234,56');
+                    return;
+                }
+                dirty = false;
+            });
+            window.addEventListener('beforeunload', function (e) {
+                if (dirty) { e.preventDefault(); e.returnValue = ''; }
+            });
+
+            document.querySelectorAll('form[data-confirm]').forEach(function (f) {
+                f.addEventListener('submit', function (e) {
+                    if (!confirm(f.dataset.confirm)) { e.preventDefault(); return; }
+                    dirty = false;
+                });
+            });
+
+            recalc();
+        })();
+    </script>
+}
