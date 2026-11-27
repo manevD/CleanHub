@@ -35,7 +35,9 @@ namespace CleanHub.Controllers
 
         // GET: Buildings
         [Route("Згради")]
-        [Route("")]
+        // ДЕМО: „/“ е јавната почетна страна (LandingController), објектите се на /Buildings
+        [Route("Buildings")]
+        [Route("Buildings/Index")]
         public IActionResult Index()
         {
             var buildingsJson = HttpContext.Session.GetString("Buildings");

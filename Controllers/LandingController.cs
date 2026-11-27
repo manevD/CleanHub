@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CleanHub.Controllers
@@ -10,6 +10,8 @@ namespace CleanHub.Controllers
     [AllowAnonymous]
     public class LandingController : Controller
     {
+        [Route("")]
+        [Route("Landing")]
         public IActionResult Index() => View();
     }
 }
