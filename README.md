@@ -86,6 +86,9 @@ dotnet user-secrets set "OnlinePayments:Password" "xxxx xxxx xxxx xxxx"         
 
 ## Демо база (гранка `demo`)
 
+- Јавна почетна страна `/` (LandingController, Views/Landing/Index.cshtml) за Але Сауба – Ѓоргиеви: услуги, пред/потоа лизгач, контакт; горе десно „Најава“ → по најава /Buildings.
+  Сликата „пред“ (wwwroot/img/landing/before.jpg) е симулирана од „потоа“ — заменете ги со вистински пред/потоа фотографии (ист сооднос 720×952).
+
 - Исклучено (закоментирано, не избришано): Онлајн уплати (Program.cs: Bind + AddHostedService), Telnyx SMS (Program.cs: Bind) и менито „Залепи завршна“ (_NavMenu.cshtml). Страниците покажуваат дека треба да се постават. AI алатките остануваат.
 
 - Една миграција `Initial` (Migrations/20261126184500_Initial) — целата шема од нула.

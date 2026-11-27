@@ -215,7 +215,7 @@ namespace CleanHub
             // ----------------------------------------------------
             app.MapControllerRoute(
                 name: "default",
-                pattern: "{controller=Buildings}/{action=Index}");
+                pattern: "{controller=Landing}/{action=Index}");  // ДЕМО: „/“ = јавна почетна страна
 
             app.MapControllerRoute(
                 name: "area",
