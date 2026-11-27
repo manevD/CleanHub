@@ -1603,16 +1603,13 @@ namespace CleanHub.Controllers
                                 request != null
                                     ? $"{request.Scheme}://{request.Host.Value}/"
                                     : null;
-
+                            var isPayed = document.PaymentStatus == PaymentStatus.Платено;
                             // ====================================================
                             // CONVERT HTML -> PDF
                             // ====================================================
-                            if (!sendToMail)
+                            if (!sendToMail || !isPayed)
                             {
-
-
                                 PdfDocument singleDoc = null;
-
                                 try
                                 {
                                     var converter = new HtmlToPdf();
