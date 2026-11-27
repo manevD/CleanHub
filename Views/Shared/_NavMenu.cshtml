@@ -51,8 +51,8 @@
             </summary>
             <div class="nav-sub">
                 <a asp-action="Index" asp-controller="BookFinancial" asp-route-id="0" class="@On("bookfinancial", "index", "costs")">Книжења увид</a>
-                <a asp-action="LastInvoice" asp-controller="BookFinancial" class="@On("bookfinancial", "lastinvoice")">Залепи завршна</a>
-            </div>
+@*                 <a asp-action="LastInvoice" asp-controller="BookFinancial" class="@On("bookfinancial", "lastinvoice")">Залепи завршна</a>
+ *@            </div>
         </details>
 
         <a asp-action="Index" asp-controller="OnlinePayments" class="nav-item @On("onlinepayments")">
@@ -82,8 +82,8 @@
             </summary>
             <div class="nav-sub">
                 <a asp-action="Index" asp-controller="Documents" class="@On("documents", "index", "edit")">По документ</a>
-                <a asp-action="Index" asp-controller="Invoices" asp-route-id="@((int)InvoiceTyp.Energy)" class="@On("invoices")">Струја</a>
-            </div>
+@*                 <a asp-action="Index" asp-controller="Invoices" asp-route-id="@((int)InvoiceTyp.Energy)" class="@On("invoices")">Струја</a>
+ *@            </div>
         </details>
 
         <details class="nav-group" open="@(openCardsBuildings || openCardsCustomers ? "open" : null)">
