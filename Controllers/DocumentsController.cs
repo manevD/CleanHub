@@ -1649,11 +1649,11 @@ namespace CleanHub.Controllers
                                 request != null
                                     ? $"{request.Scheme}://{request.Host.Value}/"
                                     : null;
-
+                            var isPayed = item.PaymentStatus == PaymentStatus.Платено;
                             // ====================================================
                             // CONVERT HTML -> PDF
                             // ====================================================
-                            if (!sendToMail)
+                            if (!sendToMail || !isPayed)
                             {
 
 
