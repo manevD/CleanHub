@@ -37,7 +37,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Дејност</label>
-                                                        <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId"></select>
+                                                        <select asp-for="ActivityId" class="form-select mb-3" asp-items="ViewBag.ActivityId" data-search="Пребарувај дејност..."></select>
                                                         <span asp-validation-for="ActivityId" class="text-danger"></span>
                                                     </div>
                                                 </div>
@@ -73,7 +73,7 @@
                                                 <div class="col-md-6">
                                                     <div class="form-group">
                                                         <label>Објект </label>
-                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId"></select>
+                                                        <select asp-for="BuildingId" class="form-control mb-3" asp-items="ViewBag.BuildingId" data-search="Пребарувај објект..."></select>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">

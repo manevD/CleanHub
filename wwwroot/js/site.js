@@ -148,8 +148,32 @@
         $t.DataTable(jQuery.extend(true, {}, window.mhDataTableDefaults));
     }
 
+    /* ---------- Паѓачки листи со пребарување ----------
+       Секој <select data-search="текст за пребарување"> станува searchable (Tom Select).
+       Оригиналниот select останува во формата, па name/value/change работат исто. */
+    function initSearchSelects(scope) {
+        if (!window.TomSelect) return;
+        (scope || doc).querySelectorAll('select[data-search]').forEach(function (el) {
+            if (el.tomselect) return;
+            new TomSelect(el, {
+                placeholder: el.getAttribute('data-search') || 'Пребарувај...',
+                allowEmptyOption: true,
+                create: false,
+                maxOptions: 2000,
+                searchField: ['text'],
+                // Редоследот од серверот се задржува (без сортирање)
+                sortField: [{ field: '$order' }],
+                render: {
+                    no_results: function () { return '<div class="no-results">Нема резултати</div>'; }
+                }
+            });
+        });
+    }
+    window.mhInitSearchSelects = initSearchSelects;
+
     function ready() {
         initDatePickers();
+        initSearchSelects();
         // По скриптите на страната — ако страната сама ја иницијализира табелата, не ја допираме.
         setTimeout(initTables, 0);
     }

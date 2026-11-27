@@ -10,7 +10,7 @@
         <form asp-action="AnnualReport" method="post" class="toolbar" id="annualForm">
             <div class="toolbar-field">
                 <label class="form-label" for="buildingId">Објект</label>
-                <select id="buildingId" name="buildingId" class="form-select" asp-items="Model.Buildings" required>
+                <select id="buildingId" name="buildingId" class="form-select" asp-items="Model.Buildings" required data-search="Пребарувај објект...">
                     <option value="">— Изберете објект —</option>
                 </select>
             </div>
