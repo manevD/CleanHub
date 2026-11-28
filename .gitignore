@@ -362,3 +362,6 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Dokumentacija Database.docx
+
+# DataProtection keys (secret, не се commit-ираат)
+App_Data/DataProtection-Keys/

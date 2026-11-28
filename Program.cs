@@ -4,6 +4,7 @@ using CleanHub.Extensions;
 using CleanHub.Infrastructure.Data;
 using CleanHub.Infrastructure.Repositories;
 using CleanHub.Infrastructure.Repositories.Interfaces;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
@@ -107,6 +108,13 @@ namespace CleanHub
                 options.LoginPath = "/Identity/Account/Login";
                 options.AccessDeniedPath = "/Identity/Account/AccessDenied";
                 options.ReturnUrlParameter = "returnUrl";
+
+                // Одјава само по 30 минути НЕАКТИВНОСТ.
+                // Секое барање (клик) го продолжува рокот (sliding).
+                options.ExpireTimeSpan = TimeSpan.FromMinutes(30);
+                options.SlidingExpiration = true;
+                options.Cookie.HttpOnly = true;
+                options.Cookie.IsEssential = true;
                 options.Events.OnRedirectToReturnUrl = context =>
                 {
                     context.Response.Redirect(
@@ -123,7 +131,17 @@ namespace CleanHub
             // ----------------------------------------------------
             builder.Services.AddControllersWithViews();
             builder.Services.AddRazorPages();
-            builder.Services.AddDataProtection();
+            // Клучевите за login-cookie се чуваат на диск (не само во меморија).
+            // Без ова, секој рестарт на app pool-от (на хостингот се случува после
+            // тешки функции: PDF, печатење, праќање) ги бришеше клучевите
+            // и сите корисници беа исфрлани од програмата.
+            var keysFolder = new DirectoryInfo(
+                Path.Combine(builder.Environment.ContentRootPath, "App_Data", "DataProtection-Keys"));
+            keysFolder.Create();
+
+            builder.Services.AddDataProtection()
+                .PersistKeysToFileSystem(keysFolder)
+                .SetApplicationName("CleanHub");
 
             var mapperConfig = new MapperConfiguration(cfg =>
             {

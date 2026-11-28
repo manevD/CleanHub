@@ -5,9 +5,15 @@ namespace CleanHub.Helpers
 {
     public class PriceCalculator(List<Customer> customers)
     {
+        /// <param name="totalIncludesTax">
+        /// true (Documents/Create): „Вк.распл.“ (Total) веќе е СО ДДВ.
+        /// Пример: 3000 ден. / 10 станари = 300 ден. по станар – ДДВ не се додава дополнително,
+        /// туку само се извлекува од 300 за да се прикаже нето цената.
+        /// </param>
         public void CalculatePrices(
             List<BuildingProductViewModel> buildingProducts,
-            Customer customer)
+            Customer customer,
+            bool totalIncludesTax = false)
         {
             foreach (var product in buildingProducts)
             {
@@ -86,6 +92,30 @@ namespace CleanHub.Helpers
                         "гаража",
                         StringComparison.OrdinalIgnoreCase)
                     ;
+
+                // =========================================================
+                // Documents/Create: Вк.распл. е бруто (со ДДВ)
+                // -> цена по станар = Total / станари (НЕ се додава ДДВ)
+                // =========================================================
+
+                if (totalIncludesTax &&
+                    product.Total.HasValue &&
+                    product.Total.Value > 0)
+                {
+                    float grossPerCustomer = product.Total.Value / customerCount;
+
+                    float taxRate = noTaxCalculation
+                        ? 18f
+                        : (product.Tax ?? 0f);
+
+                    product.Price = taxRate > 0
+                        ? grossPerCustomer / (1 + taxRate / 100f)
+                        : grossPerCustomer;
+
+                    product.PriceWithTax = grossPerCustomer;
+                    product.PriceWithTaxTotal = grossPerCustomer;
+                    continue;
+                }
 
                 if (noTaxCalculation)
                 {

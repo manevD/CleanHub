@@ -900,7 +900,8 @@ namespace CleanHub.Controllers
             var calculator = new PriceCalculator(building.Customers.ToList());
             var tempBuildingProducts = GetProductsForCustomer(document.Building?.BuildingProducts, customer, building.Customers.Any(x => x.SetCost));
 
-            calculator.CalculatePrices(tempBuildingProducts, customer);
+            // Create: Вк.распл. веќе е со ДДВ -> не додавај ДДВ повторно
+            calculator.CalculatePrices(tempBuildingProducts, customer, totalIncludesTax: true);
 
             //if (tempBuildingProducts != null)
             //{

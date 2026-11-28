@@ -533,15 +533,19 @@
             let total = parseNumber(totalInput?.value);
             let price = parseNumber(priceInput?.value);
 
-            // 👉 КЛУЧНО: Ако Total има вредност (>0), Tax се игнорира (станува 0)
-            let tax = (total > 0) ? 0 : parseNumber(taxInput?.value);
+            let tax = parseNumber(taxInput?.value);
+            let priceWithTax;
 
-            if (source === "total" && total > 0) {
-                price = customerCount > 0 ? total / customerCount : total;
-                if (priceInput) priceInput.value = formatNumber(price);
+            if (total > 0) {
+                // 👉 КЛУЧНО: Вк.распл. веќе е СО ДДВ.
+                // 3000 / 10 станари = 300 по станар -> ДДВ НЕ се додава повторно,
+                // само се извлекува за да се прикаже нето цената.
+                priceWithTax = customerCount > 0 ? total / customerCount : total;
+                price = tax > 0 ? priceWithTax / (1 + tax / 100) : priceWithTax;
+                if (priceInput && source !== "price") priceInput.value = formatNumber(price);
+            } else {
+                priceWithTax = tax === 0 ? price : price + (price * tax / 100);
             }
-
-            let priceWithTax = tax === 0 ? price : price + (price * tax / 100);
 
             if (priceWithTaxInput)
                 priceWithTaxInput.value = formatNumber(priceWithTax);
