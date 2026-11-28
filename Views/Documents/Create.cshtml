@@ -518,6 +518,14 @@
         }
 
 
+        // Редови каде цената е внесена СО ДДВ (исто како PriceCalculator.noTaxCalculation)
+        function isGrossPriceRow(row) {
+            const notes = (row.querySelector('td.description input[type="text"]')?.value || '').toLowerCase();
+            return notes.includes('потрошена електрична енергија')
+                || notes.includes('одржување на лифт')
+                || notes.includes('гаража');
+        }
+
         // ================= CALCULATE =================
 
         function calculatePrice(row, source) {
@@ -543,6 +551,9 @@
                 priceWithTax = customerCount > 0 ? total / customerCount : total;
                 price = tax > 0 ? priceWithTax / (1 + tax / 100) : priceWithTax;
                 if (priceInput && source !== "price") priceInput.value = formatNumber(price);
+            } else if (isGrossPriceRow(row)) {
+                // струја / лифт / гаража: внесената цена веќе е со ДДВ (исто како на серверот)
+                priceWithTax = price;
             } else {
                 priceWithTax = tax === 0 ? price : price + (price * tax / 100);
             }

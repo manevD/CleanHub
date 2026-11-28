@@ -1,10 +1,14 @@
 ﻿using CleanHub.Entities;
 using CleanHub.ViewModels;
+using System.Runtime.CompilerServices;
 
 namespace CleanHub.Helpers
 {
     public class PriceCalculator(List<Customer> customers)
     {
+        // Оригинална бруто цена по ред (живее само додека живее редот од барањето).
+        private static readonly ConditionalWeakTable<BuildingProductViewModel, StrongBox<float>> OriginalGrossPrices = new();
+
         /// <param name="totalIncludesTax">
         /// true (Documents/Create): „Вк.распл.“ (Total) веќе е СО ДДВ.
         /// Пример: 3000 ден. / 10 станари = 300 ден. по станар – ДДВ не се додава дополнително,
@@ -119,7 +123,12 @@ namespace CleanHub.Helpers
 
                 if (noTaxCalculation)
                 {
-                    var originalPrice = product.Price;
+                    // Истиот ред се пресметува за СЕКОЈ станар.
+                    // Затоа земаме ја оригиналната (бруто) цена од првото пресметување,
+                    // наместо да делиме со 1.18 повторно за секој следен станар.
+                    var originalPrice = OriginalGrossPrices
+                        .GetValue(product, p => new StrongBox<float>(p.Price))
+                        .Value;
 
                     // 18 % MwSt. herausrechnen
                     product.Price = originalPrice / 1.18f;
